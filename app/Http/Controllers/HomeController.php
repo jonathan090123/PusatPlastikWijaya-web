@@ -21,6 +21,6 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
-        return view('home', compact('categories', 'latestProducts'));
+        return view('customer.home', compact('categories', 'latestProducts'));
     }
 }

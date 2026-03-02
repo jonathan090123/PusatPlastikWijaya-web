@@ -40,8 +40,6 @@ class RegisterController extends Controller
             'role' => 'customer',
         ]);
 
-        Auth::login($user);
-
-        return redirect()->route('home')->with('success', 'Registrasi berhasil! Selamat datang.');
+        return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan login.');
     }
 }
