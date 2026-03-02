@@ -18,6 +18,7 @@
                 <i class="fas fa-store"></i> Pusat Plastik Wijaya
             </a>
 
+            @auth
             @unless(request()->routeIs('login') || request()->routeIs('register'))
             <div class="navbar-search">
                 <form action="{{ route('products.index') }}" method="GET">
@@ -28,6 +29,7 @@
                 </form>
             </div>
             @endunless
+            @endauth
 
             <div class="navbar-actions">
                 @auth

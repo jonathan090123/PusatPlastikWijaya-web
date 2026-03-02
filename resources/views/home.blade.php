@@ -4,151 +4,136 @@
 
 @section('content')
 {{-- Hero Section --}}
-<section class="hero-section">
-    <div class="container">
-        <div class="hero-content">
-            <h1>Selamat Datang di <span>Pusat Plastik Wijaya</span></h1>
-            <p>Temukan berbagai produk plastik berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan terpercaya.</p>
-            <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-shopping-bag"></i> Belanja Sekarang
+<section class="lp-hero">
+    <div class="container lp-hero-inner">
+        <h1>Selamat Datang di <span>Pusat Plastik Wijaya</span></h1>
+        <p>Menyediakan berbagai produk plastik berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan terpercaya.</p>
+        <div class="lp-hero-actions">
+            <a href="{{ route('register') }}" class="btn btn-primary btn-lg lp-btn-main">
+                <i class="fas fa-user-plus"></i> Daftar Sekarang
+            </a>
+            <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Masuk
             </a>
         </div>
     </div>
 </section>
 
-{{-- Categories Section --}}
-<section class="section">
+{{-- Keunggulan Section --}}
+<section class="lp-features">
     <div class="container">
-        <div class="section-header">
-            <h2>Kategori Produk</h2>
-            <p>Temukan produk berdasarkan kategori</p>
-        </div>
-        <div class="categories-grid">
-            @forelse($categories as $category)
-                <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-box"></i>
-                    </div>
-                    <h3>{{ $category->name }}</h3>
-                    <p>{{ $category->products_count ?? 0 }} Produk</p>
-                </a>
-            @empty
-                <div class="empty-state" style="grid-column: 1 / -1;">
-                    <i class="fas fa-tags"></i>
-                    <h3>Belum ada kategori</h3>
-                </div>
-            @endforelse
+        <h2 class="lp-section-title">Mengapa Belanja di Sini?</h2>
+        <div class="lp-features-grid">
+            <div class="lp-feature-card">
+                <div class="lp-feature-icon"><i class="fas fa-medal"></i></div>
+                <h3>Kualitas Terjamin</h3>
+                <p>Produk plastik yang telah melalui seleksi ketat dengan standar kualitas tinggi.</p>
+            </div>
+            <div class="lp-feature-card">
+                <div class="lp-feature-icon"><i class="fas fa-tags"></i></div>
+                <h3>Harga Terjangkau</h3>
+                <p>Harga kompetitif langsung dari distributor tanpa perantara.</p>
+            </div>
+            <div class="lp-feature-card">
+                <div class="lp-feature-icon"><i class="fas fa-truck-fast"></i></div>
+                <h3>Pengiriman Cepat</h3>
+                <p>Pesanan diproses dengan cepat dan dikirim ke seluruh Indonesia.</p>
+            </div>
         </div>
     </div>
 </section>
 
-{{-- Latest Products --}}
-<section class="section section-gray">
-    <div class="container">
-        <div class="section-header">
-            <h2>Produk Terbaru</h2>
-            <a href="{{ route('products.index') }}" class="btn btn-outline-primary btn-sm">Lihat Semua <i class="fas fa-arrow-right"></i></a>
-        </div>
-        <div class="products-grid">
-            @forelse($latestProducts as $product)
-                <a href="{{ route('products.show', $product->slug) }}" class="product-card">
-                    <div class="product-card-image">
-                        @if($product->image)
-                            <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}">
-                        @else
-                            <img src="https://placehold.co/400x300/e2e8f0/64748b?text={{ urlencode($product->name) }}" alt="{{ $product->name }}">
-                        @endif
-                    </div>
-                    <div class="product-card-body">
-                        <div class="product-card-category">{{ $product->category->name }}</div>
-                        <h3 class="product-card-name">{{ $product->name }}</h3>
-                        <div class="product-card-price">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
-                    </div>
-                </a>
-            @empty
-                <div class="empty-state" style="grid-column: 1 / -1;">
-                    <i class="fas fa-box-open"></i>
-                    <h3>Belum ada produk</h3>
-                    <p>Produk akan segera hadir!</p>
-                </div>
-            @endforelse
-        </div>
+{{-- CTA Section --}}
+<section class="lp-cta">
+    <div class="container lp-cta-inner">
+        <h2>Siap Mulai Belanja?</h2>
+        <p>Daftar sekarang untuk mulai menelusuri katalog produk kami.</p>
+        <a href="{{ route('register') }}" class="btn btn-primary btn-lg lp-btn-main">
+            <i class="fas fa-user-plus"></i> Daftar Gratis
+        </a>
     </div>
 </section>
 @endsection
 
 @push('styles')
 <style>
-.hero-section {
-    background: linear-gradient(135deg, var(--secondary) 0%, #1e3a5f 50%, var(--primary-dark) 100%);
-    padding: 4rem 0;
+/* Hero */
+.lp-hero {
+    background: linear-gradient(135deg, var(--secondary, #0f2540) 0%, #1e3a5f 50%, var(--primary-dark, #1e4976) 100%);
+    padding: 5rem 0 4rem;
+    color: #fff;
     text-align: center;
-    color: var(--white);
 }
-.hero-content h1 {
+.lp-hero-inner { max-width: 620px; margin: 0 auto; }
+.lp-hero h1 {
     font-size: 2.2rem;
     font-weight: 800;
-    margin-bottom: 1rem;
     line-height: 1.3;
+    margin-bottom: 1rem;
 }
-.hero-content h1 span { color: var(--accent); }
-.hero-content p {
+.lp-hero h1 span { color: var(--accent, #ffd60a); }
+.lp-hero p {
     font-size: 1.05rem;
-    color: var(--gray-300);
+    color: rgba(255,255,255,0.8);
     margin-bottom: 2rem;
-    max-width: 550px;
-    margin-left: auto;
-    margin-right: auto;
+    line-height: 1.7;
 }
-.section { padding: 3rem 0; }
-.section-gray { background: var(--gray-100); }
-.section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
+.lp-hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.lp-btn-main {
+    background: linear-gradient(135deg, #ffd60a 0%, #f5a623 100%);
+    border: none;
+    color: #1a1a1a !important;
+    font-weight: 700;
 }
-.section-header h2 { font-size: 1.35rem; font-weight: 700; color: var(--gray-900); }
-.section-header p { color: var(--gray-500); font-size: 0.875rem; }
+.lp-btn-main:hover { opacity: 0.9; }
 
-.categories-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
-}
-.category-card {
-    background: var(--white);
-    border-radius: var(--radius-md);
-    padding: 1.5rem 1rem;
+/* Features */
+.lp-features { padding: 3.5rem 0; background: #f8fafc; }
+.lp-section-title {
     text-align: center;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--gray-100);
-    transition: var(--transition);
-    color: var(--gray-700);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gray-900, #0f172a);
+    margin-bottom: 2rem;
 }
-.category-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    color: var(--primary);
-    border-color: var(--primary-light);
+.lp-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
 }
-.category-icon {
-    width: 56px; height: 56px;
-    margin: 0 auto 0.75rem;
-    background: var(--primary-light);
-    border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.lp-feature-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.75rem 1.25rem;
+    text-align: center;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e8eff5;
+}
+.lp-feature-icon {
+    width: 50px; height: 50px;
+    border-radius: 12px;
+    background: var(--primary-light, #e0f0ff);
+    color: var(--primary, #1e7fc2);
+    display: flex; align-items: center; justify-content: center;
     font-size: 1.3rem;
-    color: var(--primary);
+    margin: 0 auto 1rem;
 }
-.category-card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
-.category-card p { font-size: 0.75rem; color: var(--gray-500); }
+.lp-feature-card h3 { font-size: 1rem; font-weight: 700; color: var(--gray-900, #0f172a); margin-bottom: 0.4rem; }
+.lp-feature-card p { font-size: 0.85rem; color: var(--gray-500, #64748b); line-height: 1.6; }
+
+/* CTA */
+.lp-cta {
+    background: linear-gradient(135deg, var(--secondary, #0f2540) 0%, #1a3a5c 100%);
+    padding: 3.5rem 0;
+    color: #fff;
+}
+.lp-cta-inner { text-align: center; max-width: 520px; margin: 0 auto; }
+.lp-cta h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+.lp-cta p { color: rgba(255,255,255,0.75); margin-bottom: 1.5rem; font-size: 0.95rem; }
 
 @media (max-width: 768px) {
-    .hero-content h1 { font-size: 1.6rem; }
-    .section-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .lp-hero h1 { font-size: 1.6rem; }
+    .lp-hero { padding: 3rem 0 2.5rem; }
 }
 </style>
 @endpush
