@@ -43,16 +43,6 @@
     </div>
 </section>
 
-{{-- CTA Section --}}
-<section class="lp-cta">
-    <div class="container lp-cta-inner">
-        <h2>Siap Mulai Belanja?</h2>
-        <p>Daftar sekarang untuk mulai menelusuri katalog produk kami.</p>
-        <a href="{{ route('register') }}" class="btn btn-primary btn-lg lp-btn-main">
-            <i class="fas fa-user-plus"></i> Daftar Gratis
-        </a>
-    </div>
-</section>
 @endsection
 
 @push('styles')
@@ -121,15 +111,6 @@
 .lp-feature-card h3 { font-size: 1rem; font-weight: 700; color: var(--gray-900, #0f172a); margin-bottom: 0.4rem; }
 .lp-feature-card p { font-size: 0.85rem; color: var(--gray-500, #64748b); line-height: 1.6; }
 
-/* CTA */
-.lp-cta {
-    background: linear-gradient(135deg, var(--secondary, #0f2540) 0%, #1a3a5c 100%);
-    padding: 3.5rem 0;
-    color: #fff;
-}
-.lp-cta-inner { text-align: center; max-width: 520px; margin: 0 auto; }
-.lp-cta h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
-.lp-cta p { color: rgba(255,255,255,0.75); margin-bottom: 1.5rem; font-size: 0.95rem; }
 
 @media (max-width: 768px) {
     .lp-hero h1 { font-size: 1.6rem; }
