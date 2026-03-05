@@ -16,6 +16,7 @@ class Product extends Model
         'slug',
         'description',
         'price',
+        'discount_price',
         'weight',
         'stock',
         'stock_alert',
@@ -27,9 +28,20 @@ class Product extends Model
     {
         return [
             'price' => 'decimal:2',
+            'discount_price' => 'decimal:2',
             'weight' => 'decimal:2',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function getEffectivePrice()
+    {
+        return $this->discount_price ?? $this->price;
+    }
+
+    public function hasDiscount(): bool
+    {
+        return !is_null($this->discount_price) && $this->discount_price < $this->price;
     }
 
     protected static function booted(): void

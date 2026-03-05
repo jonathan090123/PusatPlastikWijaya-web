@@ -16,6 +16,21 @@
         <aside class="admin-sidebar" id="adminSidebar">
             <div class="sidebar-header">
                 <h2><i class="fas fa-store"></i> <span>Admin Panel</span></h2>
+                <p class="sidebar-greeting">
+                    <span>
+                        <span id="admin-greeting">Selamat...</span>, {{ Auth::user()->name }} 👋
+                        <script>
+                            (function() {
+                                const hour = new Date().getHours();
+                                let greeting = 'Selamat Malam';
+                                if (hour >= 1 && hour < 10) greeting = 'Selamat Pagi';
+                                else if (hour >= 10 && hour < 15) greeting = 'Selamat Siang';
+                                else if (hour >= 15 && hour < 18) greeting = 'Selamat Sore';
+                                document.getElementById('admin-greeting').textContent = greeting;
+                            })();
+                        </script>
+                    </span>
+                </p>
             </div>
             <nav class="sidebar-nav">
                 <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -33,9 +48,6 @@
                 <a href="{{ route('admin.customers.index') }}" class="sidebar-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> <span>Pelanggan</span>
                 </a>
-                <a href="{{ route('admin.vouchers.index') }}" class="sidebar-link {{ request()->routeIs('admin.vouchers.*') ? 'active' : '' }}">
-                    <i class="fas fa-ticket-alt"></i> <span>Voucher</span>
-                </a>
                 <a href="{{ route('admin.shipping.index') }}" class="sidebar-link {{ request()->routeIs('admin.shipping.*') ? 'active' : '' }}">
                     <i class="fas fa-truck"></i> <span>Pengiriman</span>
                 </a>
@@ -43,6 +55,17 @@
                     <i class="fas fa-chart-bar"></i> <span>Laporan</span>
                 </a>
             </nav>
+            <div style="margin-top:auto; padding:1rem;">
+                <a href="{{ route('profile.edit') }}" class="sidebar-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" style="margin-bottom:0.5rem; background:rgba(96,165,250,0.15); border:1px solid rgba(96,165,250,0.25); border-radius:var(--radius-sm); font-weight:600; color:#93c5fd;">
+                    <i class="fas fa-user-cog"></i> <span>Profil</span>
+                </a>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="sidebar-link" style="width:100%; color:#fecaca; border:1px solid rgba(252,165,165,0.25); border-radius:var(--radius-sm); background:rgba(185,28,28,0.6); justify-content:flex-start; font-weight:600;">
+                        <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                    </button>
+                </form>
+            </div>
         </aside>
 
         {{-- Main Content --}}
@@ -60,6 +83,7 @@
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div class="nav-dropdown-menu">
+                            <a href="{{ route('profile.edit') }}"><i class="fas fa-user-cog"></i> Profil</a>
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button>
