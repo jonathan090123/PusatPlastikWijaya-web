@@ -61,7 +61,7 @@
                 </a>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
-                    <button type="submit" class="sidebar-link" style="width:100%; color:#fecaca; border:1px solid rgba(252,165,165,0.25); border-radius:var(--radius-sm); background:rgba(185,28,28,0.6); justify-content:flex-start; font-weight:600;">
+                    <button type="submit" class="sidebar-link" style="width:100%; color:#fecaca; border:1px solid rgba(252,165,165,0.25); border-radius:var(--radius-sm); background:rgba(185,28,28,0.6); justify-content:flex-start; font-weight:600; cursor:pointer;">
                         <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
                     </button>
                 </form>
