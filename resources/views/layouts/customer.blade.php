@@ -15,7 +15,8 @@
 @unless(request()->routeIs('login') || request()->routeIs('register'))
 {{-- === LOGGED-IN CUSTOMER: Sidebar Layout (same structure as admin) === --}}
 <body class="admin-body">
-    <div class="admin-wrapper">
+    <div class="admin-wrapper" id="customerWrapper">
+        <script>if(localStorage.getItem('sidebar-collapsed')==='true')document.getElementById('customerWrapper').classList.add('sidebar-collapsed');</script>
         {{-- Sidebar --}}
         <aside class="admin-sidebar" id="customerSidebar">
             <div class="sidebar-header">
@@ -123,7 +124,9 @@
     <script>
         // Sidebar toggle
         document.getElementById('customerSidebarToggle')?.addEventListener('click', function() {
-            document.querySelector('.admin-wrapper').classList.toggle('sidebar-collapsed');
+            const wrapper = document.querySelector('.admin-wrapper');
+            wrapper.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebar-collapsed', wrapper.classList.contains('sidebar-collapsed'));
         });
 
         // Dropdown toggle

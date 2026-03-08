@@ -11,7 +11,8 @@
     @stack('styles')
 </head>
 <body class="admin-body">
-    <div class="admin-wrapper">
+    <div class="admin-wrapper" id="adminWrapper">
+        <script>if(localStorage.getItem('sidebar-collapsed')==='true')document.getElementById('adminWrapper').classList.add('sidebar-collapsed');</script>
         {{-- Sidebar --}}
         <aside class="admin-sidebar" id="adminSidebar">
             <div class="sidebar-header">
@@ -115,7 +116,9 @@
     <script>
         // Sidebar toggle
         document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            document.querySelector('.admin-wrapper').classList.toggle('sidebar-collapsed');
+            const wrapper = document.querySelector('.admin-wrapper');
+            wrapper.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebar-collapsed', wrapper.classList.contains('sidebar-collapsed'));
         });
 
         // Dropdown toggle
