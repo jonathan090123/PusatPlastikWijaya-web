@@ -3,7 +3,7 @@
 @section('title', 'Keranjang Belanja - Pusat Plastik Wijaya')
 
 @section('content')
-<div class="container" style="padding: 2rem 1rem;">
+<div style="padding: 0.5rem;">
     <div class="cart-header">
         <h1><i class="fas fa-shopping-cart"></i> Keranjang Belanja</h1>
         <a href="{{ route('products.index') }}" class="btn btn-outline-primary btn-sm">

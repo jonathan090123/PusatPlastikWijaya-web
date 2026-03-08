@@ -18,7 +18,6 @@
 
 {{-- Categories Section --}}
 <section class="section">
-    <div class="container">
         <div class="section-header">
             <h2>Kategori Produk</h2>
             <p>Temukan produk berdasarkan kategori</p>
@@ -26,11 +25,17 @@
         <div class="categories-grid">
             @forelse($categories as $category)
                 <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-box"></i>
+                    <div class="category-img">
+                        @if($category->image)
+                            <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}">
+                        @else
+                            <div class="category-img-placeholder"><i class="fas fa-box"></i></div>
+                        @endif
                     </div>
-                    <h3>{{ $category->name }}</h3>
-                    <p>{{ $category->products_count ?? 0 }} Produk</p>
+                    <div class="category-card-body">
+                        <h3>{{ $category->name }}</h3>
+                        <p>{{ $category->products_count ?? 0 }} Produk</p>
+                    </div>
                 </a>
             @empty
                 <div class="empty-state" style="grid-column: 1 / -1;">
@@ -39,12 +44,10 @@
                 </div>
             @endforelse
         </div>
-    </div>
 </section>
 
 {{-- Latest Products --}}
 <section class="section section-gray">
-    <div class="container">
         <div class="section-header">
             <h2>Produk Terbaru</h2>
             <a href="{{ route('products.index') }}" class="btn btn-outline-primary btn-sm">Lihat Semua <i class="fas fa-arrow-right"></i></a>
@@ -85,7 +88,6 @@
                 </div>
             @endforelse
         </div>
-    </div>
 </section>
 @endsection
 
@@ -113,7 +115,7 @@
     margin-left: auto;
     margin-right: auto;
 }
-.section { padding: 3rem 0; }
+.section { padding: 2rem 0; max-width: 91%; margin-left: auto; margin-right: auto; }
 .section-gray { background: var(--gray-100); }
 .section-header {
     display: flex;
@@ -132,8 +134,7 @@
 .category-card {
     background: var(--white);
     border-radius: var(--radius-md);
-    padding: 1.5rem 1rem;
-    text-align: center;
+    overflow: hidden;
     box-shadow: var(--shadow);
     border: 1px solid var(--gray-100);
     transition: var(--transition);
@@ -145,16 +146,29 @@
     color: var(--primary);
     border-color: var(--primary-light);
 }
-.category-icon {
-    width: 56px; height: 56px;
-    margin: 0 auto 0.75rem;
+.category-img {
+    width: 100%;
+    height: 120px;
+    overflow: hidden;
+}
+.category-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.category-img-placeholder {
+    width: 100%;
+    height: 100%;
     background: var(--primary-light);
-    border-radius: var(--radius);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.5rem;
     color: var(--primary);
+}
+.category-card-body {
+    padding: 0.75rem 1rem;
+    text-align: center;
 }
 .category-card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
 .category-card p { font-size: 0.75rem; color: var(--gray-500); }

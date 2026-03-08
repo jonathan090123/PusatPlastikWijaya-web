@@ -3,7 +3,7 @@
 @section('title', 'Katalog Produk - Pusat Plastik Wijaya')
 
 @section('content')
-<div class="container" style="padding: 2rem 1rem;">
+<div style="padding: 0.5rem;">
     {{-- Page Header --}}
     <div class="catalog-header">
         <h1><i class="fas fa-box-open"></i> Katalog Produk</h1>
