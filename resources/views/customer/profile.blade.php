@@ -42,8 +42,11 @@
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fas fa-map-marker-alt"></i> Alamat Pengiriman</label>
+                        <label><i class="fas fa-map-marker-alt"></i> Alamat Pengiriman <span style="color:var(--danger);">*</span></label>
                         <textarea name="address" rows="3" placeholder="Masukkan alamat lengkap...">{{ old('address', $user->address) }}</textarea>
+                        <small style="color:var(--warning); display:block; margin-top:0.35rem; font-size:0.78rem;">
+                            <i class="fas fa-exclamation-triangle"></i> Penting: Pastikan alamat pengiriman diisi dengan lengkap agar proses pengiriman berjalan lancar.
+                        </small>
                         @error('address')
                             <span class="error-message">{{ $message }}</span>
                         @enderror
