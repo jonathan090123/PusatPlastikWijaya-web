@@ -115,7 +115,7 @@
     margin-left: auto;
     margin-right: auto;
 }
-.section { padding: 2rem 0; max-width: 91%; margin-left: auto; margin-right: auto; }
+.section { padding: 2rem 0; max-width: 90%; margin-left: auto; margin-right: auto; }
 .section-gray { background: var(--gray-100); }
 .section-header {
     display: flex;
