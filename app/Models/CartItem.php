@@ -27,6 +27,6 @@ class CartItem extends Model
 
     public function getSubtotalAttribute()
     {
-        return $this->product->price * $this->quantity;
+        return $this->product->getEffectivePrice() * $this->quantity;
     }
 }

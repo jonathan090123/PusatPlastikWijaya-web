@@ -8,7 +8,8 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCustomerController;
-
+use App\Http\Controllers\Customer\CustomerProductController;
+use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\ProfileController;
 
 /* |-------------------------------------------------------------------------- | Web Routes |-------------------------------------------------------------------------- */
@@ -27,27 +28,26 @@ Route::middleware('guest')->group(function () {
 // Logout
 Route::post('/logout', [LoginController::class , 'logout'])->name('logout')->middleware('auth');
 
-// Authenticated Routes (shared by admin & customer)
+// Authenticated Routes (admin & customer)
 Route::middleware('auth')->group(function () {
     // Profile
     Route::get('/profile', [ProfileController::class , 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class , 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class , 'updatePassword'])->name('profile.password');
 
-    // Customer Routes (placeholder - will be built in next phases)
-    Route::get('/products', function () {
-            return 'Products page';
-        }
-        )->name('products.index');
-        Route::get('/products/{slug}', function () {
-            return 'Product detail';
-        }
-        )->name('products.show');
-        Route::get('/cart', function () {
-            return 'Cart page';
-        }
-        )->name('cart.index');
-        Route::get('/orders', function () {
+    // Customer Product Catalog
+    Route::get('/products', [CustomerProductController::class , 'index'])->name('products.index');
+    Route::get('/products/{slug}', [CustomerProductController::class , 'show'])->name('products.show');
+
+    // Cart
+    Route::get('/cart', [CartController::class , 'index'])->name('cart.index');
+    Route::post('/cart/add', [CartController::class , 'add'])->name('cart.add');
+    Route::patch('/cart/{cartItem}', [CartController::class , 'update'])->name('cart.update');
+    Route::delete('/cart/{cartItem}', [CartController::class , 'remove'])->name('cart.remove');
+    Route::get('/cart/count', [CartController::class , 'count'])->name('cart.count');
+
+    // Orders (placeholder)
+    Route::get('/orders', function () {
             return 'Orders page';
         }
         )->name('orders.index');    });
@@ -71,19 +71,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Placeholder routes for remaining admin features
     Route::get('/orders', function () {
-            return 'Admin Orders';
-        }
+            return 'Admin Orders'; }
         )->name('orders.index');
         Route::get('/vouchers', function () {
-            return 'Admin Vouchers';
-        }
+            return 'Admin Vouchers'; }
         )->name('vouchers.index');
         Route::get('/shipping', function () {
-            return 'Admin Shipping';
-        }
+            return 'Admin Shipping'; }
         )->name('shipping.index');
         Route::get('/reports', function () {
-            return 'Admin Reports';
-        }
-        )->name('reports.index');
-    });
+            return 'Admin Reports'; }
+        )->name('reports.index');    });

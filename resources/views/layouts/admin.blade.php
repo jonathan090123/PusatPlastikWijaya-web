@@ -28,7 +28,7 @@
                                 else if (hour >= 15 && hour < 18) greeting = 'Selamat Sore';
                                 document.getElementById('admin-greeting').textContent = greeting;
                             })();
-                        </script>
+                      --`o99da </script>
                     </span>
                 </p>
             </div>

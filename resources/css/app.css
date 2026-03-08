@@ -619,7 +619,7 @@ table tbody tr:hover { background: var(--gray-50); }
     transition: margin-left 0.3s ease;
 }
 .admin-topbar {
-    background: var(--white);
+    background: linear-gradient(90deg, #1e3a5f 0%, var(--secondary) 100%);
     height: 60px;
     display: flex;
     align-items: center;
@@ -629,26 +629,61 @@ table tbody tr:hover { background: var(--gray-50); }
     position: sticky;
     top: 0;
     z-index: 999;
+    color: var(--white);
 }
 .sidebar-toggle {
     background: none;
     border: none;
-    color: var(--gray-600);
+    color: var(--gray-300);
     font-size: 1.1rem;
     cursor: pointer;
     padding: 0.5rem;
     border-radius: var(--radius-sm);
     transition: var(--transition);
 }
-.sidebar-toggle:hover { background: var(--gray-100); }
+.sidebar-toggle:hover { background: rgba(255,255,255,0.1); }
 
 .topbar-right { display: flex; align-items: center; gap: 1rem; }
 .topbar-right .nav-dropdown-toggle {
-    background: var(--gray-50);
-    color: var(--gray-700);
-    border: 1px solid var(--gray-200);
+    background: rgba(255,255,255,0.1);
+    color: var(--gray-200);
+    border: 1px solid rgba(255,255,255,0.15);
 }
-.topbar-right .nav-dropdown-toggle:hover { background: var(--gray-100); }
+.topbar-right .nav-dropdown-toggle:hover { background: rgba(255,255,255,0.2); }
+
+.topbar-search {
+    flex: 1;
+    max-width: 480px;
+}
+.topbar-search .search-input-group {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+}
+.topbar-search .search-input-group i {
+    color: var(--gray-400);
+    font-size: 0.85rem;
+}
+.topbar-search .search-input-group input {
+    background: transparent;
+    border: none;
+    color: var(--white);
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+    width: 100%;
+    outline: none;
+}
+.topbar-search .search-input-group input::placeholder {
+    color: var(--gray-400);
+}
+.topbar-search .search-input-group:focus-within {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(96,165,250,0.5);
+}
 
 .admin-content {
     padding: 1.5rem;
@@ -821,6 +856,30 @@ table tbody tr:hover { background: var(--gray-50); }
     font-size: 1.05rem;
     font-weight: 700;
     color: var(--primary);
+}
+.price-original {
+    text-decoration: line-through;
+    color: var(--gray-400);
+    font-size: 0.8rem;
+    font-weight: 400;
+    display: block;
+}
+.price-discount {
+    color: var(--danger);
+    font-size: 1rem;
+    font-weight: 700;
+}
+.product-badge-discount {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    background: var(--danger);
+    color: var(--white);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+    z-index: 1;
 }
 .product-card-footer {
     padding: 0.75rem 1rem;

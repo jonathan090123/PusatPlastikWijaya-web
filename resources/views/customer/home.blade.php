@@ -53,6 +53,11 @@
             @forelse($latestProducts as $product)
                 <a href="{{ route('products.show', $product->slug) }}" class="product-card">
                     <div class="product-card-image">
+                        @if($product->hasDiscount())
+                            <span class="product-badge-discount">
+                                -{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%
+                            </span>
+                        @endif
                         @if($product->image)
                             <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}">
                         @else
@@ -62,7 +67,14 @@
                     <div class="product-card-body">
                         <div class="product-card-category">{{ $product->category->name }}</div>
                         <h3 class="product-card-name">{{ $product->name }}</h3>
-                        <div class="product-card-price">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
+                        <div class="product-card-price">
+                            @if($product->hasDiscount())
+                                <span class="price-original">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                                <span class="price-discount">Rp {{ number_format($product->discount_price, 0, ',', '.') }}</span>
+                            @else
+                                <span>Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                            @endif
+                        </div>
                     </div>
                 </a>
             @empty
@@ -84,6 +96,7 @@
     padding: 4rem 0;
     text-align: center;
     color: var(--white);
+    margin: -1.5rem -1.5rem 0 -1.5rem;
 }
 .hero-content h1 {
     font-size: 2.2rem;
