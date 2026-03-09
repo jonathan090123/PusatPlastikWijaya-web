@@ -12,7 +12,8 @@
 </head>
 <body class="admin-body">
     <div class="admin-wrapper" id="adminWrapper">
-        <script>if(localStorage.getItem('sidebar-collapsed')==='true')document.getElementById('adminWrapper').classList.add('sidebar-collapsed');</script>
+        <script>if(window.matchMedia('(min-width:1025px)').matches&&localStorage.getItem('admin-sidebar-collapsed')==='true')document.getElementById('adminWrapper').classList.add('sidebar-collapsed');</script>
+        <div class="sidebar-overlay" id="adminOverlay"></div>
         {{-- Sidebar --}}
         <aside class="admin-sidebar" id="adminSidebar">
             <div class="sidebar-header">
@@ -115,10 +116,38 @@
 
     <script>
         // Sidebar toggle
+        const adminSidebar = document.getElementById('adminSidebar');
+        const adminWrapper = document.getElementById('adminWrapper');
+        const adminOverlay = document.getElementById('adminOverlay');
+
+        const isMobile = () => window.matchMedia('(max-width: 1024px)').matches;
+
+        function adminToggleMobileSidebar(show) {
+            adminSidebar.classList.toggle('show', show);
+            adminOverlay.classList.toggle('show', show);
+        }
+
         document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            const wrapper = document.querySelector('.admin-wrapper');
-            wrapper.classList.toggle('sidebar-collapsed');
-            localStorage.setItem('sidebar-collapsed', wrapper.classList.contains('sidebar-collapsed'));
+            if (isMobile()) {
+                adminToggleMobileSidebar(!adminSidebar.classList.contains('show'));
+            } else {
+                adminWrapper.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('admin-sidebar-collapsed', adminWrapper.classList.contains('sidebar-collapsed'));
+            }
+        });
+
+        // Clicking sidebar links: on mobile close sidebar
+        document.querySelectorAll('#adminSidebar a.sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (isMobile()) {
+                    adminToggleMobileSidebar(false);
+                }
+            });
+        });
+
+        // Close sidebar when clicking overlay (mobile)
+        adminOverlay?.addEventListener('click', function() {
+            adminToggleMobileSidebar(false);
         });
 
         // Dropdown toggle

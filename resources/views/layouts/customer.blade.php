@@ -16,7 +16,8 @@
 {{-- === LOGGED-IN CUSTOMER: Sidebar Layout (same structure as admin) === --}}
 <body class="admin-body">
     <div class="admin-wrapper" id="customerWrapper">
-        <script>if(localStorage.getItem('sidebar-collapsed')==='true')document.getElementById('customerWrapper').classList.add('sidebar-collapsed');</script>
+        <script>if(window.matchMedia('(min-width:1025px)').matches&&localStorage.getItem('customer-sidebar-collapsed')==='true')document.getElementById('customerWrapper').classList.add('sidebar-collapsed');</script>
+        <div class="sidebar-overlay" id="customerOverlay"></div>
         {{-- Sidebar --}}
         <aside class="admin-sidebar" id="customerSidebar">
             <div class="sidebar-header">
@@ -123,10 +124,38 @@
 
     <script>
         // Sidebar toggle
+        const customerSidebar = document.getElementById('customerSidebar');
+        const customerWrapper = document.getElementById('customerWrapper');
+        const customerOverlay = document.getElementById('customerOverlay');
+
+        const isMobile = () => window.matchMedia('(max-width: 1024px)').matches;
+
+        function customerToggleMobileSidebar(show) {
+            customerSidebar.classList.toggle('show', show);
+            customerOverlay.classList.toggle('show', show);
+        }
+
         document.getElementById('customerSidebarToggle')?.addEventListener('click', function() {
-            const wrapper = document.querySelector('.admin-wrapper');
-            wrapper.classList.toggle('sidebar-collapsed');
-            localStorage.setItem('sidebar-collapsed', wrapper.classList.contains('sidebar-collapsed'));
+            if (isMobile()) {
+                customerToggleMobileSidebar(!customerSidebar.classList.contains('show'));
+            } else {
+                customerWrapper.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('customer-sidebar-collapsed', customerWrapper.classList.contains('sidebar-collapsed'));
+            }
+        });
+
+        // Clicking sidebar links: on mobile close sidebar
+        document.querySelectorAll('#customerSidebar a.sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (isMobile()) {
+                    customerToggleMobileSidebar(false);
+                }
+            });
+        });
+
+        // Close sidebar when clicking overlay (mobile)
+        customerOverlay?.addEventListener('click', function() {
+            customerToggleMobileSidebar(false);
         });
 
         // Dropdown toggle

@@ -571,7 +571,7 @@ table tbody tr:hover { background: var(--gray-50); }
     height: 100vh;
     overflow-y: auto;
     z-index: 1000;
-    transition: width 0.3s ease;
+    transition: width 0.3s ease, transform 0.3s ease;
     display: flex;
     flex-direction: column;
 }
@@ -902,7 +902,11 @@ table tbody tr:hover { background: var(--gray-50); }
 .empty-state p { font-size: 0.875rem; }
 
 /* --- Responsive --- */
-@media (max-width: 768px) {
+
+/* Sidebar overlay (hidden by default on all screens) */
+.sidebar-overlay { display: none; }
+
+@media (max-width: 1024px) {
     .navbar-search { display: none; }
     .navbar-search.show { display: block; position: absolute; top: 64px; left: 0; right: 0; padding: 0.75rem 1rem; background: var(--secondary); }
     .navbar-actions { display: none; }
@@ -911,9 +915,19 @@ table tbody tr:hover { background: var(--gray-50); }
 
     .footer-grid { grid-template-columns: 1fr; }
 
-    .admin-sidebar { transform: translateX(-100%); }
+    .admin-sidebar { transform: translateX(-100%); width: 75vw !important; max-width: 280px; }
     .admin-sidebar.show { transform: translateX(0); }
-    .admin-main { margin-left: 0; }
+    .admin-main { margin-left: 0 !important; }
+    .sidebar-collapsed .admin-sidebar .sidebar-header h2 span,
+    .sidebar-collapsed .admin-sidebar .sidebar-link span { display: flex !important; }
+    .sidebar-collapsed .admin-sidebar .sidebar-greeting { display: block !important; }
+    .sidebar-collapsed .admin-sidebar .sidebar-link { justify-content: flex-start !important; padding: 0.7rem 1.5rem !important; }
+
+    .sidebar-overlay.show { display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+
+    .topbar-search { flex: 1; min-width: 0; }
+    .topbar-search input { width: 100%; }
+    .topbar-right span { display: none; }
 
     .auth-card { padding: 1.5rem; }
 }
