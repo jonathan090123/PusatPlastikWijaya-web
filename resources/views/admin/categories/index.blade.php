@@ -45,7 +45,9 @@
                         <td>{{ $categories->firstItem() + $index }}</td>
                         <td>
                             @if($category->image)
-                                <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" style="width:65px; height:65px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--gray-200); cursor:pointer;" onclick="this.classList.toggle('img-zoomed')">
+                                <div style="width:80px; height:80px; background:var(--gray-50); border-radius:var(--radius-sm); border:1px solid var(--gray-200); overflow:hidden; cursor:pointer;" onclick="this.querySelector('img').classList.toggle('img-zoomed')">
+                                    <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" style="width:100%; height:100%; object-fit:contain; padding:4px;">
+                                </div>
                             @else
                                 <div style="width:80px; height:80px; background:var(--gray-100); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--gray-400); font-size:1.5rem;">
                                     <i class="fas fa-image"></i>

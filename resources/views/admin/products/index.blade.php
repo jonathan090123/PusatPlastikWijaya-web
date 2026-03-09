@@ -26,7 +26,7 @@
                 </select>
             </div>
             <div class="form-group" style="min-width:130px; margin:0;">
-                <select name="status">
+                <select name="status">  
                     <option value="">Semua Status</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
                     <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
@@ -62,7 +62,9 @@
                         <td>{{ $products->firstItem() + $index }}</td>
                         <td>
                             @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" style="width:75px; height:75px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--gray-200); cursor:pointer;" onclick="this.classList.toggle('img-zoomed')">
+                                <div style="width:80px; height:80px; background:var(--gray-50); border-radius:var(--radius-sm); border:1px solid var(--gray-200); overflow:hidden; cursor:pointer;" onclick="this.querySelector('img').classList.toggle('img-zoomed')">
+                                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" style="width:100%; height:100%; object-fit:contain; padding:4px;">
+                                </div>
                             @else
                                 <div style="width:80px; height:80px; background:var(--gray-100); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--gray-400); font-size:1.5rem;">
                                     <i class="fas fa-image"></i>
