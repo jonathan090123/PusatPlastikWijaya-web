@@ -62,9 +62,9 @@
                         <td>{{ $products->firstItem() + $index }}</td>
                         <td>
                             @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" style="width:48px; height:48px; object-fit:cover; border-radius:var(--radius-sm);">
+                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" style="width:76px; height:76px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--gray-200); cursor:pointer;" onclick="this.classList.toggle('img-zoomed')">
                             @else
-                                <div style="width:48px; height:48px; background:var(--gray-100); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--gray-400);">
+                                <div style="width:80px; height:80px; background:var(--gray-100); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--gray-400); font-size:1.5rem;">
                                     <i class="fas fa-image"></i>
                                 </div>
                             @endif

@@ -823,7 +823,7 @@ table tbody tr:hover { background: var(--gray-50); }
     box-shadow: var(--shadow-lg);
 }
 .product-card-image {
-    height: 200px;
+    height: 240px;
     overflow: hidden;
     background: var(--gray-100);
 }
@@ -835,6 +835,20 @@ table tbody tr:hover { background: var(--gray-50); }
 }
 .product-card:hover .product-card-image img {
     transform: scale(1.05);
+}
+
+/* Admin product image zoom on click */
+.img-zoomed {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 300px !important;
+    height: 300px !important;
+    z-index: 9999 !important;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5), var(--shadow-lg) !important;
+    border-radius: var(--radius-md) !important;
+    cursor: zoom-out !important;
 }
 .product-card-body {
     padding: 1rem;
