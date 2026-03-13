@@ -25,17 +25,19 @@ class Order extends Model
         'shipping_fee',
         'total',
         'status',
+        'status_read_at',
         'notes',
     ];
 
     protected function casts(): array
     {
         return [
-            'subtotal' => 'decimal:2',
+            'subtotal'        => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'points_discount' => 'decimal:2',
-            'shipping_fee' => 'decimal:2',
-            'total' => 'decimal:2',
+            'shipping_fee'    => 'decimal:2',
+            'total'           => 'decimal:2',
+            'status_read_at'  => 'datetime',
         ];
     }
 
@@ -81,14 +83,15 @@ class Order extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-                'pending' => 'Menunggu',
-                'waiting_payment' => 'Menunggu Pembayaran',
-                'paid' => 'Sudah Dibayar',
-                'processing' => 'Diproses',
-                'shipped' => 'Dikirim',
-                'completed' => 'Selesai',
-                'cancelled' => 'Dibatalkan',
-                default => $this->status,
+                'pending'           => 'Menunggu',
+                'waiting_payment'   => 'Menunggu Pembayaran',
+                'paid'              => 'Sudah Dibayar',
+                'processing'        => 'Diproses',
+                'ready_for_pickup'  => 'Siap Diambil',
+                'shipped'           => 'Dikirim',
+                'completed'         => 'Selesai',
+                'cancelled'         => 'Dibatalkan',
+                default             => $this->status,
             };
     }
 }

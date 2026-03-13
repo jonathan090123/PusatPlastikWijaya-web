@@ -50,6 +50,9 @@
                 </a>
                 <a href="{{ route('orders.index') }}" class="sidebar-link {{ request()->routeIs('orders.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-list"></i> <span>Pesanan Saya</span>
+                    @if($customerUnreadOrdersCount > 0)
+                        <span id="customer-orders-nav-badge" class="nav-badge">{{ $customerUnreadOrdersCount }}</span>
+                    @endif
                 </a>
             </nav>
             <div style="margin-top:auto; padding:1rem;">
@@ -179,6 +182,18 @@
                 setTimeout(() => alert.remove(), 300);
             }, 4000);
         });
+
+        // Hide orders nav-badge if all unread orders already seen in this session
+        (function() {
+            const badge = document.getElementById('customer-orders-nav-badge');
+            if (!badge) return;
+            const serverIds = @json($customerUnreadOrderIds ?? []).map(String);
+            if (serverIds.length === 0) return;
+            const seen = new Set(JSON.parse(sessionStorage.getItem('customer_seen_orders') || '[]'));
+            if (serverIds.every(id => seen.has(id))) {
+                badge.style.display = 'none';
+            }
+        })();
 
         // Auto-fetch cart count
         fetch('{{ route("cart.count") }}', { headers: { 'Accept': 'application/json' } })

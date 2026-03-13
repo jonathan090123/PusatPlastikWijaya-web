@@ -24,12 +24,20 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
+        $rules = [
+            'name'  => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:1000',
-        ]);
+            'phone' => 'required|string|max:20',
+        ];
+
+        if (!$user->isAdmin()) {
+            $rules['city_type'] = 'required|in:blitar,outside';
+            $rules['address']   = 'required|string|max:1000';
+        } else {
+            $rules['address'] = 'nullable|string|max:1000';
+        }
+
+        $validated = $request->validate($rules);
 
         $user->update($validated);
 

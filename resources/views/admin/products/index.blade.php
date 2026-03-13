@@ -62,7 +62,7 @@
                         <td>{{ $products->firstItem() + $index }}</td>
                         <td>
                             @if($product->image)
-                                <div style="width:80px; height:80px; background:var(--gray-50); border-radius:var(--radius-sm); border:1px solid var(--gray-200); overflow:hidden; cursor:pointer;" onclick="this.querySelector('img').classList.toggle('img-zoomed')">
+                                <div style="width:80px; height:80px; background:var(--gray-50); border-radius:var(--radius-sm); border:1px solid var(--gray-200); overflow:hidden; cursor:pointer;" onclick="openImgPreview(this.querySelector('img'))">
                                     <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" style="width:100%; height:100%; object-fit:contain; padding:4px;">
                                 </div>
                             @else
@@ -138,6 +138,17 @@
 
 @push('scripts')
 <script>
+function openImgPreview(img) {
+    if (img.classList.contains('img-zoomed')) return;
+    img.classList.add('img-zoomed');
+    setTimeout(function() {
+        document.addEventListener('click', function closePreview() {
+            img.classList.remove('img-zoomed');
+            document.removeEventListener('click', closePreview);
+        });
+    }, 0);
+}
+
 document.querySelectorAll('.toggle-active').forEach(btn => {
     btn.addEventListener('click', function() {
         const url = this.dataset.url;

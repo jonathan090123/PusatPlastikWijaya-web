@@ -75,19 +75,29 @@
             {{-- Add to Cart --}}
             @if($product->stock > 0)
                 <div class="add-to-cart-section">
-                    <div class="quantity-control">
-                        <button type="button" class="qty-btn" id="qtyMinus"><i class="fas fa-minus"></i></button>
-                        <input type="number" id="quantity" value="1" min="1" max="{{ $product->stock }}" readonly>
-                        <button type="button" class="qty-btn" id="qtyPlus"><i class="fas fa-plus"></i></button>
+                    <div class="qty-row">
+                        <span class="qty-label">Jumlah:</span>
+                        <div class="quantity-control">
+                            <button type="button" class="qty-btn" id="qtyMinus"><i class="fas fa-minus"></i></button>
+                            <input type="number" id="quantity" value="1" min="1" max="{{ $product->stock }}" readonly>
+                            <button type="button" class="qty-btn" id="qtyPlus"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <span class="stock-hint">Stok: {{ $product->stock }}</span>
                     </div>
-                    <button class="btn btn-primary btn-lg add-to-cart-btn" id="addToCartBtn"
-                            data-product-id="{{ $product->id }}">
-                        <i class="fas fa-cart-plus"></i> Tambah ke Keranjang
-                    </button>
+                    <div class="action-buttons">
+                        <button class="btn btn-outline-primary btn-lg" id="addToCartBtn"
+                                data-product-id="{{ $product->id }}">
+                            <i class="fas fa-cart-plus"></i> Keranjang
+                        </button>
+                        <button class="btn btn-primary btn-lg" id="buyNowBtn"
+                                data-product-id="{{ $product->id }}">
+                            <i class="fas fa-bolt"></i> Beli Langsung
+                        </button>
+                    </div>
                 </div>
             @else
                 <div class="add-to-cart-section">
-                    <button class="btn btn-secondary btn-lg" disabled>
+                    <button class="btn btn-secondary btn-lg" style="width:100%;" disabled>
                         <i class="fas fa-times"></i> Stok Habis
                     </button>
                 </div>
@@ -245,10 +255,26 @@
 }
 .add-to-cart-section {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.85rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--gray-100);
+}
+.qty-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.qty-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    white-space: nowrap;
+}
+.stock-hint {
+    font-size: 0.8rem;
+    color: var(--gray-400);
+    margin-left: auto;
 }
 .quantity-control {
     display: flex;
@@ -258,8 +284,8 @@
     overflow: hidden;
 }
 .qty-btn {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     border: none;
     background: var(--gray-50);
     color: var(--gray-700);
@@ -269,8 +295,8 @@
 }
 .qty-btn:hover { background: var(--gray-200); }
 .quantity-control input {
-    width: 50px;
-    height: 40px;
+    width: 48px;
+    height: 38px;
     text-align: center;
     border: none;
     font-size: 1rem;
@@ -278,10 +304,25 @@
     color: var(--gray-800);
     background: var(--white);
 }
-.add-to-cart-btn {
-    flex: 1;
-    font-size: 1rem;
-    padding: 0.75rem 1.5rem;
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+.action-buttons .btn {
+    font-size: 0.95rem;
+    padding: 0.7rem 0.5rem;
+    justify-content: center;
+    white-space: nowrap;
+}
+.btn-outline-primary {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}
+.btn-outline-primary:hover {
+    background: var(--primary);
+    color: var(--white);
 }
 .related-products {
     margin-top: 2rem;
@@ -301,8 +342,7 @@
         gap: 1.5rem;
     }
     .product-detail-name { font-size: 1.3rem; }
-    .add-to-cart-section { flex-direction: column; }
-    .add-to-cart-btn { width: 100%; }
+    .action-buttons .btn { font-size: 0.875rem; }
 }
 </style>
 @endpush
@@ -323,16 +363,8 @@ document.getElementById('qtyPlus')?.addEventListener('click', () => {
     if (val < maxStock) qtyInput.value = val + 1;
 });
 
-// Add to cart
-document.getElementById('addToCartBtn')?.addEventListener('click', function() {
-    const btn = this;
-    const productId = btn.dataset.productId;
-    const quantity = parseInt(qtyInput.value);
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menambahkan...';
-
-    fetch('{{ route("cart.add") }}', {
+function addToCartRequest(productId, quantity, onSuccess, onError) {
+    return fetch('{{ route("cart.add") }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -344,31 +376,60 @@ document.getElementById('addToCartBtn')?.addEventListener('click', function() {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            btn.innerHTML = '<i class="fas fa-check"></i> Ditambahkan!';
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-success');
-
-            // Update cart badge
             const badge = document.getElementById('cart-count');
             if (badge) badge.textContent = data.cart_count;
-
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fas fa-cart-plus"></i> Tambah ke Keranjang';
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-primary');
-                btn.disabled = false;
-            }, 2000);
+            onSuccess(data);
         } else {
-            alert(data.message || 'Gagal menambahkan ke keranjang');
-            btn.innerHTML = '<i class="fas fa-cart-plus"></i> Tambah ke Keranjang';
-            btn.disabled = false;
+            onError(data.message || 'Gagal menambahkan ke keranjang');
         }
     })
-    .catch(() => {
-        alert('Terjadi kesalahan');
-        btn.innerHTML = '<i class="fas fa-cart-plus"></i> Tambah ke Keranjang';
-        btn.disabled = false;
-    });
+    .catch(() => onError('Terjadi kesalahan'));
+}
+
+// Tambah ke Keranjang
+document.getElementById('addToCartBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const productId = btn.dataset.productId;
+    const quantity = parseInt(qtyInput.value);
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    addToCartRequest(productId, quantity,
+        () => {
+            btn.innerHTML = '<i class="fas fa-check"></i> Ditambahkan!';
+            btn.classList.replace('btn-outline-primary', 'btn-success');
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-cart-plus"></i> Keranjang';
+                btn.classList.replace('btn-success', 'btn-outline-primary');
+                btn.disabled = false;
+            }, 2000);
+        },
+        (msg) => {
+            alert(msg);
+            btn.innerHTML = '<i class="fas fa-cart-plus"></i> Keranjang';
+            btn.disabled = false;
+        }
+    );
+});
+
+// Beli Langsung
+document.getElementById('buyNowBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const productId = btn.dataset.productId;
+    const quantity = parseInt(qtyInput.value);
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+    addToCartRequest(productId, quantity,
+        () => { window.location.href = '{{ route("checkout.index") }}'; },
+        (msg) => {
+            alert(msg);
+            btn.innerHTML = '<i class="fas fa-bolt"></i> Beli Langsung';
+            btn.disabled = false;
+        }
+    );
 });
 </script>
 @endpush

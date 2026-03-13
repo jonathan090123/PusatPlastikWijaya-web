@@ -11,6 +11,7 @@ class ShippingCost extends Model
 
     protected $fillable = [
         'name',
+        'type',
         'description',
         'cost',
         'estimation',

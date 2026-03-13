@@ -46,6 +46,9 @@
                 </a>
                 <a href="{{ route('admin.orders.index') }}" class="sidebar-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                     <i class="fas fa-shopping-bag"></i> <span>Pesanan</span>
+                    @if($adminNewOrdersCount > 0)
+                        <span class="nav-badge">{{ $adminNewOrdersCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.customers.index') }}" class="sidebar-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> <span>Pelanggan</span>

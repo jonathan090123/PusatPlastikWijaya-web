@@ -5,11 +5,9 @@
 @section('content')
 <div class="page-header">
     <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-    @if($newOrdersCount > 0)
-        <a href="{{ route('admin.orders.index') }}" class="btn btn-warning btn-sm">
-            <i class="fas fa-bell"></i> {{ $newOrdersCount }} Pesanan Baru
-        </a>
-    @endif
+    <a href="{{ route('admin.orders.index') }}" class="btn btn-warning btn-sm" id="newOrderBtn" style="display:none;">
+        <i class="fas fa-bell"></i> <span id="newOrderCount"></span> Pesanan Baru
+    </a>
 </div>
 
 <div class="stats-grid">
@@ -24,7 +22,7 @@
         <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
         <div class="stat-info">
             <h3>Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h3>
-            <p>Total Pendapatan</p>
+            <p>Pendapatan Hari Ini</p>
         </div>
     </div>
     <div class="stat-card">
@@ -62,7 +60,7 @@
                 </thead>
                 <tbody>
                     @forelse($recentOrders as $order)
-                        <tr>
+                        <tr class="dashboard-row" style="cursor:pointer;" onclick="window.location='{{ route('admin.orders.show', $order) }}'">
                             <td><strong>{{ $order->invoice_number }}</strong></td>
                             <td>{{ $order->user->name ?? '-' }}</td>
                             <td>Rp {{ number_format($order->total, 0, ',', '.') }}</td>
@@ -102,7 +100,7 @@
                 </thead>
                 <tbody>
                     @forelse($lowStockProducts as $product)
-                        <tr>
+                        <tr class="dashboard-row" style="cursor:pointer;" onclick="window.location='{{ route('admin.products.edit', $product) }}'">
                             <td><strong>{{ $product->name }}</strong></td>
                             <td>{{ $product->category->name ?? '-' }}</td>
                             <td>
@@ -132,10 +130,37 @@
 
 @push('styles')
 <style>
+.dashboard-row { transition: background 0.15s ease; }
+.dashboard-row:hover { background: #eff6ff !important; }
 @media (max-width: 768px) {
     .admin-content > div[style*="grid-template-columns"] {
         grid-template-columns: 1fr !important;
     }
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+(function () {
+    const KEY      = 'admin_seen_orders';
+    const seen     = new Set(JSON.parse(sessionStorage.getItem(KEY) || '[]'));
+    const today    = @json($todayOrderIds);
+    const newCount = {{ $newOrdersCount }};
+
+    // Find today's order IDs that admin hasn't seen yet in this session
+    const unseen = today.filter(function (id) { return !seen.has(String(id)); });
+
+    if (unseen.length > 0 && newCount > 0) {
+        const btn   = document.getElementById('newOrderBtn');
+        const label = document.getElementById('newOrderCount');
+        label.textContent = newCount;
+        btn.style.display = 'inline-flex';
+    }
+
+    // Mark all today's orders as seen after this render
+    today.forEach(function (id) { seen.add(String(id)); });
+    sessionStorage.setItem(KEY, JSON.stringify([...seen]));
+}());
+</script>
 @endpush

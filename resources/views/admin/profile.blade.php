@@ -17,7 +17,7 @@
                 @method('PUT')
 
                 <div class="form-group">
-                    <label><i class="fas fa-user"></i> Nama Lengkap</label>
+                    <label><i class="fas fa-user"></i> Nama Lengkap <span style="color:var(--danger);">*</span></label>
                     <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
                     @error('name')
                         <span class="error-message">{{ $message }}</span>
@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <label><i class="fas fa-envelope"></i> Email <span style="color:var(--danger);">*</span></label>
                     <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
                     @error('email')
                         <span class="error-message">{{ $message }}</span>
@@ -33,15 +33,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label><i class="fas fa-phone"></i> No. Handphone</label>
-                    <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="08xxxxxxxxxx">
+                    <label><i class="fas fa-phone"></i> No. Handphone <span style="color:var(--danger);">*</span></label>
+                    <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="08xxxxxxxxxx" required>
                     @error('phone')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
 
                 <div class="form-group">
-                    <label><i class="fas fa-map-marker-alt"></i> Alamat</label>
+                    <label><i class="fas fa-map-marker-alt"></i> Alamat (Opsional)</label>
                     <textarea name="address" rows="3" placeholder="Masukkan alamat lengkap...">{{ old('address', $user->address) }}</textarea>
                     @error('address')
                         <span class="error-message">{{ $message }}</span>

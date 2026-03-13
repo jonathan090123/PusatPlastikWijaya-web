@@ -8,8 +8,12 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCustomerController;
+use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminShippingController;
 use App\Http\Controllers\Customer\CustomerProductController;
 use App\Http\Controllers\Customer\CartController;
+use App\Http\Controllers\Customer\CheckoutController;
+use App\Http\Controllers\Customer\CustomerOrderController;
 use App\Http\Controllers\ProfileController;
 
 /* |-------------------------------------------------------------------------- | Web Routes |-------------------------------------------------------------------------- */
@@ -46,11 +50,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/cart/{cartItem}', [CartController::class , 'remove'])->name('cart.remove');
     Route::get('/cart/count', [CartController::class , 'count'])->name('cart.count');
 
-    // Orders (placeholder)
-    Route::get('/orders', function () {
-            return 'Orders page';
-        }
-        )->name('orders.index');    });
+    // Checkout
+    Route::get('/checkout', [CheckoutController::class , 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class , 'store'])->name('checkout.store');
+
+    // Customer Orders
+    Route::get('/orders', [CustomerOrderController::class , 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [CustomerOrderController::class , 'show'])->name('orders.show');
+});
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -69,16 +76,21 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/customers', [AdminCustomerController::class , 'index'])->name('customers.index');
     Route::get('/customers/{customer}', [AdminCustomerController::class , 'show'])->name('customers.show');
 
+    // Orders
+    Route::get('/orders', [AdminOrderController::class , 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [AdminOrderController::class , 'show'])->name('orders.show');
+    Route::patch('/orders/{order}/status', [AdminOrderController::class , 'updateStatus'])->name('orders.updateStatus');
+
+    // Shipping Settings
+    Route::get('/shipping', [AdminShippingController::class , 'index'])->name('shipping.index');
+    Route::put('/shipping', [AdminShippingController::class , 'update'])->name('shipping.update');
+    Route::post('/shipping/toggle', [AdminShippingController::class , 'toggleActive'])->name('shipping.toggle');
+
     // Placeholder routes for remaining admin features
-    Route::get('/orders', function () {
-            return 'Admin Orders'; }
-        )->name('orders.index');
-        Route::get('/vouchers', function () {
-            return 'Admin Vouchers'; }
-        )->name('vouchers.index');
-        Route::get('/shipping', function () {
-            return 'Admin Shipping'; }
-        )->name('shipping.index');
-        Route::get('/reports', function () {
-            return 'Admin Reports'; }
-        )->name('reports.index');    });
+    Route::get('/vouchers', function () {
+        return 'Admin Vouchers';
+    })->name('vouchers.index');
+    Route::get('/reports', function () {
+        return 'Admin Reports';
+    })->name('reports.index');
+});

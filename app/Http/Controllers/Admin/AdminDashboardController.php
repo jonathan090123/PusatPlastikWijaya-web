@@ -11,9 +11,11 @@ class AdminDashboardController extends Controller
 {
     public function index()
     {
-        $totalOrders = Order::count();
-        $totalRevenue = Order::whereIn('status', ['paid', 'processing', 'shipped', 'completed'])->sum('total');
-        $totalProducts = Product::count();
+        $totalOrders   = Order::count();
+        $totalRevenue  = Order::whereIn('status', ['paid', 'processing', 'shipped', 'completed', 'ready_for_pickup'])
+            ->whereDate('created_at', today())
+            ->sum('total');
+        $totalProducts  = Product::count();
         $totalCustomers = User::where('role', 'customer')->count();
 
         $recentOrders = Order::with('user')
@@ -30,6 +32,11 @@ class AdminDashboardController extends Controller
 
         $newOrdersCount = Order::whereIn('status', ['pending', 'waiting_payment'])->count();
 
+        // IDs of today's newest orders — passed to JS for sessionStorage new-order notification
+        $todayOrderIds  = Order::whereDate('created_at', today())
+            ->orderByDesc('id')
+            ->pluck('id');
+
         return view('admin.dashboard', compact(
             'totalOrders',
             'totalRevenue',
@@ -37,7 +44,8 @@ class AdminDashboardController extends Controller
             'totalCustomers',
             'recentOrders',
             'lowStockProducts',
-            'newOrdersCount'
+            'newOrdersCount',
+            'todayOrderIds'
         ));
     }
 }

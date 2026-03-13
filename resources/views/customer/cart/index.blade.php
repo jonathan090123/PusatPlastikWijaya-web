@@ -6,9 +6,11 @@
 <div style="padding: 0.5rem;">
     <div class="cart-header">
         <h1><i class="fas fa-shopping-cart"></i> Keranjang Belanja</h1>
-        <a href="{{ route('products.index') }}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-arrow-left"></i> Lanjut Belanja
-        </a>
+        @if($cart->items->count() > 0)
+            <a href="{{ route('products.index') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-arrow-left"></i> Lanjut Belanja
+            </a>
+        @endif
     </div>
 
     @if($cart->items->count() > 0)
@@ -73,12 +75,9 @@
                         <span>Total Harga</span>
                         <span id="summary-total">Rp {{ number_format($cart->total, 0, ',', '.') }}</span>
                     </div>
-                    <button class="btn btn-primary btn-lg" style="width:100%; margin-top:1rem;" disabled>
+                    <a href="{{ route('checkout.index') }}" class="btn btn-primary btn-lg" style="width:100%; margin-top:1rem; text-align:center;">
                         <i class="fas fa-credit-card"></i> Checkout
-                    </button>
-                    <p style="font-size:0.75rem; color:var(--gray-400); text-align:center; margin-top:0.5rem;">
-                        Fitur checkout akan segera hadir
-                    </p>
+                    </a>
                 </div>
             </div>
         </div>
