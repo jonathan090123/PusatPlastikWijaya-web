@@ -17,10 +17,9 @@
             <div class="form-group" style="min-width:180px; margin:0;">
                 <select name="status">
                     <option value="">Semua Status</option>
-                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu</option>
                     <option value="waiting_payment" {{ request('status') === 'waiting_payment' ? 'selected' : '' }}>Menunggu Pembayaran</option>
-                    <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>Sudah Dibayar</option>
                     <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Diproses</option>
+                    <option value="ready_for_pickup" {{ request('status') === 'ready_for_pickup' ? 'selected' : '' }}>Siap Diambil</option>
                     <option value="shipped" {{ request('status') === 'shipped' ? 'selected' : '' }}>Dikirim</option>
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
                     <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
@@ -53,7 +52,7 @@
                         $isDone = in_array($order->status, ['completed', 'cancelled']);
                         $badgeClass = match($order->status) {
                             'pending'           => 'badge-pending',
-                            'waiting_payment'   => 'badge-pending',
+                            'waiting_payment'   => 'badge-waiting_payment',
                             'paid'              => 'badge-paid',
                             'processing'        => 'badge-processing',
                             'ready_for_pickup'  => 'badge-ready-pickup',

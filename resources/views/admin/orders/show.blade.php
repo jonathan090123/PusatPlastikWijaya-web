@@ -23,7 +23,7 @@
                     @php
                         $badgeClass = match($order->status) {
                             'pending'           => 'badge-pending',
-                            'waiting_payment'   => 'badge-pending',
+                            'waiting_payment'   => 'badge-waiting_payment',
                             'paid'              => 'badge-paid',
                             'processing'        => 'badge-processing',
                             'ready_for_pickup'  => 'badge-ready-pickup',
@@ -73,6 +73,45 @@
                 @endif
             </div>
         </div>
+
+        {{-- Payment Info Card --}}
+        @if($order->payment)
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-body">
+                    <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.75rem;">
+                        <i class="fas fa-credit-card" style="color:var(--primary);"></i> Informasi Pembayaran
+                    </h3>
+                    <div style="font-size:0.88rem; color:var(--gray-600); line-height:2;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span>Status</span>
+                            @if($order->payment->isPaid())
+                                <span class="badge-status badge-paid">Sudah Dibayar</span>
+                            @else
+                                <span class="badge-status badge-pending">{{ ucfirst($order->payment->transaction_status ?? 'Pending') }}</span>
+                            @endif
+                        </div>
+                        @if($order->payment->payment_type)
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Metode</span>
+                                <strong>{{ strtoupper(str_replace('_', ' ', $order->payment->payment_type)) }}</strong>
+                            </div>
+                        @endif
+                        @if($order->payment->transaction_id)
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>ID Transaksi</span>
+                                <strong style="font-size:0.8rem;">{{ $order->payment->transaction_id }}</strong>
+                            </div>
+                        @endif
+                        @if($order->payment->paid_at)
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Dibayar pada</span>
+                                <strong>{{ $order->payment->paid_at->format('d M Y, H:i') }}</strong>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
 
     </div>
 
@@ -152,7 +191,6 @@
                         @method('PATCH')
                         <div class="form-group">
                             <select name="status" id="statusSelect" required>
-                                <option value="pending"            {{ $order->status === 'pending'           ? 'selected' : '' }}>Menunggu</option>
                                 <option value="processing"         {{ $order->status === 'processing'        ? 'selected' : '' }}>Diproses</option>
                                 @if($shippingType === 'pickup')
                                 <option value="ready_for_pickup"   {{ $order->status === 'ready_for_pickup'  ? 'selected' : '' }}>Siap Diambil</option>

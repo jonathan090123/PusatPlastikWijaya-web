@@ -498,10 +498,12 @@ table tbody tr:hover { background: var(--gray-50); }
     letter-spacing: 0.01em;
     white-space: nowrap;
 }
-.badge-pending        { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-.badge-paid           { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-.badge-processing     { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
-.badge-ready-pickup   { background: #fef9c3; color: #713f12; border: 1px solid #fde047; }
+.badge-pending          { background: #fef3c7; color: #92400e;  border: 1px solid #fcd34d; }
+.badge-waiting_payment  { background: #fef3c7; color: #92400e;  border: 1px solid #fcd34d; }
+.badge-paid             { background: #d1fae5; color: #065f46;  border: 1px solid #6ee7b7; }
+.badge-processing       { background: #dbeafe; color: #1e40af;  border: 1px solid #93c5fd; }
+.badge-ready-pickup,
+.badge-ready_for_pickup { background: #ccfbf1; color: #0f766e;  border: 1px solid #5eead4; }
 .badge-shipped        { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
 .badge-completed      { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
 .badge-cancelled      { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }

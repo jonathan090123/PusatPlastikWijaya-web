@@ -442,7 +442,8 @@
 
 @push('scripts')
 <script>
-const subtotal = {{ $cart->total }};
+const subtotal         = {{ $cart->total }};
+const customerAddress  = @json($user->address ?? '');
 
 function formatRupiah(num) {
     return 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -519,10 +520,17 @@ function updateAddressField() {
         addressInput.removeAttribute('required');
         addressRequired.style.display = 'none';
         addressGroup.style.opacity    = '0.5';
+        addressInput.setAttribute('readonly', 'readonly');
+        addressInput.style.cursor     = 'not-allowed';
+        addressInput.style.background = 'var(--gray-100)';
+        addressInput.value            = customerAddress;
     } else {
         addressInput.setAttribute('required', 'required');
         addressRequired.style.display = 'inline';
         addressGroup.style.opacity    = '1';
+        addressInput.removeAttribute('readonly');
+        addressInput.style.cursor     = '';
+        addressInput.style.background = '';
     }
 }
 

@@ -11,6 +11,7 @@ class CustomerOrderController extends Controller
     public function index()
     {
         $orders = Order::where('user_id', Auth::id())
+            ->with('items.product')
             ->latest()
             ->paginate(10);
 

@@ -25,7 +25,7 @@
                         @php
                             $badgeClass = match($order->status) {
                                 'pending'           => 'badge-pending',
-                                'waiting_payment'   => 'badge-pending',
+                                'waiting_payment'   => 'badge-waiting_payment',
                                 'paid'              => 'badge-paid',
                                 'processing'        => 'badge-processing',
                                 'ready_for_pickup'  => 'badge-ready-pickup',
@@ -65,6 +65,42 @@
                     @endif
                 </div>
             </div>
+
+            {{-- Payment Info --}}
+            @if(in_array($order->status, ['pending', 'waiting_payment']))
+                <div class="card" style="margin-bottom:1.5rem; border:2px solid var(--primary); background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+                    <div class="card-body" style="text-align:center; padding:1.5rem;">
+                        <i class="fas fa-credit-card" style="font-size:2rem; color:var(--primary); margin-bottom:0.75rem;"></i>
+                        <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.5rem;">Menunggu Pembayaran</h3>
+                        <p style="font-size:0.85rem; color:var(--gray-500); margin-bottom:1rem;">Segera selesaikan pembayaran sebelum pesanan kedaluwarsa.</p>
+                        <a href="{{ route('payment.show', $order) }}" class="btn btn-primary" style="padding:0.7rem 2rem; font-weight:700;">
+                            <i class="fas fa-lock"></i> Bayar Sekarang
+                        </a>
+                    </div>
+                </div>
+            @elseif($order->payment && $order->payment->isPaid())
+                <div class="card" style="margin-bottom:1.5rem;">
+                    <div class="card-body">
+                        <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.75rem;">
+                            <i class="fas fa-check-circle" style="color:var(--success);"></i> Informasi Pembayaran
+                        </h3>
+                        <div style="font-size:0.85rem; color:var(--gray-600); line-height:1.8;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Metode</span>
+                                <strong>{{ strtoupper(str_replace('_', ' ', $order->payment->payment_type ?? '-')) }}</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>ID Transaksi</span>
+                                <strong style="font-size:0.8rem;">{{ $order->payment->transaction_id ?? '-' }}</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Dibayar pada</span>
+                                <strong>{{ $order->payment->paid_at ? $order->payment->paid_at->format('d M Y, H:i') : '-' }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
         </div>
 
@@ -130,6 +166,34 @@
         </div>
     </div>
 </div>
+
+{{-- Payment Success Modal --}}
+@if(session('payment_success'))
+<div id="paymentSuccessModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; display:flex; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:#fff; border-radius:1.25rem; padding:2.5rem 2rem; max-width:420px; width:100%; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.25); animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1);">
+        <div style="width:80px; height:80px; background:linear-gradient(135deg,#34d399,#059669); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem; box-shadow:0 8px 20px rgba(5,150,105,0.3);">
+            <i class="fas fa-check" style="font-size:2rem; color:#fff;"></i>
+        </div>
+        <h2 style="font-size:1.4rem; font-weight:800; color:#064e3b; margin-bottom:0.5rem;">Pembayaran Berhasil!</h2>
+        <p style="font-size:0.9rem; color:#6b7280; line-height:1.7; margin-bottom:0.5rem;">
+            Terima kasih! Pesanan <strong>{{ $order->invoice_number }}</strong> Anda telah dikonfirmasi dan sedang diproses oleh tim kami.
+        </p>
+        <p style="font-size:0.85rem; color:#9ca3af; margin-bottom:1.75rem;">
+            Kami akan segera menangani pesanan Anda 🎉
+        </p>
+        <button onclick="document.getElementById('paymentSuccessModal').remove()" class="btn btn-primary" style="padding:0.75rem 2.5rem; font-weight:700; font-size:0.95rem;">
+            Lihat Detail Pesanan
+        </button>
+    </div>
+</div>
+<style>
+@keyframes popIn {
+    from { opacity:0; transform:scale(0.8); }
+    to   { opacity:1; transform:scale(1); }
+}
+</style>
+@endif
+
 @endsection
 
 @push('styles')

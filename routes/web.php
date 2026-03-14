@@ -14,6 +14,7 @@ use App\Http\Controllers\Customer\CustomerProductController;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Controllers\Customer\CustomerOrderController;
+use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\ProfileController;
 
 /* |-------------------------------------------------------------------------- | Web Routes |-------------------------------------------------------------------------- */
@@ -57,7 +58,14 @@ Route::middleware('auth')->group(function () {
     // Customer Orders
     Route::get('/orders', [CustomerOrderController::class , 'index'])->name('orders.index');
     Route::get('/orders/{order}', [CustomerOrderController::class , 'show'])->name('orders.show');
+
+    // Payment
+    Route::get('/payment/{order}', [PaymentController::class , 'show'])->name('payment.show');
+    Route::get('/payment/{order}/finish', [PaymentController::class , 'finish'])->name('payment.finish');
 });
+
+// Midtrans Webhook (no auth, no CSRF)
+Route::post('/midtrans/webhook', [PaymentController::class , 'webhook'])->name('midtrans.webhook');
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {

@@ -22,7 +22,7 @@
         <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
         <div class="stat-info">
             <h3>Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h3>
-            <p>Pendapatan Hari Ini</p>
+            <p>Total Pendapatan</p>
         </div>
     </div>
     <div class="stat-card">

@@ -14,7 +14,7 @@
                 @php
                     $badgeClass = match($order->status) {
                         'pending'           => 'badge-pending',
-                        'waiting_payment'   => 'badge-pending',
+                        'waiting_payment'   => 'badge-waiting_payment',
                         'paid'              => 'badge-paid',
                         'processing'        => 'badge-processing',
                         'ready_for_pickup'  => 'badge-ready-pickup',
@@ -30,7 +30,7 @@
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
                                 <div>
                                     <strong style="font-size:1rem; color:var(--gray-800);">{{ $order->invoice_number }}</strong>
-                                    <span style="font-size:0.8rem; color:var(--gray-400); margin-left:0.5rem;">{{ $order->created_at->format('d M Y, H:i') }}</span>
+                                    <span style="font-size:0.8rem; color:var(--gray-500); margin-left:0.5rem; font-weight:600;">{{ $order->created_at->format('d M Y, H:i') }}</span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:0.5rem;">
                                     @if(is_null($order->status_read_at))
@@ -39,6 +39,30 @@
                                     <span style="font-size:0.8rem; color:var(--gray-700); font-weight:700;">Status:</span>
                                     <span class="badge-status {{ $badgeClass }}">{{ $order->status_label }}</span>
                                 </div>
+                            </div>
+
+                            {{-- Item produk --}}
+                            @php $firstItems = $order->items->take(3); $remaining = $order->items->count() - 3; @endphp
+                            <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+                                @foreach($firstItems as $item)
+                                    <div style="display:flex; align-items:center; gap:0.4rem; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:8px; padding:0.3rem 0.6rem;">
+                                        @if($item->product && $item->product->image)
+                                            <img src="{{ asset('storage/' . $item->product->image) }}" alt="{{ $item->product->name }}"
+                                                style="width:32px; height:32px; object-fit:cover; border-radius:4px; flex-shrink:0;">
+                                        @else
+                                            <div style="width:32px; height:32px; background:var(--gray-200); border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                                <i class="fas fa-box" style="font-size:0.7rem; color:var(--gray-400);"></i>
+                                            </div>
+                                        @endif
+                                        <div style="max-width:110px;">
+                                            <div style="font-size:0.78rem; color:var(--gray-700); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $item->product->name ?? 'Produk dihapus' }}</div>
+                                            <div style="font-size:0.72rem; color:var(--gray-400);">x{{ $item->quantity }}</div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                                @if($remaining > 0)
+                                    <span style="font-size:0.78rem; color:var(--gray-500); font-style:italic;">+{{ $remaining }} produk lainnya</span>
+                                @endif
                             </div>
 
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">

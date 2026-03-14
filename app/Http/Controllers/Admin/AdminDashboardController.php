@@ -12,9 +12,7 @@ class AdminDashboardController extends Controller
     public function index()
     {
         $totalOrders   = Order::count();
-        $totalRevenue  = Order::whereIn('status', ['paid', 'processing', 'shipped', 'completed', 'ready_for_pickup'])
-            ->whereDate('created_at', today())
-            ->sum('total');
+        $totalRevenue  = Order::where('status', 'completed')->sum('total');
         $totalProducts  = Product::count();
         $totalCustomers = User::where('role', 'customer')->count();
 

@@ -107,7 +107,7 @@ class CheckoutController extends Controller
                     'notes' => $request->notes,
                 ]);
 
-                // Create order items & reduce stock
+                // Create order items (stock reduced only after payment confirmed)
                 foreach ($cart->items as $item) {
                     $price = $item->product->getEffectivePrice();
 
@@ -119,8 +119,6 @@ class CheckoutController extends Controller
                         'quantity' => $item->quantity,
                         'subtotal' => $price * $item->quantity,
                     ]);
-
-                    $item->product->decrement('stock', $item->quantity);
                 }
 
                 // Clear cart
@@ -129,7 +127,7 @@ class CheckoutController extends Controller
                 return $order;
             });
 
-            return redirect()->route('orders.show', $order)->with('success', 'Pesanan berhasil dibuat! No. Invoice: ' . $order->invoice_number);
+            return redirect()->route('payment.show', $order)->with('success', 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran.');
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat membuat pesanan. Silakan coba lagi.');
         }
