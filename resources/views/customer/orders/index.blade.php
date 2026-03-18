@@ -21,6 +21,7 @@
                         'shipped'           => 'badge-shipped',
                         'completed'         => 'badge-completed',
                         'cancelled'         => 'badge-cancelled',
+                        'expired'           => 'badge-expired',
                         default             => '',
                     };
                 @endphp

@@ -26,6 +26,7 @@ class Order extends Model
         'total',
         'status',
         'status_read_at',
+        'admin_read_at',
         'notes',
     ];
 
@@ -38,6 +39,7 @@ class Order extends Model
             'shipping_fee'    => 'decimal:2',
             'total'           => 'decimal:2',
             'status_read_at'  => 'datetime',
+            'admin_read_at'   => 'datetime',
         ];
     }
 
@@ -91,6 +93,7 @@ class Order extends Model
                 'shipped'           => 'Dikirim',
                 'completed'         => 'Selesai',
                 'cancelled'         => 'Dibatalkan',
+                'expired'           => 'Kadaluarsa',
                 default             => $this->status,
             };
     }

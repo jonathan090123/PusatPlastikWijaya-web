@@ -28,6 +28,14 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
-        return view('customer.home', compact('categories', 'latestProducts'));
+        $promoProducts = Product::with('category')
+            ->where('is_active', true)
+            ->whereNotNull('discount_price')
+            ->where('discount_price', '>', 0)
+            ->latest()
+            ->take(8)
+            ->get();
+
+        return view('customer.home', compact('categories', 'latestProducts', 'promoProducts'));
     }
 }

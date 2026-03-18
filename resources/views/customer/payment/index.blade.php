@@ -12,52 +12,71 @@
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 380px; gap:1.5rem; align-items:start;">
-        {{-- Left: Payment Info --}}
+        {{-- Left: Payment Method Selector --}}
         <div>
             <div class="card" style="margin-bottom:1.5rem;">
-                <div class="card-body" style="text-align:center; padding:2rem;">
-                    <div style="width:80px; height:80px; background:var(--primary-light, #dbeafe); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem;">
-                        <i class="fas fa-shield-alt" style="font-size:2rem; color:var(--primary);"></i>
-                    </div>
-                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--gray-800); margin-bottom:0.5rem;">Selesaikan Pembayaran</h2>
-                    <p style="color:var(--gray-500); font-size:0.9rem; margin-bottom:1.5rem;">
-                        Klik tombol di bawah untuk memilih metode pembayaran dan menyelesaikan transaksi.
+                <div class="card-body" style="padding:1.75rem;">
+                    <h2 style="font-size:1.1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.25rem;">
+                        <i class="fas fa-wallet" style="color:var(--primary);"></i> Pilih Metode Pembayaran
+                    </h2>
+                    <p style="color:var(--gray-500); font-size:0.85rem; margin-bottom:1.5rem; margin-top:0.25rem;">
+                        Pilih salah satu metode di bawah, lalu klik <strong>Lanjutkan Pembayaran</strong>.
                     </p>
 
-                    <div style="background:var(--gray-50); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem;">
-                        <div style="font-size:0.85rem; color:var(--gray-500); margin-bottom:0.25rem;">Total Pembayaran</div>
-                        <div style="font-size:1.75rem; font-weight:800; color:var(--gray-900);">
-                            Rp {{ number_format($order->total, 0, ',', '.') }}
+                    <div class="payment-methods" style="display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1.5rem;">
+
+                        {{-- BCA Virtual Account --}}
+                        <label class="method-card" data-method="bca_va">
+                            <input type="radio" name="payment_method" value="bca_va" style="display:none;">
+                            <div class="method-icon" style="background:#005faf; color:#fff;">
+                                <i class="fas fa-university"></i>
+                            </div>
+                            <div class="method-info">
+                                <div class="method-name">BCA Virtual Account</div>
+                                <div class="method-desc">Transfer via ATM, mBCA, atau internet banking BCA</div>
+                            </div>
+                            <div class="method-check"><i class="fas fa-check-circle"></i></div>
+                        </label>
+
+                        {{-- GoPay QRIS --}}
+                        <label class="method-card" data-method="gopay">
+                            <input type="radio" name="payment_method" value="gopay" style="display:none;">
+                            <div class="method-icon" style="background:#00aed6; color:#fff;">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div class="method-info">
+                                <div class="method-name">GoPay QRIS</div>
+                                <div class="method-desc">Bayar langsung dari aplikasi Gojek / GoPay</div>
+                            </div>
+                            <div class="method-check"><i class="fas fa-check-circle"></i></div>
+                        </label>
+
+                    </div>
+
+                    {{-- Total + Pay Button --}}
+                    <div style="background:var(--gray-50); border-radius:var(--radius-md); padding:1.1rem 1.25rem; margin-bottom:1.25rem; display:flex; align-items:center; justify-content:space-between;">
+                        <div>
+                            <div style="font-size:0.78rem; color:var(--gray-500);">Total Pembayaran</div>
+                            <div style="font-size:1.4rem; font-weight:800; color:var(--gray-900);">
+                                Rp {{ number_format($order->total, 0, ',', '.') }}
+                            </div>
                         </div>
-                        <div style="font-size:0.8rem; color:var(--gray-400); margin-top:0.25rem;">
+                        <div style="font-size:0.75rem; color:var(--gray-400); text-align:right;">
                             {{ $order->invoice_number }}
                         </div>
                     </div>
 
-                    <button id="pay-button" class="btn btn-primary" style="width:100%; padding:0.85rem 1.5rem; font-size:1rem; font-weight:700;">
-                        <i class="fas fa-lock"></i> Bayar Sekarang
+                    <button id="pay-button" class="btn btn-primary" disabled
+                        style="width:100%; padding:0.85rem 1.5rem; font-size:1rem; font-weight:700; opacity:0.55; cursor:not-allowed; transition:opacity .2s;">
+                        <i class="fas fa-lock"></i> Lanjutkan Pembayaran
                     </button>
 
-                    <p style="font-size:0.75rem; color:var(--gray-400); margin-top:1rem;">
+                    <p style="font-size:0.75rem; color:var(--gray-400); margin-top:0.85rem; text-align:center;">
                         <i class="fas fa-shield-alt"></i> Pembayaran diproses secara aman oleh Midtrans
+                        &nbsp;·&nbsp;
+                        <a href="https://simulator.sandbox.midtrans.com" target="_blank" rel="noopener noreferrer"
+                           style="color:var(--primary); text-decoration:underline;">Payment Simulator</a>
                     </p>
-                </div>
-            </div>
-
-            {{-- Payment Methods Info --}}
-            <div class="card">
-                <div class="card-body">
-                    <h3 style="font-size:0.95rem; font-weight:700; color:var(--gray-800); margin-bottom:0.75rem;">
-                        <i class="fas fa-wallet" style="color:var(--primary);"></i> Metode Pembayaran Tersedia
-                    </h3>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; font-size:0.82rem; color:var(--gray-600);">
-                        <div style="padding:0.5rem; background:var(--gray-50); border-radius:var(--radius-sm);">
-                            <i class="fas fa-mobile-alt" style="color:var(--primary);"></i> GoPay
-                        </div>
-                        <div style="padding:0.5rem; background:var(--gray-50); border-radius:var(--radius-sm);">
-                            <i class="fas fa-qrcode" style="color:var(--primary);"></i> QRIS
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -135,6 +154,53 @@
 
 @push('styles')
 <style>
+/* ── Method Card ── */
+.method-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color .2s, background .2s, box-shadow .15s;
+    background: #fff;
+    user-select: none;
+}
+.method-card:hover {
+    border-color: var(--primary);
+    background: var(--primary-light, #dbeafe);
+}
+.method-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-light, #dbeafe);
+    box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+.method-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.method-info { flex: 1; }
+.method-name { font-weight: 700; font-size: 0.95rem; color: var(--gray-800); }
+.method-desc { font-size: 0.78rem; color: var(--gray-500); margin-top: 0.15rem; }
+.method-check {
+    font-size: 1.25rem;
+    color: var(--gray-300);
+    transition: color .2s;
+}
+.method-card.selected .method-check { color: var(--primary); }
+
+#pay-button:not([disabled]) {
+    opacity: 1 !important;
+    cursor: pointer !important;
+}
+
 @media (max-width: 768px) {
     div[style*="grid-template-columns:1fr 380px"] {
         grid-template-columns: 1fr !important;
@@ -146,26 +212,71 @@
 @push('scripts')
 <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 <script>
-document.getElementById('pay-button').addEventListener('click', function () {
-    this.disabled = true;
-    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+(function () {
+    const cards    = document.querySelectorAll('.method-card');
+    const payBtn   = document.getElementById('pay-button');
+    const tokenUrl = '{{ route("payment.token", $order) }}';
+    const finishUrl= '{{ route("payment.finish", $order) }}';
+    const csrfToken= '{{ csrf_token() }}';
 
-    window.snap.pay('{{ $snapToken }}', {
-        onSuccess: function(result) {
-            window.location.href = '{{ route("payment.finish", $order) }}';
-        },
-        onPending: function(result) {
-            window.location.href = '{{ route("payment.finish", $order) }}';
-        },
-        onError: function(result) {
-            alert('Pembayaran gagal. Silakan coba lagi.');
-            location.reload();
-        },
-        onClose: function() {
-            document.getElementById('pay-button').disabled = false;
-            document.getElementById('pay-button').innerHTML = '<i class="fas fa-lock"></i> Bayar Sekarang';
-        }
+    let selectedMethod = null;
+
+    // Select card on click
+    cards.forEach(function (card) {
+        card.addEventListener('click', function () {
+            cards.forEach(function (c) { c.classList.remove('selected'); });
+            card.classList.add('selected');
+            card.querySelector('input[type=radio]').checked = true;
+            selectedMethod = card.dataset.method;
+            payBtn.disabled = false;
+        });
     });
-});
+
+    // Pay button
+    payBtn.addEventListener('click', function () {
+        if (!selectedMethod) return;
+
+        payBtn.disabled = true;
+        payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+        fetch(tokenUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({ method: selectedMethod })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.error) {
+                alert(data.error);
+                resetButton();
+                return;
+            }
+            window.snap.pay(data.token, {
+                onSuccess: function () { window.location.href = finishUrl; },
+                onPending: function () { window.location.href = finishUrl; },
+                onError:   function () {
+                    alert('Pembayaran gagal. Silakan coba lagi.');
+                    resetButton();
+                },
+                onClose:   function () { resetButton(); }
+            });
+        })
+        .catch(function () {
+            alert('Terjadi kesalahan. Silakan coba lagi.');
+            resetButton();
+        });
+    });
+
+    function resetButton() {
+        payBtn.disabled = false;
+        payBtn.innerHTML = '<i class="fas fa-lock"></i> Lanjutkan Pembayaran';
+    }
+})();
+
+
 </script>
 @endpush
+

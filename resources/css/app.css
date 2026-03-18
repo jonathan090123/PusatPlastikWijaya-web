@@ -507,6 +507,7 @@ table tbody tr:hover { background: var(--gray-50); }
 .badge-shipped        { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
 .badge-completed      { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
 .badge-cancelled      { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.badge-expired        { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
 
 /* --- Footer --- */
 .footer {
@@ -683,6 +684,46 @@ table tbody tr:hover { background: var(--gray-50); }
 .sidebar-toggle:hover { background: rgba(255,255,255,0.1); }
 
 .topbar-right { display: flex; align-items: center; gap: 1rem; }
+
+/* ── Topbar new-order alert pill ── */
+.topbar-order-alert {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: linear-gradient(90deg, #f59e0b, #f97316);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.3);
+    animation: pulse-order 2s infinite;
+    flex-shrink: 0;
+}
+.topbar-order-alert:hover {
+    background: linear-gradient(90deg, #d97706, #ea580c);
+    color: #fff;
+    text-decoration: none;
+}
+.topbar-order-bell {
+    animation: bell-ring 1.5s infinite;
+    transform-origin: top center;
+}
+@keyframes bell-ring {
+    0%, 100% { transform: rotate(0deg); }
+    10%       { transform: rotate(15deg); }
+    20%       { transform: rotate(-12deg); }
+    30%       { transform: rotate(8deg); }
+    40%       { transform: rotate(-5deg); }
+    50%       { transform: rotate(0deg); }
+}
+@keyframes pulse-order {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(245,158,11,0.3); }
+    50%       { box-shadow: 0 0 0 6px rgba(245,158,11,0.1); }
+}
+
 .topbar-right .nav-dropdown-toggle {
     background: rgba(255,255,255,0.1);
     color: var(--gray-200);

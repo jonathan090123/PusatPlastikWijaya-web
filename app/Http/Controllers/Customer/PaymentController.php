@@ -38,43 +38,66 @@ class PaymentController extends Controller
                 ->with('info', 'Pesanan ini tidak memerlukan pembayaran.');
         }
 
-        $payment = $order->payment;
-
-        // Reuse existing snap_token if exists and not yet paid
-        if ($payment && $payment->snap_token && !$payment->isPaid()) {
-            $snapToken = $payment->snap_token;
-        } else {
-            $snapToken = $this->createSnapToken($order);
-
-            Payment::updateOrCreate(
-                ['order_id' => $order->id],
-                [
-                    'snap_token'         => $snapToken,
-                    'gross_amount'       => $order->total,
-                    'transaction_status' => 'pending',
-                ]
-            );
-
-            // Update order status to waiting_payment
-            if ($order->status === 'pending') {
-                $order->update([
-                    'status'         => 'waiting_payment',
-                    'status_read_at' => null,
-                ]);
-            }
-        }
-
         $order->load(['items.product', 'shippingCost']);
 
-        return view('customer.payment.index', compact('order', 'snapToken'));
+        return view('customer.payment.index', compact('order'));
     }
 
     /**
-     * Generate Midtrans SNAP token for the order.
+     * AJAX: generate a fresh Snap token for the chosen payment method.
      */
-    private function createSnapToken(Order $order): string
+    public function getToken(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) abort(403);
+
+        if (!in_array($order->status, ['pending', 'waiting_payment'])) {
+            return response()->json(['error' => 'Pesanan tidak dapat dibayar.'], 422);
+        }
+
+        $method = $request->input('method', 'all'); // bca_va | gopay | qris | all
+
+        $enabledPayments = match($method) {
+            'bca_va' => ['bank_transfer'],
+            'gopay'  => ['gopay', 'qris'],
+            default  => ['gopay', 'qris', 'bank_transfer'],
+        };
+
+        $bankTransfer = $method === 'bca_va' ? ['bank' => ['bca']] : null;
+        $midtransOrderId = 'PPW-' . $order->id . '-' . time();
+
+        $snapToken = null;
+        try {
+            $snapToken = $this->createSnapToken($order, $enabledPayments, $bankTransfer, $midtransOrderId);
+        } catch (\Exception $e) {
+            Log::error('Snap token error: ' . $e->getMessage());
+            return response()->json(['error' => 'Gagal membuat token pembayaran. Coba lagi.'], 500);
+        }
+
+        Payment::updateOrCreate(
+            ['order_id' => $order->id],
+            [
+                'snap_token'         => $snapToken,
+                'gross_amount'       => $order->total,
+                'transaction_status' => 'pending',
+                'payment_detail'     => ['midtrans_order_id' => $midtransOrderId],
+            ]
+        );
+
+        if ($order->status === 'pending') {
+            $order->update(['status' => 'waiting_payment', 'status_read_at' => null]);
+        }
+
+        return response()->json(['token' => $snapToken]);
+    }
+
+    private function createSnapToken(Order $order, array $enabledPayments = ['gopay', 'qris'], ?array $bankTransfer = null, ?string $midtransOrderId = null): string
     {
         $order->load(['items.product', 'user']);
+
+        // Use a unique order_id every time to avoid Midtrans "already taken" error
+        if (!$midtransOrderId) {
+            $midtransOrderId = 'PPW-' . $order->id . '-' . time();
+        }
 
         $itemDetails = [];
 
@@ -119,7 +142,7 @@ class PaymentController extends Controller
 
         $params = [
             'transaction_details' => [
-                'order_id'     => $order->invoice_number,
+                'order_id'     => $midtransOrderId,
                 'gross_amount' => (int) $order->total,
             ],
             'item_details'  => $itemDetails,
@@ -133,11 +156,15 @@ class PaymentController extends Controller
                     'address'    => $order->shipping_address,
                 ],
             ],
-            'enabled_payments' => ['gopay', 'qris'],
+            'enabled_payments' => $enabledPayments,
             'callbacks' => [
                 'finish' => route('payment.finish', $order),
             ],
         ];
+
+        if ($bankTransfer) {
+            $params['bank_transfer'] = $bankTransfer;
+        }
 
         return Snap::getSnapToken($params);
     }
@@ -160,14 +187,22 @@ class PaymentController extends Controller
         }
 
         // Check transaction status directly from Midtrans API
+        // Use the stored midtrans_order_id (which may differ from invoice_number)
+        $midtransOrderId = data_get($order->payment, 'payment_detail.midtrans_order_id', $order->invoice_number);
+
         try {
-            $status = Transaction::status($order->invoice_number);
+            $status = Transaction::status($midtransOrderId);
             $transactionStatus = $status->transaction_status ?? null;
             $paymentType       = $status->payment_type ?? null;
             $fraudStatus       = $status->fraud_status ?? null;
             $transactionId     = $status->transaction_id ?? null;
 
             if ($transactionStatus) {
+                $detail = array_merge(
+                    json_decode(json_encode($status), true) ?? [],
+                    ['midtrans_order_id' => $midtransOrderId]
+                );
+
                 $payment = Payment::updateOrCreate(
                     ['order_id' => $order->id],
                     [
@@ -175,7 +210,7 @@ class PaymentController extends Controller
                         'transaction_id'     => $transactionId,
                         'transaction_status' => $transactionStatus,
                         'gross_amount'       => $status->gross_amount ?? $order->total,
-                        'payment_detail'     => json_decode(json_encode($status), true),
+                        'payment_detail'     => $detail,
                     ]
                 );
 
@@ -212,7 +247,7 @@ class PaymentController extends Controller
 
             $transactionStatus = $notification->transaction_status;
             $paymentType       = $notification->payment_type;
-            $orderId           = $notification->order_id;       // this is invoice_number
+            $orderId           = $notification->order_id;  // PPW-{id}-{time} format
             $transactionId     = $notification->transaction_id;
             $fraudStatus       = $notification->fraud_status ?? null;
 
@@ -223,7 +258,14 @@ class PaymentController extends Controller
                 'fraud'       => $fraudStatus,
             ]);
 
-            $order = Order::where('invoice_number', $orderId)->first();
+            // Support both new format (PPW-{id}-{time}) and legacy (invoice_number)
+            $order = null;
+            if (preg_match('/^PPW-(\d+)-/', $orderId, $m)) {
+                $order = Order::find((int) $m[1]);
+            }
+            if (!$order) {
+                $order = Order::where('invoice_number', $orderId)->first();
+            }
 
             if (!$order) {
                 Log::warning('Midtrans webhook: order not found', ['order_id' => $orderId]);

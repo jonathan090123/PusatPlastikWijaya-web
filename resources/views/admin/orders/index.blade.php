@@ -23,6 +23,7 @@
                     <option value="shipped" {{ request('status') === 'shipped' ? 'selected' : '' }}>Dikirim</option>
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
                     <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                    <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Kadaluarsa</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Filter</button>
@@ -49,7 +50,7 @@
             <tbody>
                 @forelse($orders as $index => $order)
                     @php
-                        $isDone = in_array($order->status, ['completed', 'cancelled']);
+                        $isDone = in_array($order->status, ['completed', 'cancelled', 'expired']);
                         $badgeClass = match($order->status) {
                             'pending'           => 'badge-pending',
                             'waiting_payment'   => 'badge-waiting_payment',
@@ -59,6 +60,7 @@
                             'shipped'           => 'badge-shipped',
                             'completed'         => 'badge-completed',
                             'cancelled'         => 'badge-cancelled',
+                            'expired'           => 'badge-expired',
                             default             => '',
                         };
                     @endphp

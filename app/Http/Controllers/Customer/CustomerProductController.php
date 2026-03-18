@@ -42,7 +42,7 @@ class CustomerProductController extends Controller
                 break;
         }
 
-        $products = $query->paginate(12)->withQueryString();
+        $products = $query->paginate(48)->withQueryString();
         $categories = Category::where('is_active', true)->withCount(['products' => function ($q) {
             $q->where('is_active', true);
         }])->orderBy('name')->get();

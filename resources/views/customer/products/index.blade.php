@@ -223,8 +223,8 @@
 .active-filter a { color: var(--primary); }
 .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
 }
 .product-card {
     background: var(--white);
@@ -238,7 +238,7 @@
     flex-direction: column;
 }
 .product-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
     border-color: var(--primary-light);
 }
@@ -259,13 +259,13 @@
 }
 .product-badge-discount {
     position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
+    top: 0.35rem;
+    left: 0.35rem;
     background: var(--danger);
     color: var(--white);
-    padding: 0.2rem 0.6rem;
+    padding: 0.1rem 0.4rem;
     border-radius: var(--radius-sm);
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     font-weight: 700;
     z-index: 1;
 }
@@ -280,45 +280,47 @@
     margin-top: 0.4rem;
 }
 .product-card-body {
-    padding: 1rem;
+    padding: 0.55rem 0.65rem;
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 .product-card-category {
-    font-size: 0.7rem;
+    font-size: 0.62rem;
     color: var(--primary);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
 }
 .product-card-name {
-    font-size: 0.9rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--gray-800);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-clamp: 2;
+    line-height: 1.35;
 }
 .product-card-price {
     margin-top: auto;
     font-weight: 700;
+    font-size: 0.82rem;
     color: var(--gray-900);
 }
 .price-original {
     text-decoration: line-through;
     color: var(--gray-400);
-    font-size: 0.8rem;
+    font-size: 0.68rem;
     font-weight: 400;
     display: block;
 }
 .price-discount {
     color: var(--danger);
-    font-size: 1rem;
+    font-size: 0.82rem;
 }
 .catalog-pagination {
     margin-top: 2rem;
@@ -337,8 +339,8 @@
         position: static;
     }
     .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.5rem;
     }
 }
 </style>

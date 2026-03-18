@@ -5,9 +5,6 @@
 @section('content')
 <div class="page-header">
     <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-    <a href="{{ route('admin.orders.index') }}" class="btn btn-warning btn-sm" id="newOrderBtn" style="display:none;">
-        <i class="fas fa-bell"></i> <span id="newOrderCount"></span> Pesanan Baru
-    </a>
 </div>
 
 <div class="stats-grid">
@@ -142,25 +139,6 @@
 
 @push('scripts')
 <script>
-(function () {
-    const KEY      = 'admin_seen_orders';
-    const seen     = new Set(JSON.parse(sessionStorage.getItem(KEY) || '[]'));
-    const today    = @json($todayOrderIds);
-    const newCount = {{ $newOrdersCount }};
-
-    // Find today's order IDs that admin hasn't seen yet in this session
-    const unseen = today.filter(function (id) { return !seen.has(String(id)); });
-
-    if (unseen.length > 0 && newCount > 0) {
-        const btn   = document.getElementById('newOrderBtn');
-        const label = document.getElementById('newOrderCount');
-        label.textContent = newCount;
-        btn.style.display = 'inline-flex';
-    }
-
-    // Mark all today's orders as seen after this render
-    today.forEach(function (id) { seen.add(String(id)); });
-    sessionStorage.setItem(KEY, JSON.stringify([...seen]));
-}());
+// notification now handled globally via topbar in layouts/admin.blade.php
 </script>
 @endpush

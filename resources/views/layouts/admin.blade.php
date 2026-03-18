@@ -80,6 +80,13 @@
                 <button class="sidebar-toggle" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
+                @if($adminNewOrdersCount > 0)
+                <a href="{{ route('admin.orders.index') }}" class="topbar-order-alert">
+                    <i class="fas fa-bell topbar-order-bell"></i>
+                    <span>{{ $adminNewOrdersCount }} pesanan baru menunggu anda</span>
+                    <i class="fas fa-arrow-right" style="font-size:0.75rem;"></i>
+                </a>
+                @endif
                 <div class="topbar-right">
                     <div class="nav-dropdown">
                         <button class="nav-dropdown-toggle">

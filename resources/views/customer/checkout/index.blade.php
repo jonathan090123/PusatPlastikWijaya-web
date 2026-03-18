@@ -35,7 +35,7 @@
                                         <i class="fas fa-store" style="color:var(--success);"></i>
                                         <strong>Pickup (Ambil di Toko)</strong>
                                     </div>
-                                    <p class="shipping-desc">Ambil langsung di toko Pusat Plastik Wijaya, Blitar</p>
+                                    <p class="shipping-desc">Ambil langsung di toko, <b>Ruko Niaga Jl. Sedap Malam Kav 8-10 Blitar</b></p>
                                 </div>
                                 <span class="shipping-price free">Gratis</span>
                             </label>

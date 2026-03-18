@@ -103,7 +103,7 @@ class CheckoutController extends Controller
                     'points_discount' => 0,
                     'shipping_fee' => $shippingFee,
                     'total' => $total,
-                    'status' => 'pending',
+                    'status' => 'waiting_payment',
                     'notes' => $request->notes,
                 ]);
 

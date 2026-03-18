@@ -16,7 +16,11 @@ class AppServiceProvider extends ServiceProvider
         // Share pending orders count to all admin views (badge on sidebar)
         View::composer('layouts.admin', function ($view) {
             if (Auth::check() && Auth::user()->isAdmin()) {
-                $view->with('adminNewOrdersCount', Order::where('status', 'pending')->count());
+                $view->with('adminNewOrdersCount',
+                    Order::whereNull('admin_read_at')
+                         ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
+                         ->count()
+                );
             } else {
                 $view->with('adminNewOrdersCount', 0);
             }

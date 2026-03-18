@@ -33,4 +33,29 @@ class CustomerOrderController extends Controller
 
         return view('customer.orders.show', compact('order'));
     }
+
+    public function cancel(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (!in_array($order->status, ['pending', 'waiting_payment'])) {
+            return back()->with('error', 'Pesanan ini tidak dapat dibatalkan.');
+        }
+
+        $deadline = $order->created_at->addHours(2);
+        if (now()->gt($deadline)) {
+            return back()->with('error', 'Batas waktu pembatalan telah habis.');
+        }
+
+        $order->update([
+            'status'         => 'cancelled',
+            'status_read_at' => null,
+        ]);
+
+        return redirect()->route('orders.index')
+            ->with('success', 'Pesanan ' . $order->invoice_number . ' telah dibatalkan.');
+    }
 }
+

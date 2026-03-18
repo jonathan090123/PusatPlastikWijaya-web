@@ -46,6 +46,51 @@
         </div>
 </section>
 
+{{-- Promo / Diskon --}}
+@if($promoProducts->isNotEmpty())
+<section class="section promo-section">
+    <div class="promo-heading">
+        <div class="promo-heading-left">
+            <span class="promo-fire">🔥</span>
+            <div>
+                <div class="promo-heading-title">Promo <span class="promo-heading-highlight">&amp; Diskon</span></div>
+                <div class="promo-heading-sub">Penawaran terbatas! jangan sampai kehabisan!</div>
+            </div>
+        </div>
+        <a href="{{ route('products.index', ['promo' => '1']) }}" class="btn btn-danger btn-sm promo-cta">
+            Lihat Semua <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    <div class="products-grid">
+        @foreach($promoProducts as $product)
+        <a href="{{ route('products.show', $product->slug) }}" class="product-card promo-card">
+            <div class="product-card-image">
+                <span class="product-badge-discount">
+                    -{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%
+                </span>
+                @if($product->image)
+                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}">
+                @else
+                    <img src="https://placehold.co/400x300/fee2e2/dc2626?text={{ urlencode($product->name) }}" alt="{{ $product->name }}">
+                @endif
+            </div>
+            <div class="product-card-body">
+                <div class="product-card-category">{{ $product->category->name }}</div>
+                <h3 class="product-card-name">{{ $product->name }}</h3>
+                <div class="product-card-price">
+                    <span class="price-original">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                    <span class="price-discount">Rp {{ number_format($product->discount_price, 0, ',', '.') }}</span>
+                </div>
+                <div class="promo-saving">
+                    Hemat Rp {{ number_format($product->price - $product->discount_price, 0, ',', '.') }}
+                </div>
+            </div>
+        </a>
+        @endforeach
+    </div>
+</section>
+@endif
+
 {{-- Latest Products --}}
 <section class="section section-gray">
         <div class="section-header">
@@ -116,6 +161,86 @@
     margin-right: auto;
 }
 .section { padding: 2rem 0; }
+
+/* Promo section */
+.promo-section {
+    background: linear-gradient(130deg, #fff7ed 0%, #fef2f2 60%, #fdf4ff 100%);
+    padding: 2rem 0;
+    margin: 0 -1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    border-top: 3px solid #fb923c;
+    border-bottom: 3px solid #fb923c;
+}
+.promo-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+.promo-heading-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.promo-fire {
+    font-size: 2.6rem;
+    line-height: 1;
+    animation: fireWiggle 1.4s ease-in-out infinite;
+    filter: drop-shadow(0 2px 6px rgba(251,146,60,0.5));
+}
+@keyframes fireWiggle {
+    0%,100% { transform: rotate(-6deg) scale(1); }
+    50%      { transform: rotate(6deg) scale(1.12); }
+}
+.promo-heading-title {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #9a3412;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+.promo-heading-highlight {
+    background: linear-gradient(90deg, #ea580c, #dc2626);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.promo-heading-sub {
+    font-size: 0.8rem;
+    color: #c2410c;
+    margin-top: 0.2rem;
+    font-weight: 500;
+}
+.promo-cta {
+    background: linear-gradient(90deg, #ea580c, #dc2626);
+    border: none;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 14px rgba(220,38,38,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.promo-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(220,38,38,0.45);
+}
+.promo-title-icon { font-size: 1.25rem; margin-right: 0.25rem; }
+.promo-card .product-card-image {
+    border: 2px solid #fecaca;
+}
+.promo-saving {
+    display: inline-block;
+    margin-top: 0.4rem;
+    background: #fee2e2;
+    color: #b91c1c;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+}
+
 .section-gray {
     background: var(--gray-100);
     padding: 2rem 0;

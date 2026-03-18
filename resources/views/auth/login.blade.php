@@ -11,6 +11,13 @@
             <p>Selamat datang kembali! Silakan masuk dengan akun Anda.</p>
         </div>
 
+        @if(session('success'))
+        <div class="alert-success-register">
+            <i class="fas fa-check-circle"></i>
+            {{ session('success') }}
+        </div>
+        @endif
+
         <form method="POST" action="{{ route('login') }}" class="auth-form">
             @csrf
 
@@ -76,4 +83,27 @@ function togglePassword(id) {
     }
 }
 </script>
+
+@push('styles')
+<style>
+.alert-success-register {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: var(--radius, 8px);
+    color: #166534;
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.25rem;
+}
+.alert-success-register i {
+    font-size: 1.1rem;
+    color: #16a34a;
+    flex-shrink: 0;
+}
+</style>
+@endpush
 @endsection

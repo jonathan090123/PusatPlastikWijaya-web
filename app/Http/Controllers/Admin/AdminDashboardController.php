@@ -28,12 +28,9 @@ class AdminDashboardController extends Controller
             ->take(5)
             ->get();
 
-        $newOrdersCount = Order::whereIn('status', ['pending', 'waiting_payment'])->count();
-
-        // IDs of today's newest orders — passed to JS for sessionStorage new-order notification
-        $todayOrderIds  = Order::whereDate('created_at', today())
-            ->orderByDesc('id')
-            ->pluck('id');
+        $newOrdersCount = Order::whereNull('admin_read_at')
+            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->count();
 
         return view('admin.dashboard', compact(
             'totalOrders',
@@ -42,8 +39,7 @@ class AdminDashboardController extends Controller
             'totalCustomers',
             'recentOrders',
             'lowStockProducts',
-            'newOrdersCount',
-            'todayOrderIds'
+            'newOrdersCount'
         ));
     }
 }

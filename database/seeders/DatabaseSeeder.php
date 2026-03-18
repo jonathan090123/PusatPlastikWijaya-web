@@ -14,21 +14,33 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Akun Admin
-        User::create([
-            'name' => 'Admin',
-            'email' => 'admin@plastikwijaya.com',
-            'phone' => '081234567890',
-            'role' => 'admin',
-            'password' => Hash::make('admin123'),
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin@plastikwijaya.com'],
+            [
+                'name'     => 'Admin',
+                'phone'    => '081234567890',
+                'role'     => 'admin',
+                'password' => Hash::make('admin123'),
+            ]
+        );
 
         // Akun Customer contoh
-        User::create([
-            'name' => 'Customer Test',
-            'email' => 'customer@test.com',
-            'phone' => '089876543210',
-            'role' => 'customer',
-            'password' => Hash::make('customer123'),
+        User::firstOrCreate(
+            ['email' => 'customer@test.com'],
+            [
+                'name'     => 'Customer Test',
+                'phone'    => '089876543210',
+                'role'     => 'customer',
+                'password' => Hash::make('customer123'),
+            ]
+        );
+
+        // Data dummy
+        $this->call([
+            CategorySeeder::class,
+            ProductSeeder::class,
+            UserSeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }

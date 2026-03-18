@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminShippingController;
+use App\Http\Controllers\Admin\AdminReportsController;
 use App\Http\Controllers\Customer\CustomerProductController;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
@@ -58,9 +59,11 @@ Route::middleware('auth')->group(function () {
     // Customer Orders
     Route::get('/orders', [CustomerOrderController::class , 'index'])->name('orders.index');
     Route::get('/orders/{order}', [CustomerOrderController::class , 'show'])->name('orders.show');
+    Route::post('/orders/{order}/cancel', [CustomerOrderController::class , 'cancel'])->name('orders.cancel');
 
     // Payment
     Route::get('/payment/{order}', [PaymentController::class , 'show'])->name('payment.show');
+    Route::post('/payment/{order}/token', [PaymentController::class , 'getToken'])->name('payment.token');
     Route::get('/payment/{order}/finish', [PaymentController::class , 'finish'])->name('payment.finish');
 });
 
@@ -98,7 +101,5 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/vouchers', function () {
         return 'Admin Vouchers';
     })->name('vouchers.index');
-    Route::get('/reports', function () {
-        return 'Admin Reports';
-    })->name('reports.index');
+    Route::get('/reports', [AdminReportsController::class, 'index'])->name('reports.index');
 });

@@ -27,6 +27,11 @@ class AdminOrderController extends Controller
 
         $orders = $query->paginate(15)->withQueryString();
 
+        // Mark all unread orders as read when admin visits this page
+        Order::whereNull('admin_read_at')
+             ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
+             ->update(['admin_read_at' => now()]);
+
         return view('admin.orders.index', compact('orders'));
     }
 
