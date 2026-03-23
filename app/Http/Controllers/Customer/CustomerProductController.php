@@ -13,9 +13,13 @@ class CustomerProductController extends Controller
     {
         $query = Product::with('category')->where('is_active', true);
 
-        // Search
+        // Search — includes product_code as hidden keyword (not shown in UI)
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $term = $request->search;
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', '%' . $term . '%')
+                  ->orWhere('product_code', 'like', '%' . $term . '%');
+            });
         }
 
         // Filter by category slug
@@ -52,7 +56,7 @@ class CustomerProductController extends Controller
 
     public function show($slug)
     {
-        $product = Product::with('category')
+        $product = Product::with(['category', 'productUnits'])
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();

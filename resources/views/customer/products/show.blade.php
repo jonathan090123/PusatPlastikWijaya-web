@@ -72,9 +72,37 @@
                 </div>
             @endif
 
-            {{-- Add to Cart --}}
+            {{-- Unit Selector + Add to Cart --}}
+            @php $availableUnits = $product->getAvailableUnits(); @endphp
             @if($product->stock > 0)
                 <div class="add-to-cart-section">
+                    {{-- Pilih Satuan --}}
+                    @if(count($availableUnits) > 1)
+                    <div class="unit-selector-row">
+                        <span class="qty-label">Satuan:</span>
+                        <div class="unit-options" id="unitOptions">
+                            @foreach($availableUnits as $u)
+                            <button type="button"
+                                class="unit-btn {{ $loop->first ? 'active' : '' }}"
+                                data-unit="{{ $u['unit'] }}"
+                                data-price="{{ $u['price'] }}"
+                                data-conversion="{{ $u['conversion_value'] }}">
+                                {{ $u['unit'] }}
+                                @if($u['conversion_value'] > 1)
+                                    <small>({{ $u['conversion_value'] }} {{ $availableUnits[0]['unit'] }})</small>
+                                @endif
+                            </button>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Harga sesuai satuan --}}
+                    <div id="selectedPriceDisplay" class="selected-price-display">
+                        <span class="selected-price-label">Harga / {{ $availableUnits[0]['unit'] }}:</span>
+                        <span id="selectedPrice" class="selected-price-value">Rp {{ number_format($availableUnits[0]['price'], 0, ',', '.') }}</span>
+                    </div>
+
                     <div class="qty-row">
                         <span class="qty-label">Jumlah:</span>
                         <div class="quantity-control">
@@ -82,8 +110,9 @@
                             <input type="number" id="quantity" value="1" min="1" max="{{ $product->stock }}" readonly>
                             <button type="button" class="qty-btn" id="qtyPlus"><i class="fas fa-plus"></i></button>
                         </div>
-                        <span class="stock-hint">Stok: {{ $product->stock }}</span>
+                        <span id="stockHint" class="stock-hint">Stok: {{ $product->stock }} {{ $product->unit }}</span>
                     </div>
+                    <input type="hidden" id="selectedUnit" value="{{ $product->unit }}">
                     <div class="action-buttons">
                         <button class="btn btn-outline-primary btn-lg" id="addToCartBtn"
                                 data-product-id="{{ $product->id }}">
@@ -260,6 +289,64 @@
     padding-top: 1.5rem;
     border-top: 1px solid var(--gray-100);
 }
+.unit-selector-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+.unit-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.unit-btn {
+    padding: 0.35rem 0.85rem;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    background: var(--white);
+    color: var(--gray-700);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    line-height: 1.3;
+    text-align: center;
+}
+.unit-btn small {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--gray-500);
+}
+.unit-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.unit-btn.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--white);
+}
+.unit-btn.active small { color: rgba(255,255,255,0.8); }
+.selected-price-display {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.selected-price-label {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    font-weight: 500;
+}
+.selected-price-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--primary);
+}
 .qty-row {
     display: flex;
     align-items: center;
@@ -349,9 +436,45 @@
 
 @push('scripts')
 <script>
-// Quantity controls
-const qtyInput = document.getElementById('quantity');
-const maxStock = {{ $product->stock }};
+const baseStock    = {{ $product->stock }};
+const baseUnit     = @json($product->unit);
+const qtyInput     = document.getElementById('quantity');
+const stockHint    = document.getElementById('stockHint');
+const selectedUnit = document.getElementById('selectedUnit');
+const priceDisplay = document.getElementById('selectedPrice');
+const priceLabel   = document.querySelector('.selected-price-label');
+
+let currentConversion = 1; // how many base units per 1 selected unit
+
+function maxQtyForConversion(conv) {
+    return Math.max(1, Math.floor(baseStock / conv));
+}
+
+// Unit selector
+document.querySelectorAll('.unit-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const unit  = this.dataset.unit;
+        const price = parseFloat(this.dataset.price);
+        const conv  = parseInt(this.dataset.conversion);
+
+        currentConversion = conv;
+        selectedUnit.value = unit;
+        priceDisplay.textContent = 'Rp ' + price.toLocaleString('id-ID');
+        if (priceLabel) priceLabel.textContent = 'Harga / ' + unit + ':';
+
+        const maxQty = maxQtyForConversion(conv);
+        qtyInput.max   = maxQty;
+        qtyInput.value = 1;
+        if (stockHint) {
+            stockHint.textContent = conv > 1
+                ? `Stok: ${baseStock} ${baseUnit} (maks ${maxQty} ${unit})`
+                : `Stok: ${baseStock} ${unit}`;
+        }
+    });
+});
 
 document.getElementById('qtyMinus')?.addEventListener('click', () => {
     let val = parseInt(qtyInput.value);
@@ -360,10 +483,11 @@ document.getElementById('qtyMinus')?.addEventListener('click', () => {
 
 document.getElementById('qtyPlus')?.addEventListener('click', () => {
     let val = parseInt(qtyInput.value);
-    if (val < maxStock) qtyInput.value = val + 1;
+    const maxQty = maxQtyForConversion(currentConversion);
+    if (val < maxQty) qtyInput.value = val + 1;
 });
 
-function addToCartRequest(productId, quantity, onSuccess, onError) {
+function addToCartRequest(productId, quantity, unit, onSuccess, onError) {
     return fetch('{{ route("cart.add") }}', {
         method: 'POST',
         headers: {
@@ -371,7 +495,7 @@ function addToCartRequest(productId, quantity, onSuccess, onError) {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ product_id: productId, quantity: quantity })
+        body: JSON.stringify({ product_id: productId, quantity: quantity, unit: unit })
     })
     .then(res => res.json())
     .then(data => {
@@ -390,12 +514,13 @@ function addToCartRequest(productId, quantity, onSuccess, onError) {
 document.getElementById('addToCartBtn')?.addEventListener('click', function() {
     const btn = this;
     const productId = btn.dataset.productId;
-    const quantity = parseInt(qtyInput.value);
+    const quantity  = parseInt(qtyInput.value);
+    const unit      = selectedUnit ? selectedUnit.value : baseUnit;
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-    addToCartRequest(productId, quantity,
+    addToCartRequest(productId, quantity, unit,
         () => {
             btn.innerHTML = '<i class="fas fa-check"></i> Ditambahkan!';
             btn.classList.replace('btn-outline-primary', 'btn-success');
@@ -417,12 +542,13 @@ document.getElementById('addToCartBtn')?.addEventListener('click', function() {
 document.getElementById('buyNowBtn')?.addEventListener('click', function() {
     const btn = this;
     const productId = btn.dataset.productId;
-    const quantity = parseInt(qtyInput.value);
+    const quantity  = parseInt(qtyInput.value);
+    const unit      = selectedUnit ? selectedUnit.value : baseUnit;
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
 
-    addToCartRequest(productId, quantity,
+    addToCartRequest(productId, quantity, unit,
         () => { window.location.href = '{{ route("checkout.index") }}'; },
         (msg) => {
             alert(msg);

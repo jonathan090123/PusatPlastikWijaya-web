@@ -16,7 +16,11 @@ class AdminProductController extends Controller
         $query = Product::with('category');
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $term = $request->search;
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', '%' . $term . '%')
+                  ->orWhere('product_code', 'like', '%' . $term . '%');
+            });
         }
 
         if ($request->filled('category')) {
@@ -43,6 +47,7 @@ class AdminProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'product_code' => 'nullable|string|max:50|unique:products,product_code',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
@@ -85,6 +90,7 @@ class AdminProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'product_code' => 'nullable|string|max:50|unique:products,product_code,' . $product->id,
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',

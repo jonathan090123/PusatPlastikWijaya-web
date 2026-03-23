@@ -33,12 +33,9 @@
                             </a>
                             <span class="cart-item-category">{{ $item->product->category->name }}</span>
                             <div class="cart-item-price">
-                                @if($item->product->hasDiscount())
-                                    <span class="price-original" style="font-size:0.75rem;">Rp {{ number_format($item->product->price, 0, ',', '.') }}</span>
-                                    <span style="color:var(--danger); font-weight:700;">Rp {{ number_format($item->product->getEffectivePrice(), 0, ',', '.') }}</span>
-                                @else
-                                    <span style="font-weight:700;">Rp {{ number_format($item->product->price, 0, ',', '.') }}</span>
-                                @endif
+                                @php $unitPrice = $item->product->getPriceForUnit($item->unit); @endphp
+                                <span style="font-weight:700;">Rp {{ number_format($unitPrice, 0, ',', '.') }}</span>
+                                <span class="cart-unit-badge">/ {{ $item->unit ?: $item->product->unit }}</span>
                             </div>
                         </div>
                         <div class="cart-item-actions">
@@ -46,8 +43,17 @@
                                 <button type="button" class="qty-btn cart-qty-minus" data-item-id="{{ $item->id }}">
                                     <i class="fas fa-minus"></i>
                                 </button>
+                                @php
+                                    $itemUnit = $item->unit ?: $item->product->unit;
+                                    $itemConv = 1;
+                                    if ($itemUnit !== $item->product->unit) {
+                                        $pu = $item->product->productUnits->firstWhere('unit', $itemUnit);
+                                        if ($pu) $itemConv = (int) $pu->conversion_value;
+                                    }
+                                    $maxQtyCart = max(1, (int) floor($item->product->stock / $itemConv));
+                                @endphp
                                 <input type="number" class="cart-qty-input" value="{{ $item->quantity }}" readonly
-                                       data-item-id="{{ $item->id }}" data-max="{{ $item->product->stock }}">
+                                       data-item-id="{{ $item->id }}" data-max="{{ $maxQtyCart }}">
                                 <button type="button" class="qty-btn cart-qty-plus" data-item-id="{{ $item->id }}"
                                         data-max="{{ $item->product->stock }}">
                                     <i class="fas fa-plus"></i>
@@ -174,6 +180,14 @@
 }
 .cart-item-price {
     margin-top: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.cart-unit-badge {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+    font-weight: 500;
 }
 .cart-item-actions {
     display: flex;

@@ -11,9 +11,9 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Kantong Plastik', 'description' => 'Berbagai jenis kantong plastik HD, kresek, sampah, dan PE kiloan'],
-            ['name' => 'Botol & Toples', 'description' => 'Botol plastik, toples, dan wadah penyimpanan serbaguna'],
-            ['name' => 'Sendok',         'description' => 'Sendok plastik, garpu plastik, dan perlengkapan makan plastik'],
+            ['name' => 'Kresek',   'description' => 'Kantong kresek berbagai ukuran, warna, dan merek'],
+            ['name' => 'Plastik',  'description' => 'Produk plastik umum: wrap film, botol, mika box, dll'],
+            ['name' => 'Kertas',   'description' => 'Cup kertas, cup muffin, cup bakery, dan produk kertas lainnya'],
         ];
 
         foreach ($categories as $cat) {

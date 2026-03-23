@@ -16,11 +16,19 @@
             @csrf
             @method('PUT')
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
                 <div class="form-group">
                     <label><i class="fas fa-box"></i> Nama Produk <span style="color:var(--danger);">*</span></label>
                     <input type="text" name="name" value="{{ old('name', $product->name) }}" class="{{ $errors->has('name') ? 'is-invalid' : '' }}" required>
                     @error('name')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-barcode"></i> Kode Barang</label>
+                    <input type="text" name="product_code" value="{{ old('product_code', $product->product_code) }}" class="{{ $errors->has('product_code') ? 'is-invalid' : '' }}" placeholder="cth: KRS-P15-DRG" style="font-family:monospace;">
+                    @error('product_code')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>

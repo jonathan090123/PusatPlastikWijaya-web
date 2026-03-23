@@ -13,6 +13,7 @@ class CartItem extends Model
         'cart_id',
         'product_id',
         'quantity',
+        'unit',
     ];
 
     public function cart()
@@ -27,6 +28,6 @@ class CartItem extends Model
 
     public function getSubtotalAttribute()
     {
-        return $this->product->getEffectivePrice() * $this->quantity;
+        return $this->product->getPriceForUnit($this->unit) * $this->quantity;
     }
 }

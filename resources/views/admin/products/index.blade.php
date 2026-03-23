@@ -48,6 +48,7 @@
                     <th>No</th>
                     <th>Gambar</th>
                     <th>Nama Produk</th>
+                    <th>Kode</th>
                     <th>Kategori</th>
                     <th>Harga</th>
                     <th>Stok</th>
@@ -72,6 +73,13 @@
                             @endif
                         </td>
                         <td><strong>{{ $product->name }}</strong></td>
+                        <td>
+                            @if($product->product_code)
+                                <code style="font-size:0.75rem; background:var(--gray-100); padding:0.15rem 0.4rem; border-radius:4px; color:var(--gray-700);">{{ $product->product_code }}</code>
+                            @else
+                                <span style="color:var(--gray-300);">-</span>
+                            @endif
+                        </td>
                         <td>
                             <span class="badge-status badge-processing">{{ $product->category->name ?? '-' }}</span>
                         </td>
@@ -116,7 +124,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9">
+                        <td colspan="10">
                             <div class="empty-state">
                                 <i class="fas fa-box-open"></i>
                                 <h3>Belum ada produk</h3>

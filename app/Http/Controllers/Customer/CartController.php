@@ -20,7 +20,7 @@ class CartController extends Controller
     public function index()
     {
         $cart = $this->getOrCreateCart();
-        $cart->load('items.product.category');
+        $cart->load('items.product.category', 'items.product.productUnits');
 
         return view('customer.cart.index', compact('cart'));
     }
@@ -29,37 +29,54 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
+            'quantity'   => 'required|integer|min:1',
+            'unit'       => 'nullable|string|max:20',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        $product = Product::with('productUnits')->findOrFail($request->product_id);
 
         if (!$product->is_active) {
             return response()->json(['success' => false, 'message' => 'Produk tidak tersedia'], 400);
         }
 
-        if ($product->stock < $request->quantity) {
+        // Resolve unit and its conversion factor (how many base units per 1 selected unit)
+        $selectedUnit = $request->unit ?: $product->unit;
+        $conversion   = 1;
+        if ($selectedUnit !== $product->unit) {
+            $pu = $product->productUnits->firstWhere('unit', $selectedUnit);
+            if (!$pu) {
+                return response()->json(['success' => false, 'message' => 'Satuan tidak valid'], 400);
+            }
+            $conversion = (int) $pu->conversion_value;
+        }
+
+        // Stock check in base units
+        $requiredStock = $request->quantity * $conversion;
+        if ($product->stock < $requiredStock) {
             return response()->json(['success' => false, 'message' => 'Stok tidak mencukupi'], 400);
         }
 
         $cart = $this->getOrCreateCart();
 
+        // Cart items are keyed by product+unit combination
         $cartItem = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $product->id)
+            ->where('unit', $selectedUnit)
             ->first();
 
         if ($cartItem) {
-            $newQty = $cartItem->quantity + $request->quantity;
-            if ($newQty > $product->stock) {
+            $newQty        = $cartItem->quantity + $request->quantity;
+            $newStockNeeded = $newQty * $conversion;
+            if ($newStockNeeded > $product->stock) {
                 return response()->json(['success' => false, 'message' => 'Stok tidak mencukupi'], 400);
             }
             $cartItem->update(['quantity' => $newQty]);
-        }
-        else {
+        } else {
             CartItem::create([
-                'cart_id' => $cart->id,
+                'cart_id'    => $cart->id,
                 'product_id' => $product->id,
-                'quantity' => $request->quantity,
+                'quantity'   => $request->quantity,
+                'unit'       => $selectedUnit,
             ]);
         }
 
@@ -84,7 +101,15 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        if ($request->quantity > $cartItem->product->stock) {
+        // Stock check with conversion factor
+        $cartItem->load('product.productUnits');
+        $unitName   = $cartItem->unit ?: $cartItem->product->unit;
+        $conversion = 1;
+        if ($unitName !== $cartItem->product->unit) {
+            $pu = $cartItem->product->productUnits->firstWhere('unit', $unitName);
+            if ($pu) $conversion = (int) $pu->conversion_value;
+        }
+        if (($request->quantity * $conversion) > $cartItem->product->stock) {
             return response()->json(['success' => false, 'message' => 'Stok tidak mencukupi'], 400);
         }
 
