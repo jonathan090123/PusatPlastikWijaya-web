@@ -160,9 +160,24 @@
                     </div>
 
                     {{-- Product list --}}
-                    <div class="summary-items">
+                    <div class="summary-items" id="summaryItemsList">
                         @foreach($cart->items as $item)
-                        <div class="summary-item">
+                        @php
+                            $itemUnitPrice  = $item->product->getPriceForUnit($item->unit);
+                            // Max qty in selected unit: for non-base units divide stock by conversion
+                            $itemConversion = 1;
+                            if ($item->unit && $item->unit !== $item->product->unit) {
+                                $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
+                                if ($pu) $itemConversion = (int) $pu->conversion_value;
+                            }
+                            $itemMaxQty = $itemConversion > 1 ? (int) floor($item->product->stock / $itemConversion) : $item->product->stock;
+                        @endphp
+                        <div class="summary-item" id="summary-item-{{ $item->id }}"
+                             data-item-id="{{ $item->id }}"
+                             data-price="{{ $itemUnitPrice }}"
+                             data-stock="{{ $item->product->stock }}"
+                             data-max="{{ $itemMaxQty }}"
+                             data-unit="{{ $item->unit }}">
                             <div class="summary-item-img">
                                 @if($item->product->image)
                                     <img src="{{ asset('storage/' . $item->product->image) }}"
@@ -172,11 +187,29 @@
                                 @endif
                             </div>
                             <div class="summary-item-detail">
-                                <div class="summary-item-name">{{ $item->product->name }}</div>
-                                <div class="summary-item-qty">{{ $item->quantity }} × Rp {{ number_format($item->product->getEffectivePrice(), 0, ',', '.') }}</div>
+                                <a href="{{ route('products.show', $item->product->slug) }}"
+                                   target="_blank" rel="noopener"
+                                   class="summary-item-name">{{ $item->product->name }}
+                                    @if($item->unit && $item->unit !== $item->product->unit)
+                                        <span style="font-size:0.7rem;font-weight:600;color:var(--primary);background:var(--primary-light);padding:0.1rem 0.35rem;border-radius:4px;margin-left:0.25rem;">{{ strtoupper($item->unit) }}</span>
+                                    @endif
+                                </a>
+                                <div class="summary-item-controls">
+                                    <button type="button" class="qty-btn qty-minus" data-id="{{ $item->id }}"
+                                        {{ $item->quantity <= 1 ? 'disabled' : '' }}>−</button>
+                                    <input type="number" class="qty-val" id="qty-{{ $item->id }}"
+                                        value="{{ $item->quantity }}" min="1" max="{{ $itemMaxQty }}">
+                                    <button type="button" class="qty-btn qty-plus" data-id="{{ $item->id }}" data-max="{{ $itemMaxQty }}"
+                                        {{ $item->quantity >= $itemMaxQty ? 'disabled' : '' }}>+</button>
+                                </div>
                             </div>
-                            <div class="summary-item-subtotal">
-                                Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem;">
+                                <div class="summary-item-subtotal" id="sub-{{ $item->id }}">
+                                    Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                                </div>
+                                <button type="button" class="item-delete-btn" data-id="{{ $item->id }}" title="Hapus">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </div>
                         </div>
                         @endforeach
@@ -184,6 +217,12 @@
 
                     {{-- Divider --}}
                     <div class="summary-divider"></div>
+
+                    {{-- Empty state --}}
+                    <div id="cartEmptyMsg" style="display:none;padding:1.25rem;text-align:center;color:var(--gray-400);font-size:0.85rem;">
+                        <i class="fas fa-shopping-cart" style="font-size:1.5rem;display:block;margin-bottom:0.4rem;"></i>
+                        Keranjang kosong
+                    </div>
 
                     {{-- Totals --}}
                     <div class="summary-row">
@@ -389,6 +428,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-decoration: none;
+    display: block;
+}
+a.summary-item-name:hover {
+    color: var(--primary);
+    text-decoration: underline;
 }
 .summary-item-qty { font-size: 0.75rem; color: var(--gray-500); margin-top: 0.1rem; }
 .summary-item-subtotal {
@@ -397,6 +442,53 @@
     color: var(--gray-700);
     white-space: nowrap;
 }
+.summary-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.25rem;
+}
+.qty-btn {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--gray-300);
+    background: var(--white);
+    color: var(--gray-700);
+    font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: background 0.12s, border-color 0.12s;
+}
+.qty-btn:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+.qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.qty-val {
+    width: 42px;
+    min-width: 42px;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 0.1rem 0.2rem;
+    background: var(--white);
+    -moz-appearance: textfield;
+}
+.qty-val::-webkit-inner-spin-button,
+.qty-val::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.qty-val:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+.item-delete-btn {
+    background: none;
+    border: none;
+    color: #f87171;
+    font-size: 0.82rem;
+    cursor: pointer;
+    padding: 0.1rem 0.25rem;
+    transition: color 0.12s;
+}
+.item-delete-btn:hover { color: var(--danger); }
 
 /* Totals section */
 .summary-divider { height: 2px; background: var(--gray-100); margin: 0; }
@@ -442,12 +534,131 @@
 
 @push('scripts')
 <script>
-const subtotal         = {{ $cart->total }};
+var subtotal           = {{ $cart->total }};
 const customerAddress  = @json($user->address ?? '');
+const csrfToken        = document.querySelector('meta[name="csrf-token"]').content;
 
 function formatRupiah(num) {
     return 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
+
+function recalcSubtotal() {
+    let total = 0;
+    document.querySelectorAll('#summaryItemsList .summary-item').forEach(function(row) {
+        const price = parseFloat(row.dataset.price);
+        const qty   = parseInt(document.getElementById('qty-' + row.dataset.itemId).value, 10);
+        total += price * qty;
+    });
+    subtotal = total;
+    document.getElementById('checkout-subtotal').textContent = formatRupiah(total);
+    // Refresh shipping display
+    const shippingSelected = document.querySelector('input[name="shipping_type"]:checked');
+    if (shippingSelected) {
+        const cost = parseFloat(shippingSelected.closest('.shipping-option').dataset.cost);
+        document.getElementById('checkout-total').textContent = formatRupiah(total + cost);
+    } else {
+        document.getElementById('checkout-total').textContent = formatRupiah(total);
+    }
+    // Total items badge
+    var count = 0;
+    document.querySelectorAll('#summaryItemsList .summary-item').forEach(function(row) {
+        count += parseInt(document.getElementById('qty-' + row.dataset.itemId).value, 10);
+    });
+    var badge = document.querySelector('.summary-item-count');
+    if (badge) badge.textContent = count + ' item';
+}
+
+function updateCartItem(itemId, newQty) {
+    fetch('/cart/' + itemId, {
+        method: 'PATCH',
+        headers: {'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', 'Accept': 'application/json'},
+        body: JSON.stringify({quantity: newQty})
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.success === false) return;
+        var row   = document.getElementById('summary-item-' + itemId);
+        var price = parseFloat(row.dataset.price);
+        document.getElementById('sub-' + itemId).textContent = formatRupiah(price * newQty);
+        recalcSubtotal();
+    });
+}
+
+function deleteCartItem(itemId) {
+    fetch('/cart/' + itemId, {
+        method: 'DELETE',
+        headers: {'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json'}
+    }).then(function(r) { return r.json(); }).then(function() {
+        var row = document.getElementById('summary-item-' + itemId);
+        if (row) row.remove();
+        recalcSubtotal();
+        var remaining = document.querySelectorAll('#summaryItemsList .summary-item').length;
+        if (remaining === 0) {
+            document.getElementById('cartEmptyMsg').style.display = 'block';
+            document.getElementById('btnCheckout').disabled = true;
+        }
+    });
+}
+
+// Qty minus
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.qty-minus');
+    if (!btn || btn.disabled) return;
+    var id  = btn.dataset.id;
+    var el  = document.getElementById('qty-' + id);
+    var qty = parseInt(el.value, 10);
+    if (qty <= 1) return; // min = 1
+    el.value = qty - 1;
+    // toggle buttons
+    btn.disabled = (qty - 1) <= 1;
+    var plusBtn = document.querySelector('.qty-plus[data-id="' + id + '"]');
+    if (plusBtn) plusBtn.disabled = false;
+    updateCartItem(id, qty - 1);
+});
+
+// Qty plus
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.qty-plus');
+    if (!btn || btn.disabled) return;
+    var id   = btn.dataset.id;
+    var row  = document.getElementById('summary-item-' + id);
+    var max  = parseInt(row.dataset.max, 10);
+    var el   = document.getElementById('qty-' + id);
+    var qty  = parseInt(el.value, 10);
+    if (qty >= max) return;
+    el.value = qty + 1;
+    // toggle buttons
+    btn.disabled = (qty + 1) >= max;
+    var minusBtn = document.querySelector('.qty-minus[data-id="' + id + '"]');
+    if (minusBtn) minusBtn.disabled = false;
+    updateCartItem(id, qty + 1);
+});
+
+// Delete
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.item-delete-btn');
+    if (!btn) return;
+    deleteCartItem(btn.dataset.id);
+});
+
+// Direct qty input
+document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('qty-val')) return;
+    var el  = e.target;
+    var id  = el.id.replace('qty-', '');
+    var row = document.getElementById('summary-item-' + id);
+    var max = parseInt(row.dataset.max, 10);
+    var qty = parseInt(el.value, 10);
+    if (isNaN(qty) || qty < 1) qty = 1;
+    if (qty > max) qty = max;
+    el.value = qty;
+    var minusBtn = document.querySelector('.qty-minus[data-id="' + id + '"]');
+    var plusBtn  = document.querySelector('.qty-plus[data-id="' + id + '"]');
+    if (minusBtn) minusBtn.disabled = qty <= 1;
+    if (plusBtn)  plusBtn.disabled  = qty >= max;
+    var price = parseFloat(row.dataset.price);
+    document.getElementById('sub-' + id).textContent = formatRupiah(price * qty);
+    recalcSubtotal();
+    updateCartItem(id, qty);
+});
 
 // ── City type change: filter shipping options ──
 function updateCityType() {

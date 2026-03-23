@@ -1,4 +1,4 @@
-1. tambahin btn / tampilan Whatsapp hubungi admin . hubungi utk customer di pesanannya
+
 2. satuan terkecil ga harus pcs dan yg juga menyesuaikan sesuai pada data excel
 3. kode barang perlu tapi jangan di tampilkan ke nama barang , tapi ibarat seperti kode rahasia yg digunakan untuk search keyword 
 4. perlu sedia in field input stok (satuan) , dan itu menyesuaikan dengan data excel per produknya 

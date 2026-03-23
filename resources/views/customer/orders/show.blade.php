@@ -47,15 +47,15 @@
             {{-- Payment Deadline PHP vars --}}
             @if(in_array($order->status, ['pending', 'waiting_payment']))
             @php
-                $payDeadline    = $order->created_at->addHours(2);
+                $payDeadline    = $order->payment_deadline ?? $order->created_at->addHours(2);
                 $paySecondsLeft = max(0, (int) now()->diffInSeconds($payDeadline, false));
                 $isPayExpired   = now()->gt($payDeadline);
             @endphp
             @endif
 
             {{-- Blue: Menunggu Pembayaran (above shipping) --}}
-            @if(in_array($order->status, ['pending', 'waiting_payment']))
-                <div class="card" style="margin-bottom:1.5rem; border:2px solid var(--primary); background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+            @if(in_array($order->status, ['pending', 'waiting_payment']) && !$isPayExpired)
+                <div class="card" id="bluePayCard" style="margin-bottom:1.5rem; border:2px solid var(--primary); background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
                     <div class="card-body" style="text-align:center; padding:1.5rem;">
                         <i class="fas fa-credit-card" style="font-size:2rem; color:var(--primary); margin-bottom:0.75rem;"></i>
                         <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.5rem;">Menunggu Pembayaran</h3>
@@ -138,12 +138,22 @@
                 </div>
             </div>
             @else
+            {{-- Time past but DB not yet updated (will expire on reload) --}}
             <div class="card" style="margin-bottom:1.5rem; background:#fef2f2; border:1px solid #fecaca;">
                 <div class="card-body" style="padding:0.85rem 1.25rem; font-size:0.82rem; color:#b91c1c;">
-                    <i class="fas fa-times-circle"></i> Batas waktu pembayaran telah habis. Pesanan akan segera dikadaluarsakan otomatis.
+                    <i class="fas fa-times-circle"></i> Batas waktu pembayaran telah habis. Pesanan ini tidak dapat dibayar.
                 </div>
             </div>
             @endif
+            @endif
+
+            {{-- DB status already expired --}}
+            @if($order->status === 'expired')
+            <div class="card" style="margin-bottom:1.5rem; background:#fef2f2; border:1px solid #fecaca;">
+                <div class="card-body" style="padding:0.85rem 1.25rem; font-size:0.82rem; color:#b91c1c;">
+                    <i class="fas fa-times-circle"></i> Batas waktu pembayaran telah habis. Pesanan ini tidak dapat dibayar.
+                </div>
+            </div>
             @endif
 
             {{-- Green: Paid info --}}
@@ -232,6 +242,23 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Hubungi Admin via WhatsApp --}}
+            <div class="card" style="margin-top:1rem; border-left:4px solid #25d366; background:var(--white);">
+                <div class="card-body" style="padding:1rem 1.25rem;">
+                    <div style="font-size:0.82rem; color:var(--gray-700); margin-bottom:0.65rem;">
+                        <div style="font-weight:700; color:var(--gray-800); margin-bottom:0.15rem;">
+                            <i class="fas fa-headset" style="color:#25d366;"></i> Butuh bantuan?
+                        </div>
+                        Ada pertanyaan tentang pesanan ini?
+                    </div>
+                    <a href="https://wa.me/6282294777070?text={{ urlencode('Halo admin, saya ingin menanyakan pesanan saya dengan no. ' . $order->invoice_number) }}"
+                       target="_blank" rel="noopener noreferrer"
+                       class="btn-wa-admin" style="width:100%; justify-content:center;">
+                        <i class="fab fa-whatsapp" style="font-size:1.2rem;"></i> Hubungi Admin via WhatsApp
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -267,6 +294,25 @@
 
 @push('styles')
 <style>
+.btn-wa-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: #25d366;
+    color: #fff;
+    font-weight: 700;
+    border-radius: var(--radius);
+    padding: 0.65rem 1.5rem;
+    font-size: 0.88rem;
+    text-decoration: none;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(37,211,102,0.3);
+}
+.btn-wa-admin:hover {
+    background: #1da851;
+    box-shadow: 0 4px 14px rgba(37,211,102,0.45);
+    color: #fff;
+}
 @media (max-width: 768px) {
     .admin-content > div > div[style*="grid-template-columns"] {
         grid-template-columns: 1fr !important;
@@ -299,9 +345,20 @@
         seconds--;
         if (seconds <= 0) {
             clearInterval(timer);
+            // Call server to mark order as expired
+            var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            fetch('{{ route('orders.expire', $order) }}', {
+                method: 'POST',
+                headers: {'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json'}
+            }).finally(function () {
+                setTimeout(function () { window.location.reload(); }, 800);
+            });
+            // Immediately show waiting message while page reloads
+            var bluePayCard = document.getElementById('bluePayCard');
+            if (bluePayCard) bluePayCard.style.display = 'none';
             if (deadlineCard) {
-                deadlineCard.style.border = '1px solid #fecaca';
-                deadlineCard.innerHTML = '<div class="card-body" style="padding:0.85rem 1.25rem; font-size:0.82rem; color:#b91c1c;"><i class="fas fa-times-circle"></i> Batas waktu pembayaran telah habis. Pesanan akan segera dikadaluarsakan otomatis.</div>';
+                deadlineCard.style.borderColor = '#fecaca';
+                deadlineCard.innerHTML = '<div class="card-body" style="padding:1rem 1.25rem; text-align:center; color:#92400e; font-size:0.85rem;"><i class="fas fa-clock"></i> Waktu habis. Memperbarui status pesanan...</div>';
             }
             return;
         }

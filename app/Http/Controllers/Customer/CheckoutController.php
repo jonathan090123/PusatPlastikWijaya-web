@@ -21,7 +21,7 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Keranjang belanja kosong.');
         }
 
-        $cart->load('items.product.category');
+        $cart->load('items.product.category', 'items.product.productUnits');
 
         // Load all active shipping methods from DB
         $shippingMethods = ShippingCost::whereIn('type', ['pickup', 'local', 'outside'])
@@ -54,15 +54,23 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Keranjang belanja kosong.');
         }
 
-        $cart->load('items.product');
+        $cart->load('items.product.productUnits');
 
-        // Validate stock availability
+        // Validate stock availability (unit-aware)
         foreach ($cart->items as $item) {
             if (!$item->product->is_active) {
                 return back()->with('error', "Produk \"{$item->product->name}\" sudah tidak tersedia.");
             }
-            if ($item->product->stock < $item->quantity) {
-                return back()->with('error', "Stok \"{$item->product->name}\" tidak mencukupi. Tersisa {$item->product->stock}.");
+            $conv = 1;
+            if ($item->unit && $item->unit !== $item->product->unit) {
+                $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
+                if ($pu) $conv = (int) $pu->conversion_value;
+            }
+            $required = $item->quantity * $conv;
+            if ($item->product->stock < $required) {
+                $avail     = $conv > 1 ? (int) floor($item->product->stock / $conv) : $item->product->stock;
+                $unitLabel = $item->unit ? strtoupper($item->unit) : strtoupper($item->product->unit);
+                return back()->with('error', "Stok \"{$item->product->name}\" tidak mencukupi. Tersisa {$avail} {$unitLabel}.");
             }
         }
 
@@ -80,10 +88,10 @@ class CheckoutController extends Controller
 
         try {
             $order = DB::transaction(function () use ($cart, $shippingFee, $shippingName, $shippingCostId, $request) {
-                // Calculate subtotal
+                // Calculate subtotal (unit-aware pricing)
                 $subtotal = 0;
                 foreach ($cart->items as $item) {
-                    $subtotal += $item->product->getEffectivePrice() * $item->quantity;
+                    $subtotal += $item->product->getPriceForUnit($item->unit) * $item->quantity;
                 }
 
                 $total = $subtotal + $shippingFee;
@@ -107,18 +115,27 @@ class CheckoutController extends Controller
                     'notes' => $request->notes,
                 ]);
 
-                // Create order items (stock reduced only after payment confirmed)
+                // Create order items & immediately reserve (deduct) stock
                 foreach ($cart->items as $item) {
-                    $price = $item->product->getEffectivePrice();
+                    $price = $item->product->getPriceForUnit($item->unit);
 
                     OrderItem::create([
-                        'order_id' => $order->id,
-                        'product_id' => $item->product->id,
-                        'product_name' => $item->product->name,
+                        'order_id'      => $order->id,
+                        'product_id'    => $item->product->id,
+                        'product_name'  => $item->product->name,
                         'product_price' => $price,
-                        'quantity' => $item->quantity,
-                        'subtotal' => $price * $item->quantity,
+                        'unit'          => $item->unit,
+                        'quantity'      => $item->quantity,
+                        'subtotal'      => $price * $item->quantity,
                     ]);
+
+                    // Deduct stock immediately (restored on expire / cancel)
+                    $conv = 1;
+                    if ($item->unit && $item->unit !== $item->product->unit) {
+                        $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
+                        if ($pu) $conv = (int) $pu->conversion_value;
+                    }
+                    $item->product->decrement('stock', $item->quantity * $conv);
                 }
 
                 // Clear cart

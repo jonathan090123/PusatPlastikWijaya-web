@@ -25,7 +25,10 @@
                         default             => '',
                     };
                 @endphp
-                <a href="{{ route('orders.show', $order) }}" class="order-card-link" data-order-id="{{ $order->id }}">
+                <div class="order-card-link" data-order-id="{{ $order->id }}"
+                     data-href="{{ route('orders.show', $order) }}"
+                     onclick="if(!event.target.closest('.reorder-btn-wrap')){window.location.href=this.dataset.href}"
+                     style="cursor:pointer; text-decoration:none; display:block;">
                     <div class="card order-card">
                         <div class="card-body" style="padding:1.25rem;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
@@ -72,16 +75,26 @@
                                     &middot;
                                     <i class="fas fa-user" style="color:var(--gray-400);"></i> {{ $order->recipient_name }}
                                 </div>
-                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
                                     <span style="font-weight:700; font-size:1.05rem; color:var(--gray-900);">
                                         Rp {{ number_format($order->total, 0, ',', '.') }}
                                     </span>
+                                    {{-- Beli Lagi --}}
+                                    <div class="reorder-btn-wrap">
+                                        <form method="POST" action="{{ route('orders.reorder', $order) }}" style="margin:0;">
+                                            @csrf
+                                            <button type="submit" class="btn-reorder"
+                                                title="Tambahkan produk pesanan ini ke keranjang">
+                                                <i class="fas fa-redo-alt"></i> Beli Lagi
+                                            </button>
+                                        </form>
+                                    </div>
                                     <span class="order-card-arrow"><i class="fas fa-chevron-right"></i></span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </a>
+                </div>
             @endforeach
         </div>
 
@@ -158,6 +171,25 @@
 .order-card-link:hover .order-card-arrow {
     color: var(--primary);
     transform: translateX(3px);
+}
+.btn-reorder {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--primary);
+    background: var(--white);
+    color: var(--primary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+.btn-reorder:hover {
+    background: var(--primary);
+    color: #fff;
 }
 </style>
 @endpush

@@ -38,6 +38,15 @@ class PaymentController extends Controller
                 ->with('info', 'Pesanan ini tidak memerlukan pembayaran.');
         }
 
+        // Server-side deadline check: auto-expire if time has passed
+        $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
+        if (now()->gt($deadline)) {
+            $this->restoreStock($order);
+            $order->update(['status' => 'expired', 'status_read_at' => null]);
+            return redirect()->route('orders.show', $order)
+                ->with('info', 'Waktu pembayaran telah habis. Aktifkan kembali pesanan untuk melanjutkan.');
+        }
+
         $order->load(['items.product', 'shippingCost']);
 
         return view('customer.payment.index', compact('order'));
@@ -52,6 +61,14 @@ class PaymentController extends Controller
 
         if (!in_array($order->status, ['pending', 'waiting_payment'])) {
             return response()->json(['error' => 'Pesanan tidak dapat dibayar.'], 422);
+        }
+
+        // Server-side deadline check
+        $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
+        if (now()->gt($deadline)) {
+            $this->restoreStock($order);
+            $order->update(['status' => 'expired', 'status_read_at' => null]);
+            return response()->json(['error' => 'Waktu pembayaran telah habis.'], 422);
         }
 
         $method = $request->input('method', 'all'); // bca_va | gopay | qris | all
@@ -225,6 +242,7 @@ class PaymentController extends Controller
 
                 if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
                     if (in_array($order->status, ['pending', 'waiting_payment'])) {
+                        $this->restoreStock($order);
                         $order->update(['status' => 'cancelled', 'status_read_at' => null]);
                     }
                 }
@@ -301,11 +319,11 @@ class PaymentController extends Controller
                 $payment->update(['transaction_status' => $transactionStatus]);
                 // Only cancel if not yet processing (stock not yet deducted)
                 if (in_array($order->status, ['pending', 'waiting_payment'])) {
+                    $this->restoreStock($order); // return reserved stock
                     $order->update([
                         'status'         => 'cancelled',
                         'status_read_at' => null,
                     ]);
-                    // No stock restore needed — stock was never deducted
                 }
             } elseif ($transactionStatus === 'pending') {
                 $payment->update(['transaction_status' => 'pending']);
@@ -336,14 +354,7 @@ class PaymentController extends Controller
             return;
         }
 
-        // Deduct stock now that payment is confirmed
-        $order->load('items.product');
-        foreach ($order->items as $item) {
-            if ($item->product) {
-                $item->product->decrement('stock', $item->quantity);
-            }
-        }
-
+        // Stock was already reserved at checkout — no deduction needed here
         $order->update([
             'status'         => 'processing',
             'status_read_at' => null,
@@ -352,11 +363,15 @@ class PaymentController extends Controller
 
     private function restoreStock(Order $order): void
     {
-        $order->load('items.product');
+        $order->load('items.product.productUnits');
         foreach ($order->items as $item) {
-            if ($item->product) {
-                $item->product->increment('stock', $item->quantity);
+            if (!$item->product) continue;
+            $conv = 1;
+            if ($item->unit && $item->unit !== $item->product->unit) {
+                $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
+                if ($pu) $conv = (int) $pu->conversion_value;
             }
+            $item->product->increment('stock', $item->quantity * $conv);
         }
     }
 }
