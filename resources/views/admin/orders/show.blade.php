@@ -60,7 +60,9 @@
                 </h3>
                 <div style="font-size:0.9rem; color:var(--gray-600); line-height:1.6;">
                     <strong>{{ $order->recipient_name }}</strong><br>
-                    {{ $order->recipient_phone }}<br>
+                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->recipient_phone) }}" target="_blank" rel="noopener noreferrer" style="color:var(--success); text-decoration:none; font-weight:600;">
+                        <i class="fab fa-whatsapp"></i> {{ $order->recipient_phone }}
+                    </a><br>
                     {{ $order->shipping_address }}<br>
                     <span style="color:var(--primary); font-weight:600;">{{ $order->shipping_name }}</span>
                     @if($order->shippingCost && $order->shippingCost->estimation)
@@ -234,6 +236,43 @@
                     Pesanan ini sudah <strong>{{ $order->status_label }}</strong> dan tidak dapat diubah.
                 </div>
             </div>
+            @if($order->status === 'cancelled' && $order->payment && $order->payment->isPaid())
+                @php
+                    $invoiceLines = "*INVOICE PEMBATALAN*\n";
+                    $invoiceLines .= "========================\n";
+                    $invoiceLines .= "No. Invoice: {$order->invoice_number}\n";
+                    $invoiceLines .= "Tanggal Pesan: {$order->created_at->format('d M Y, H:i')}\n";
+                    $invoiceLines .= "Pelanggan: {$order->user->name}\n";
+                    $invoiceLines .= "No. HP: {$order->recipient_phone}\n";
+                    $invoiceLines .= "Alamat: {$order->shipping_address}\n";
+                    $invoiceLines .= "========================\n";
+                    $invoiceLines .= "*Detail Produk:*\n";
+                    foreach($order->items as $item) {
+                        $invoiceLines .= "- {$item->product_name} ({$item->quantity} x Rp " . number_format($item->product_price, 0, ',', '.') . ") = Rp " . number_format($item->subtotal, 0, ',', '.') . "\n";
+                    }
+                    $invoiceLines .= "========================\n";
+                    $invoiceLines .= "Subtotal: Rp " . number_format($order->subtotal, 0, ',', '.') . "\n";
+                    if($order->discount_amount > 0) {
+                        $invoiceLines .= "Diskon Voucher: -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
+                    }
+                    if($order->points_discount > 0) {
+                        $invoiceLines .= "Diskon Poin ({$order->points_used} poin): -Rp " . number_format($order->points_discount, 0, ',', '.') . "\n";
+                    }
+                    $invoiceLines .= "Ongkos Kirim: Rp " . number_format($order->shipping_fee, 0, ',', '.') . "\n";
+                    $invoiceLines .= "*Total: Rp " . number_format($order->total, 0, ',', '.') . "*\n";
+                    $invoiceLines .= "========================\n";
+                    $invoiceLines .= "Metode Bayar: " . strtoupper(str_replace('_', ' ', $order->payment->payment_type ?? '-')) . "\n";
+                    $invoiceLines .= "Status: DIBATALKAN\n";
+                    $invoiceLines .= "\nMohon diproses refund untuk pesanan di atas. Terima kasih.";
+                @endphp
+                <div style="margin-top:0.75rem;">
+                    <a href="https://wa.me/6282294777070?text={{ urlencode($invoiceLines) }}"
+                       target="_blank" rel="noopener noreferrer"
+                       style="display:flex; align-items:center; justify-content:center; gap:0.5rem; width:100%; padding:0.7rem 1rem; background:white; color:var(--primary); border:2px solid var(--primary); border-radius:var(--radius); font-weight:600; font-size:0.875rem; text-decoration:none; transition:var(--transition);">
+                        <i class="fab fa-whatsapp" style="font-size:1.2rem;"></i> Kirim Invoice Pembatalan ke Accounting
+                    </a>
+                </div>
+            @endif
         @endif
     </div>
 </div>

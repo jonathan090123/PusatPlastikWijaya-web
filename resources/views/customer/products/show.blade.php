@@ -82,11 +82,13 @@
                         <span class="qty-label">Satuan:</span>
                         <div class="unit-options" id="unitOptions">
                             @foreach($availableUnits as $u)
+                            @php $maxForUnit = floor($product->stock / $u['conversion_value']); @endphp
                             <button type="button"
-                                class="unit-btn {{ $loop->first ? 'active' : '' }}"
+                                class="unit-btn {{ $loop->first ? 'active' : '' }}{{ $maxForUnit < 1 ? ' disabled' : '' }}"
                                 data-unit="{{ $u['unit'] }}"
                                 data-price="{{ $u['price'] }}"
-                                data-conversion="{{ $u['conversion_value'] }}">
+                                data-conversion="{{ $u['conversion_value'] }}"
+                                {{ $maxForUnit < 1 ? 'disabled' : '' }}>
                                 {{ $u['unit'] }}
                                 @if($u['conversion_value'] > 1)
                                     <small>({{ $u['conversion_value'] }} {{ $availableUnits[0]['unit'] }})</small>
@@ -107,7 +109,7 @@
                         <span class="qty-label">Jumlah:</span>
                         <div class="quantity-control">
                             <button type="button" class="qty-btn" id="qtyMinus"><i class="fas fa-minus"></i></button>
-                            <input type="number" id="quantity" value="1" min="1" max="{{ $product->stock }}" readonly>
+                            <input type="number" id="quantity" value="1" min="1" max="{{ $product->stock }}">
                             <button type="button" class="qty-btn" id="qtyPlus"><i class="fas fa-plus"></i></button>
                         </div>
                         <span id="stockHint" class="stock-hint">Stok: {{ $product->stock }} {{ $product->unit }}</span>
@@ -328,6 +330,17 @@
     color: var(--white);
 }
 .unit-btn.active small { color: rgba(255,255,255,0.8); }
+.unit-btn.disabled, .unit-btn:disabled {
+    background: var(--gray-100);
+    color: var(--gray-400);
+    border-color: var(--gray-200);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+.unit-btn.disabled:hover, .unit-btn:disabled:hover {
+    border-color: var(--gray-200);
+    color: var(--gray-400);
+}
 .selected-price-display {
     background: var(--gray-50);
     border: 1px solid var(--gray-100);
@@ -390,6 +403,12 @@
     font-weight: 600;
     color: var(--gray-800);
     background: var(--white);
+    -moz-appearance: textfield;
+}
+.quantity-control input::-webkit-outer-spin-button,
+.quantity-control input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 .action-buttons {
     display: grid;
@@ -445,14 +464,22 @@ const priceDisplay = document.getElementById('selectedPrice');
 const priceLabel   = document.querySelector('.selected-price-label');
 
 let currentConversion = 1; // how many base units per 1 selected unit
+let currentUnitPrice  = {{ $availableUnits[0]['price'] }};
 
 function maxQtyForConversion(conv) {
     return Math.max(1, Math.floor(baseStock / conv));
 }
 
+function updatePriceDisplay() {
+    const qty = parseInt(qtyInput.value) || 1;
+    const total = currentUnitPrice * qty;
+    priceDisplay.textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
+
 // Unit selector
 document.querySelectorAll('.unit-btn').forEach(btn => {
     btn.addEventListener('click', function () {
+        if (this.disabled) return;
         document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
 
@@ -461,13 +488,14 @@ document.querySelectorAll('.unit-btn').forEach(btn => {
         const conv  = parseInt(this.dataset.conversion);
 
         currentConversion = conv;
+        currentUnitPrice = price;
         selectedUnit.value = unit;
-        priceDisplay.textContent = 'Rp ' + price.toLocaleString('id-ID');
         if (priceLabel) priceLabel.textContent = 'Harga / ' + unit + ':';
 
         const maxQty = maxQtyForConversion(conv);
         qtyInput.max   = maxQty;
         qtyInput.value = 1;
+        updatePriceDisplay();
         if (stockHint) {
             stockHint.textContent = conv > 1
                 ? `Stok: ${baseStock} ${baseUnit} (maks ${maxQty} ${unit})`
@@ -478,13 +506,28 @@ document.querySelectorAll('.unit-btn').forEach(btn => {
 
 document.getElementById('qtyMinus')?.addEventListener('click', () => {
     let val = parseInt(qtyInput.value);
-    if (val > 1) qtyInput.value = val - 1;
+    if (val > 1) {
+        qtyInput.value = val - 1;
+        updatePriceDisplay();
+    }
 });
 
 document.getElementById('qtyPlus')?.addEventListener('click', () => {
     let val = parseInt(qtyInput.value);
     const maxQty = maxQtyForConversion(currentConversion);
-    if (val < maxQty) qtyInput.value = val + 1;
+    if (val < maxQty) {
+        qtyInput.value = val + 1;
+        updatePriceDisplay();
+    }
+});
+
+qtyInput.addEventListener('input', () => {
+    const maxQty = maxQtyForConversion(currentConversion);
+    let val = parseInt(qtyInput.value);
+    if (isNaN(val) || val < 1) val = 1;
+    if (val > maxQty) val = maxQty;
+    qtyInput.value = val;
+    updatePriceDisplay();
 });
 
 function addToCartRequest(productId, quantity, unit, onSuccess, onError) {
