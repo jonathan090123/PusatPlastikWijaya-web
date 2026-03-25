@@ -55,7 +55,19 @@
                 @enderror
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:1rem;">
+            <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:1rem;">
+                <div class="form-group">
+                    <label><i class="fas fa-balance-scale"></i> Satuan Dasar <span style="color:var(--danger);">*</span></label>
+                    <select name="unit" id="baseUnit" class="{{ $errors->has('unit') ? 'is-invalid' : '' }}" required>
+                        @foreach(['KG','PAK','ROL','PCS','BH','SAP','P100','BAL','IKT','DOS','PRS'] as $u)
+                            <option value="{{ $u }}" {{ old('unit', $product->unit) == $u ? 'selected' : '' }}>{{ $u }}</option>
+                        @endforeach
+                    </select>
+                    @error('unit')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
                 <div class="form-group">
                     <label><i class="fas fa-money-bill"></i> Harga (Rp) <span style="color:var(--danger);">*</span></label>
                     <input type="number" name="price" value="{{ old('price', $product->price) }}" min="0" step="100" required>
@@ -73,8 +85,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label><i class="fas fa-weight-hanging"></i> Berat (gram) <span style="color:var(--danger);">*</span></label>
-                    <input type="number" name="weight" value="{{ old('weight', $product->weight) }}" min="0" step="1" required>
+                    <label><i class="fas fa-weight-hanging"></i> Berat (gram)</label>
+                    <input type="number" name="weight" value="{{ old('weight', $product->weight) }}" min="0" step="1">
                     @error('weight')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
@@ -95,6 +107,40 @@
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
+            </div>
+
+            {{-- Satuan Konversi --}}
+            <div class="form-group">
+                <label><i class="fas fa-layer-group"></i> Satuan Konversi
+                    <small style="font-weight:normal; color:var(--gray-400);">(opsional — mis. BAL, IKT, DOS)</small>
+                </label>
+                <div id="conversionUnitsContainer" style="display:flex; flex-direction:column; gap:0.5rem;">
+                    @php
+                        $cuUnits = ['KG','PAK','ROL','PCS','BH','SAP','P100','BAL','IKT','DOS','PRS'];
+                        $existingUnits = old('conversion_units') ? collect(old('conversion_units')) : $product->productUnits;
+                    @endphp
+                    @foreach($existingUnits as $i => $cu)
+                    @php
+                        $cuUnit  = is_array($cu) ? ($cu['unit'] ?? '') : $cu->unit;
+                        $cuConv  = is_array($cu) ? ($cu['conversion_value'] ?? '') : $cu->conversion_value;
+                        $cuPrice = is_array($cu) ? ($cu['price'] ?? '') : $cu->price;
+                    @endphp
+                    <div class="cu-row" style="display:grid; grid-template-columns:110px 1fr 1fr auto; gap:0.5rem; align-items:center;">
+                        <select name="conversion_units[{{ $i }}][unit]">
+                            @foreach($cuUnits as $u)
+                                <option value="{{ $u }}" {{ $cuUnit == $u ? 'selected' : '' }}>{{ $u }}</option>
+                            @endforeach
+                        </select>
+                        <input type="number" name="conversion_units[{{ $i }}][conversion_value]" value="{{ $cuConv }}" placeholder="1 satuan ini = ? satuan dasar" min="1">
+                        <input type="number" name="conversion_units[{{ $i }}][price]" value="{{ $cuPrice }}" placeholder="Harga satuan ini (Rp)" min="0" step="100">
+                        <button type="button" onclick="this.closest('.cu-row').remove()" class="btn btn-icon btn-danger" title="Hapus"><i class="fas fa-times"></i></button>
+                    </div>
+                    @endforeach
+                </div>
+                <button type="button" id="addConvUnit" class="btn btn-secondary btn-sm" style="margin-top:0.5rem;">
+                    <i class="fas fa-plus"></i> Tambah Satuan Konversi
+                </button>
+                <small style="display:block; margin-top:0.375rem; color:var(--gray-400);">Contoh: BAL &bull; nilai konversi 25 (1 BAL = 25 KG) &bull; harga Rp 675.000</small>
             </div>
 
             <div class="form-group">
@@ -145,6 +191,27 @@ document.getElementById('imageInput').addEventListener('change', function(e) {
     } else {
         preview.style.display = 'none';
     }
+});
+
+// Satuan Konversi - dynamic rows
+const cuUnits = ['KG','PAK','ROL','PCS','BH','SAP','P100','BAL','IKT','DOS','PRS'];
+let cuIndex = document.querySelectorAll('#conversionUnitsContainer .cu-row').length;
+
+document.getElementById('addConvUnit').addEventListener('click', function() {
+    const container = document.getElementById('conversionUnitsContainer');
+    const row = document.createElement('div');
+    row.className = 'cu-row';
+    row.style.cssText = 'display:grid; grid-template-columns:110px 1fr 1fr auto; gap:0.5rem; align-items:center;';
+    row.innerHTML = `
+        <select name="conversion_units[${cuIndex}][unit]">
+            ${cuUnits.map(u => `<option value="${u}">${u}</option>`).join('')}
+        </select>
+        <input type="number" name="conversion_units[${cuIndex}][conversion_value]" placeholder="1 satuan ini = ? satuan dasar" min="1">
+        <input type="number" name="conversion_units[${cuIndex}][price]" placeholder="Harga satuan ini (Rp)" min="0" step="100">
+        <button type="button" onclick="this.closest('.cu-row').remove()" class="btn btn-icon btn-danger" title="Hapus"><i class="fas fa-times"></i></button>
+    `;
+    container.appendChild(row);
+    cuIndex++;
 });
 </script>
 @endpush

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductUnit;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -46,22 +47,28 @@ class AdminProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'product_code' => 'nullable|string|max:50|unique:products,product_code',
-            'category_id' => 'required|exists:categories,id',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'weight' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'stock_alert' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'is_active' => 'boolean',
+            'name'                              => 'required|string|max:255',
+            'product_code'                      => 'nullable|string|max:50|unique:products,product_code',
+            'category_id'                       => 'required|exists:categories,id',
+            'description'                       => 'nullable|string',
+            'unit'                              => 'required|string|max:20',
+            'price'                             => 'required|numeric|min:0',
+            'discount_price'                    => 'nullable|numeric|min:0',
+            'weight'                            => 'nullable|numeric|min:0',
+            'stock'                             => 'required|integer|min:0',
+            'stock_alert'                       => 'required|integer|min:0',
+            'image'                             => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'is_active'                         => 'boolean',
+            'conversion_units'                  => 'nullable|array',
+            'conversion_units.*.unit'           => 'required|string|max:20',
+            'conversion_units.*.conversion_value' => 'required|integer|min:1',
+            'conversion_units.*.price'          => 'required|numeric|min:0',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
         $validated['is_active'] = $request->has('is_active');
         $validated['discount_price'] = $request->filled('discount_price') ? $request->discount_price : null;
+        $validated['weight'] = $validated['weight'] ?? 0;
 
         // Ensure unique slug
         $originalSlug = $validated['slug'];
@@ -74,7 +81,20 @@ class AdminProductController extends Controller
             $validated['image'] = $request->file('image')->store('products', 'public');
         }
 
-        Product::create($validated);
+        $product = Product::create($validated);
+
+        // Save satuan konversi
+        if ($request->filled('conversion_units')) {
+            foreach ($request->conversion_units as $cu) {
+                if (!empty($cu['unit']) && !empty($cu['conversion_value']) && isset($cu['price'])) {
+                    $product->productUnits()->create([
+                        'unit'             => $cu['unit'],
+                        'conversion_value' => (int) $cu['conversion_value'],
+                        'price'            => $cu['price'],
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Produk berhasil ditambahkan!');
@@ -82,6 +102,7 @@ class AdminProductController extends Controller
 
     public function edit(Product $product)
     {
+        $product->load('productUnits');
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         return view('admin.products.edit', compact('product', 'categories'));
     }
@@ -89,22 +110,28 @@ class AdminProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'product_code' => 'nullable|string|max:50|unique:products,product_code,' . $product->id,
-            'category_id' => 'required|exists:categories,id',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'weight' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'stock_alert' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'is_active' => 'boolean',
+            'name'                              => 'required|string|max:255',
+            'product_code'                      => 'nullable|string|max:50|unique:products,product_code,' . $product->id,
+            'category_id'                       => 'required|exists:categories,id',
+            'description'                       => 'nullable|string',
+            'unit'                              => 'required|string|max:20',
+            'price'                             => 'required|numeric|min:0',
+            'discount_price'                    => 'nullable|numeric|min:0',
+            'weight'                            => 'nullable|numeric|min:0',
+            'stock'                             => 'required|integer|min:0',
+            'stock_alert'                       => 'required|integer|min:0',
+            'image'                             => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'is_active'                         => 'boolean',
+            'conversion_units'                  => 'nullable|array',
+            'conversion_units.*.unit'           => 'required|string|max:20',
+            'conversion_units.*.conversion_value' => 'required|integer|min:1',
+            'conversion_units.*.price'          => 'required|numeric|min:0',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
         $validated['is_active'] = $request->has('is_active');
         $validated['discount_price'] = $request->filled('discount_price') ? $request->discount_price : null;
+        $validated['weight'] = $validated['weight'] ?? 0;
 
         // Ensure unique slug (exclude current product)
         $originalSlug = $validated['slug'];
@@ -121,6 +148,20 @@ class AdminProductController extends Controller
         }
 
         $product->update($validated);
+
+        // Sync satuan konversi
+        $product->productUnits()->delete();
+        if ($request->filled('conversion_units')) {
+            foreach ($request->conversion_units as $cu) {
+                if (!empty($cu['unit']) && !empty($cu['conversion_value']) && isset($cu['price'])) {
+                    $product->productUnits()->create([
+                        'unit'             => $cu['unit'],
+                        'conversion_value' => (int) $cu['conversion_value'],
+                        'price'            => $cu['price'],
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Produk berhasil diperbarui!');
