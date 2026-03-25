@@ -310,6 +310,21 @@
 @media (max-width: 768px) {
     .hero-content h1 { font-size: 1.6rem; }
     .section-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .categories-grid { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .hero-section { padding: 2.5rem 0; }
+    .promo-heading-title { font-size: 1.3rem; }
+}
+@media (max-width: 480px) {
+    .hero-content h1 { font-size: 1.3rem; }
+    .hero-content p { font-size: 0.9rem; margin-bottom: 1.25rem; }
+    .hero-section { padding: 1.75rem 0; }
+    .categories-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .category-card-body { padding: 0.4rem 0.5rem 0.5rem; }
+    .category-card h3 { font-size: 0.78rem; }
+    .promo-heading-title { font-size: 1.15rem; }
+    .promo-fire { font-size: 2rem; }
+    .promo-saving { font-size: 0.68rem; }
+    .section { padding: 1.25rem 0; }
 }
 </style>
 @endpush

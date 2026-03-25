@@ -191,5 +191,29 @@
     background: var(--primary);
     color: #fff;
 }
+
+@media (max-width: 768px) {
+    /* Order item chips: limit max-width for small screens */
+    .order-card .card-body div[style*="max-width:110px"] {
+        max-width: 90px !important;
+    }
+    .btn-reorder { padding: 0.4rem 0.65rem; font-size: 0.75rem; }
+}
+@media (max-width: 480px) {
+    /* Stack invoice + date vertically */
+    .order-card .card-body div[style*="display:flex; justify-content:space-between"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.35rem !important;
+    }
+    /* Smaller product chip images */
+    .order-card img[style*="width:32px"] {
+        width: 26px !important;
+        height: 26px !important;
+    }
+    /* Tighten card padding */
+    .order-card .card-body { padding: 0.9rem !important; }
+    .order-card .card-body div[style*="font-size:1.05rem"] { font-size: 0.95rem !important; }
+}
 </style>
 @endpush

@@ -10,9 +10,18 @@
         <p>Temukan produk plastik berkualitas dengan harga terbaik</p>
     </div>
 
+    {{-- Mobile filter toggle --}}
+    <button class="filter-toggle-btn" id="filterToggleBtn" aria-expanded="false">
+        <i class="fas fa-filter"></i> Filter & Urutkan
+        @if(request('category') || request('sort') && request('sort') !== 'terbaru')
+            <span class="filter-active-dot"></span>
+        @endif
+        <i class="fas fa-chevron-down filter-toggle-icon" id="filterToggleIcon"></i>
+    </button>
+
     <div class="catalog-layout">
         {{-- Sidebar Filters --}}
-        <aside class="catalog-sidebar">
+        <aside class="catalog-sidebar" id="catalogSidebar">
             <div class="filter-card">
                 <h3><i class="fas fa-filter"></i> Filter</h3>
 
@@ -328,20 +337,98 @@
     justify-content: center;
 }
 
+/* Mobile filter toggle button — hidden on desktop */
+.filter-toggle-btn {
+    display: none;
+    width: 100%;
+    padding: 0.65rem 1rem;
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    cursor: pointer;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow-sm);
+}
+.filter-active-dot {
+    width: 8px; height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    display: inline-block;
+}
+.filter-toggle-icon {
+    margin-left: auto;
+    transition: transform 0.25s;
+}
+.filter-toggle-btn[aria-expanded="true"] .filter-toggle-icon {
+    transform: rotate(180deg);
+}
+
 @media (max-width: 768px) {
+    .filter-toggle-btn { display: inline-flex; }
     .catalog-layout {
         grid-template-columns: 1fr;
     }
     .catalog-sidebar {
         order: -1;
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.3s ease;
+    }
+    .catalog-sidebar.open {
+        max-height: 1000px;
     }
     .filter-card {
         position: static;
+        margin-bottom: 0.5rem;
     }
     .products-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
     }
 }
+@media (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+    .catalog-header h1 { font-size: 1.3rem; }
+    .catalog-header p { font-size: 0.82rem; }
+}
 </style>
+@endpush
+
+@push('scripts')
+<script>
+(function () {
+    var btn     = document.getElementById('filterToggleBtn');
+    var sidebar = document.getElementById('catalogSidebar');
+    if (!btn || !sidebar) return;
+
+    // On load: open sidebar if screen >= 769px
+    function checkOpen() {
+        if (window.innerWidth >= 769) {
+            sidebar.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+        } else {
+            // Keep closed unless filter is active
+            var hasActive = btn.querySelector('.filter-active-dot');
+            if (hasActive) {
+                sidebar.classList.add('open');
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        }
+    }
+    checkOpen();
+
+    btn.addEventListener('click', function () {
+        var isOpen = sidebar.classList.toggle('open');
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+})();
+</script>
 @endpush

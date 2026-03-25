@@ -280,6 +280,20 @@
     .summary-card {
         position: static;
     }
+    .cart-item-subtotal {
+        min-width: unset;
+        font-size: 0.95rem;
+    }
+    /* Enlarge qty buttons for touch */
+    .qty-btn { width: 40px; height: 40px; font-size: 0.85rem; }
+    .cart-qty-input { height: 40px; width: 44px; }
+}
+@media (max-width: 480px) {
+    .cart-header h1 { font-size: 1.2rem; }
+    .cart-item { padding: 0.85rem; gap: 0.75rem; }
+    .cart-item-image { width: 60px; height: 60px; }
+    .cart-item-name { font-size: 0.85rem; }
+    .summary-card { padding: 1rem; }
 }
 </style>
 @endpush

@@ -526,8 +526,17 @@ a.summary-item-name:hover {
     .checkout-right { position: static; }
     .summary-items { max-height: none; }
 }
+@media (max-width: 768px) {
+    .form-grid-2 { grid-template-columns: 1fr; }
+    .shipping-option { flex-wrap: wrap; gap: 0.5rem; }
+    .qty-btn { width: 32px; height: 32px; }
+}
 @media (max-width: 576px) {
     .form-grid-2 { grid-template-columns: 1fr; }
+    .summary-items { max-height: none; }
+    .summary-item { gap: 0.5rem; }
+    .summary-item-img { width: 36px; height: 36px; }
+    .city-option { font-size: 0.82rem; padding: 0.55rem 0.75rem; }
 }
 </style>
 @endpush

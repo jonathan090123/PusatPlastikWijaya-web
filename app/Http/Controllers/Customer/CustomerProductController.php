@@ -29,7 +29,10 @@ class CustomerProductController extends Controller
             });
         }
 
-        // Sorting
+        // Produk promo selalu muncul lebih dahulu (berlaku di semua sort)
+        $query->orderByRaw('CASE WHEN discount_price IS NOT NULL AND discount_price < price THEN 0 ELSE 1 END ASC');
+
+        // Sorting sekunder sesuai pilihan user
         $sort = $request->get('sort', 'terbaru');
         switch ($sort) {
             case 'harga-rendah':

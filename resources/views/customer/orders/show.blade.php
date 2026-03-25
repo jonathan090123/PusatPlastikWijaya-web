@@ -244,13 +244,13 @@
             </div>
 
             {{-- Hubungi Admin via WhatsApp --}}
-            <div class="card" style="margin-top:1rem; border-left:4px solid #25d366; background:var(--white);">
+            <div class="card" style="margin-top:1rem; background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);">
                 <div class="card-body" style="padding:1rem 1.25rem;">
                     <div style="font-size:0.82rem; color:var(--gray-700); margin-bottom:0.65rem;">
-                        <div style="font-weight:700; color:var(--gray-800); margin-bottom:0.15rem;">
-                            <i class="fas fa-headset" style="color:#25d366;"></i> Butuh bantuan?
+                        <div style="font-weight:700; color:var(--primary); margin-bottom:0.15rem;">
+                            <i class="fas fa-headset" style="color:var(--primary);"></i> Butuh bantuan?
                         </div>
-                        Ada pertanyaan tentang pesanan ini?
+                        Ada pertanyaan tentang pesanan ini? Hubungi admin kami.
                     </div>
                     <a href="https://wa.me/6282294777070?text={{ urlencode('Halo admin, saya ingin menanyakan pesanan saya dengan no. ' . $order->invoice_number) }}"
                        target="_blank" rel="noopener noreferrer"
@@ -298,7 +298,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    background: #25d366;
+    background: var(--primary);
     color: #fff;
     font-weight: 700;
     border-radius: var(--radius);
@@ -306,17 +306,23 @@
     font-size: 0.88rem;
     text-decoration: none;
     transition: background 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 8px rgba(37,211,102,0.3);
+    box-shadow: 0 2px 8px rgba(37,99,235,0.25);
 }
 .btn-wa-admin:hover {
-    background: #1da851;
-    box-shadow: 0 4px 14px rgba(37,211,102,0.45);
+    background: var(--primary-dark);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.4);
     color: #fff;
 }
 @media (max-width: 768px) {
-    .admin-content > div > div[style*="grid-template-columns"] {
+    /* Collapse the 1fr 350px grid to single column */
+    div[style*="grid-template-columns:1fr 350px"],
+    div[style*="grid-template-columns: 1fr 350px"] {
         grid-template-columns: 1fr !important;
     }
+}
+@media (max-width: 480px) {
+    .btn-wa-admin { font-size: 0.82rem; padding: 0.6rem 1rem; }
+    .page-header h1 { font-size: 1.15rem; }
 }
 </style>
 @endpush

@@ -882,8 +882,8 @@ table tbody tr:hover { background: var(--gray-50); }
 /* --- Product Cards --- */
 .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 0.875rem;
 }
 .product-card {
     background: var(--white);
@@ -898,7 +898,7 @@ table tbody tr:hover { background: var(--gray-50); }
     box-shadow: var(--shadow-lg);
 }
 .product-card-image {
-    height: 240px;
+    height: 160px;
     overflow: hidden;
     background: var(--gray-100);
 }
@@ -926,7 +926,7 @@ table tbody tr:hover { background: var(--gray-50); }
     cursor: zoom-out !important;
 }
 .product-card-body {
-    padding: 1rem;
+    padding: 0.6rem 0.75rem 0.75rem;
 }
 .product-card-category {
     font-size: 0.7rem;
@@ -937,17 +937,17 @@ table tbody tr:hover { background: var(--gray-50); }
     margin-bottom: 0.35rem;
 }
 .product-card-name {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--gray-800);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 .product-card-price {
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--primary);
 }
@@ -1021,7 +1021,48 @@ table tbody tr:hover { background: var(--gray-50); }
     .auth-card { padding: 1.5rem; }
 }
 
+@media (max-width: 768px) {
+    /* Product grid: 3 kolom di tablet */
+    .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+    .product-card-image { height: 120px; }
+
+    /* Touch target improvement pada semua tombol qty */
+    .qty-btn { width: 40px; height: 40px; min-width: 40px; }
+
+    /* Alert: full lebar di mobile */
+    .alert {
+        left: 1rem;
+        right: 1rem;
+        max-width: calc(100vw - 2rem);
+        top: 4.75rem;
+    }
+
+    /* Page header jadi column di mobile */
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
 @media (max-width: 480px) {
-    .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-    .product-card-image { height: 140px; }
+    /* Product grid: 2 kolom di HP kecil */
+    .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .product-card-image { height: 100px; }
+    .product-card-name { font-size: 0.75rem; }
+    .product-card-price { font-size: 0.78rem; }
+
+    /* Navbar brand hide text, keep logo */
+    .navbar-brand-text { display: none; }
+
+    /* Alert full width */
+    .alert {
+        left: 0.5rem;
+        right: 0.5rem;
+        max-width: calc(100vw - 1rem);
+        font-size: 0.82rem;
+    }
 }
