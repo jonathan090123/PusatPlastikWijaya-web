@@ -290,6 +290,29 @@
 </style>
 @endif
 
+{{-- ── Cancel Confirmation Modal ── --}}
+<div id="cancelModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:#fff; border-radius:14px; padding:2rem 1.75rem 1.75rem; max-width:360px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.15); animation:cancelPopIn 0.25s cubic-bezier(0.34,1.56,0.64,1);">
+        <div style="width:52px; height:52px; border-radius:50%; background:#fef2f2; border:2px solid #fecaca; display:flex; align-items:center; justify-content:center; margin:0 auto 1.1rem;">
+            <i class="fas fa-times" style="color:#ef4444; font-size:1.2rem;"></i>
+        </div>
+        <h3 style="font-size:1.1rem; font-weight:800; color:#111827; margin-bottom:0.45rem;">Batalkan Pesanan?</h3>
+        <p style="font-size:0.85rem; color:#6b7280; line-height:1.65; margin-bottom:1.5rem;">
+            Pesanan <strong style="color:#111827;">{{ $order->invoice_number }}</strong> akan dibatalkan secara permanen.
+        </p>
+        <div style="display:flex; gap:0.65rem;">
+            <button type="button" id="cancelModalClose"
+                style="flex:1; padding:0.65rem; border-radius:8px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:700; font-size:0.88rem; cursor:pointer;">
+                Tidak
+            </button>
+            <button type="button" id="cancelModalConfirm"
+                style="flex:1; padding:0.65rem; border-radius:8px; border:none; background:#ef4444; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer;">
+                Ya, Batalkan
+            </button>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('styles')
@@ -313,6 +336,10 @@
     box-shadow: 0 4px 14px rgba(37,99,235,0.4);
     color: #fff;
 }
+@keyframes cancelPopIn {
+    from { opacity:0; transform:scale(0.9); }
+    to   { opacity:1; transform:scale(1); }
+}
 @media (max-width: 768px) {
     /* Collapse the 1fr 350px grid to single column */
     div[style*="grid-template-columns:1fr 350px"],
@@ -335,11 +362,27 @@
     var cancelBtn    = document.getElementById('cancelBtn');
     var cancelForm   = document.getElementById('cancelForm');
 
-    if (cancelBtn && cancelForm) {
+    var cancelModal        = document.getElementById('cancelModal');
+    var cancelModalClose   = document.getElementById('cancelModalClose');
+    var cancelModalConfirm = document.getElementById('cancelModalConfirm');
+
+    if (cancelBtn && cancelModal) {
         cancelBtn.addEventListener('click', function () {
-            if (confirm('Yakin ingin membatalkan pesanan ini?')) {
-                cancelForm.submit();
-            }
+            cancelModal.style.display = 'flex';
+        });
+        cancelModalClose.addEventListener('click', function () {
+            cancelModal.style.display = 'none';
+        });
+        cancelModal.addEventListener('click', function (e) {
+            if (e.target === cancelModal) cancelModal.style.display = 'none';
+        });
+        cancelModalConfirm.addEventListener('click', function () {
+            this.disabled = true;
+            this.textContent = 'Membatalkan...';
+            cancelForm.submit();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') cancelModal.style.display = 'none';
         });
     }
 

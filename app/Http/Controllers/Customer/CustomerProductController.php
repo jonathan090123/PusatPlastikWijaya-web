@@ -57,6 +57,37 @@ class CustomerProductController extends Controller
         return view('customer.products.index', compact('products', 'categories'));
     }
 
+    public function suggest(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $products = Product::with('category')
+            ->where('is_active', true)
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'like', '%' . $q . '%')
+                      ->orWhere('product_code', 'like', '%' . $q . '%');
+            })
+            ->orderByRaw('CASE WHEN name LIKE ? THEN 0 ELSE 1 END', [$q . '%'])
+            ->limit(8)
+            ->get(['id', 'name', 'slug', 'image', 'price', 'discount_price', 'category_id']);
+
+        return response()->json($products->map(function ($p) {
+            $isPromo = $p->discount_price && $p->discount_price < $p->price;
+            return [
+                'name'           => $p->name,
+                'slug'           => $p->slug,
+                'category'       => $p->category->name ?? '',
+                'image'          => $p->image ? asset('storage/' . $p->image) : null,
+                'price'          => 'Rp ' . number_format($isPromo ? $p->discount_price : $p->price, 0, ',', '.'),
+                'price_original' => $isPromo ? 'Rp ' . number_format($p->price, 0, ',', '.') : null,
+                'is_promo'       => $isPromo,
+            ];
+        }));
+    }
+
     public function show($slug)
     {
         $product = Product::with(['category', 'productUnits'])

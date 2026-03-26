@@ -76,11 +76,14 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="topbar-search">
-                    <form action="{{ route('products.index') }}" method="GET">
-                        <div class="search-input-group">
+                    <form action="{{ route('products.index') }}" method="GET" id="topSearchForm" autocomplete="off">
+                        <div class="search-input-group" style="position:relative;">
                             <i class="fas fa-search"></i>
-                            <input type="text" name="search" placeholder="Cari produk..." value="{{ request('search') }}">
+                            <input type="text" name="search" id="topSearchInput"
+                                   placeholder="Cari produk..." value="{{ request('search') }}"
+                                   autocomplete="off">
                         </div>
+                        <div id="topSearchDropdown" class="search-suggest-dropdown" style="display:none;"></div>
                     </form>
                 </div>
                 <div class="topbar-right">
@@ -205,6 +208,280 @@
             .catch(() => {});
     </script>
     @stack('scripts')
+
+    {{-- Search Autocomplete --}}
+    <style>
+    .topbar-search { position: relative; }
+    .search-suggest-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.14);
+        border: 1px solid #e2e8f0;
+        z-index: 99999;
+        overflow: hidden;
+        max-height: 420px;
+        overflow-y: auto;
+    }
+    .ssd-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.65rem 1rem;
+        cursor: pointer;
+        transition: background 0.12s;
+        text-decoration: none;
+        color: inherit;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .ssd-item:last-child { border-bottom: none; }
+    .ssd-item:hover, .ssd-item.active { background: #eff6ff; }
+    .ssd-img {
+        width: 42px; height: 42px;
+        border-radius: 6px;
+        object-fit: cover;
+        background: #f1f5f9;
+        flex-shrink: 0;
+    }
+    .ssd-img-placeholder {
+        width: 42px; height: 42px;
+        border-radius: 6px;
+        background: #e2e8f0;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+    .ssd-info { flex: 1; min-width: 0; }
+    .ssd-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ssd-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.1rem;
+    }
+    .ssd-price-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.05rem;
+        flex-shrink: 0;
+    }
+    .ssd-price {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #2563eb;
+        white-space: nowrap;
+    }
+    .ssd-price.promo { color: #ef4444; }
+    .ssd-price-original {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        text-decoration: line-through;
+        white-space: nowrap;
+        font-weight: 400;
+    }
+    .ssd-footer {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+        color: #2563eb;
+        font-weight: 600;
+        background: #f8fafc;
+        cursor: pointer;
+        border-top: 1px solid #e2e8f0;
+    }
+    .ssd-footer:hover { background: #eff6ff; }
+    .ssd-empty {
+        padding: 1rem;
+        text-align: center;
+        font-size: 0.83rem;
+        color: #94a3b8;
+    }
+    </style>
+    <script>
+    (function () {
+        const input    = document.getElementById('topSearchInput');
+        const dropdown = document.getElementById('topSearchDropdown');
+        const form     = document.getElementById('topSearchForm');
+        if (!input || !dropdown) return;
+
+        const SUGGEST_URL = '{{ route("products.suggest") }}';
+        const SEARCH_URL  = '{{ route("products.index") }}';
+        let timer = null;
+        let activeIdx = -1;
+
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function highlight(text, query) {
+            if (!query) return escHtml(text);
+            const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return escHtml(text).replace(new RegExp('(' + escaped + ')', 'gi'),
+                '<mark style="background:#dbeafe;color:#1d4ed8;border-radius:2px;padding:0 1px;">$1</mark>');
+        }
+
+        function renderDropdown(items, query) {
+            if (!items.length) {
+                dropdown.innerHTML = '<div class="ssd-empty"><i class="fas fa-search" style="margin-right:0.4rem;"></i>Produk tidak ditemukan</div>';
+                dropdown.style.display = 'block';
+                return;
+            }
+            let html = '';
+            items.forEach(function (p, i) {
+                const imgHtml = p.image
+                    ? '<img class="ssd-img" src="' + p.image + '" alt="" loading="lazy">'
+                    : '<div class="ssd-img-placeholder"><i class="fas fa-box"></i></div>';
+                html += '<a class="ssd-item" href="' + SEARCH_URL + '?search=' + encodeURIComponent(p.name) + '" data-slug="' + p.slug + '">'
+                    + imgHtml
+                    + '<div class="ssd-info">'
+                    +   '<div class="ssd-name">' + highlight(p.name, query) + '</div>'
+                    +   '<div class="ssd-meta">' + escHtml(p.category) + '</div>'
+                    + '</div>'
+                    + '<div class="ssd-price-wrap">'
+                    +   (p.is_promo && p.price_original ? '<span class="ssd-price-original">' + escHtml(p.price_original) + '</span>' : '')
+                    +   '<span class="ssd-price' + (p.is_promo ? ' promo' : '') + '">' + escHtml(p.price) + '</span>'
+                    + '</div>'
+                    + '</a>';
+            });
+            // "Lihat semua hasil" footer
+            html += '<div class="ssd-footer" id="ssd-see-all"><i class="fas fa-search"></i> Lihat semua hasil untuk "<strong>' + escHtml(query) + '</strong>"</div>';
+            dropdown.innerHTML = html;
+            dropdown.style.display = 'block';
+            activeIdx = -1;
+
+            dropdown.querySelectorAll('.ssd-item').forEach(function (el) {
+                el.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    window.location.href = el.href;
+                });
+            });
+            const seeAll = document.getElementById('ssd-see-all');
+            if (seeAll) {
+                seeAll.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    form.submit();
+                });
+            }
+        }
+
+        function closeDropdown() {
+            dropdown.style.display = 'none';
+            activeIdx = -1;
+        }
+
+        function fetchSuggestions(q) {
+            fetch(SUGGEST_URL + '?q=' + encodeURIComponent(q), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (input.value.trim().length >= 2) renderDropdown(data, input.value.trim());
+            })
+            .catch(function () {});
+        }
+
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            const q = input.value.trim();
+            if (q.length < 2) { closeDropdown(); return; }
+            timer = setTimeout(function () { fetchSuggestions(q); }, 280);
+        });
+
+        // Keyboard navigation
+        input.addEventListener('keydown', function (e) {
+            const items = dropdown.querySelectorAll('.ssd-item, #ssd-see-all');
+            if (!items.length) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIdx = Math.min(activeIdx + 1, items.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIdx = Math.max(activeIdx - 1, -1);
+            } else if (e.key === 'Enter' && activeIdx >= 0) {
+                e.preventDefault();
+                const el = items[activeIdx];
+                if (el.id === 'ssd-see-all') { form.submit(); }
+                else { window.location.href = el.href; }
+                return;
+            } else if (e.key === 'Escape') {
+                closeDropdown(); return;
+            } else { return; }
+            items.forEach(function (el, i) { el.classList.toggle('active', i === activeIdx); });
+        });
+
+        // Close on outside click
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.topbar-search')) closeDropdown();
+        });
+
+        // Re-open on focus if there's query
+        input.addEventListener('focus', function () {
+            if (input.value.trim().length >= 2 && dropdown.innerHTML) {
+                dropdown.style.display = 'block';
+            }
+        });
+    })();
+    </script>
+
+    {{-- Global Confirm Modal --}}
+    <div id="wwConfirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:99999; align-items:center; justify-content:center; padding:1rem;">
+        <div style="background:#fff; border-radius:12px; padding:1.75rem 1.5rem 1.5rem; max-width:340px; width:100%; text-align:center; box-shadow:0 16px 40px rgba(0,0,0,0.14); animation:wwPop 0.22s cubic-bezier(0.34,1.56,0.64,1);">
+            <div id="wwConfirmIcon" style="width:48px; height:48px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                <i class="fas fa-trash" style="color:#ef4444; font-size:1.1rem;"></i>
+            </div>
+            <h3 id="wwConfirmTitle" style="font-size:1rem; font-weight:800; color:#111827; margin-bottom:0.4rem;"></h3>
+            <p id="wwConfirmMsg" style="font-size:0.83rem; color:#6b7280; line-height:1.6; margin-bottom:1.35rem;"></p>
+            <div style="display:flex; gap:0.6rem;">
+                <button id="wwConfirmNo" style="flex:1; padding:0.6rem; border-radius:8px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:700; font-size:0.85rem; cursor:pointer;">Batal</button>
+                <button id="wwConfirmYes" style="flex:1; padding:0.6rem; border-radius:8px; border:none; background:#ef4444; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">Hapus</button>
+            </div>
+        </div>
+    </div>
+    <style>
+    @keyframes wwPop { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+    </style>
+    <script>
+    (function(){
+        var modal   = document.getElementById('wwConfirmModal');
+        var btnNo   = document.getElementById('wwConfirmNo');
+        var btnYes  = document.getElementById('wwConfirmYes');
+        var _cb     = null;
+
+        function close(){ modal.style.display='none'; _cb=null; btnYes.textContent='Hapus'; btnYes.disabled=false; }
+
+        btnNo.addEventListener('click', close);
+        modal.addEventListener('click', function(e){ if(e.target===modal) close(); });
+        document.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
+        btnYes.addEventListener('click', function(){
+            btnYes.textContent='Menghapus...'; btnYes.disabled=true;
+            if(_cb) _cb();
+        });
+
+        window.wwConfirm = function(title, msg, cb, opts){
+            opts = opts || {};
+            document.getElementById('wwConfirmTitle').textContent = title;
+            document.getElementById('wwConfirmMsg').textContent   = msg;
+            btnYes.textContent  = opts.confirmText  || 'Hapus';
+            btnYes.style.background = opts.confirmColor || '#ef4444';
+            btnYes.disabled = false;
+            _cb = cb;
+            modal.style.display='flex';
+        };
+    })();
+    </script>
 </body>
 
 @else

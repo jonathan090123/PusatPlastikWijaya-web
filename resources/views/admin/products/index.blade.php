@@ -111,11 +111,11 @@
                                 <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-icon btn-warning" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('admin.products.destroy', $product) }}" method="POST"
-                                      onsubmit="return confirm('Yakin ingin menghapus produk ini?')">
+                                <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="delete-form">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-icon btn-danger" title="Hapus">
+                                    <button type="button" class="btn btn-icon btn-danger delete-btn"
+                                        data-name="{{ $product->name }}" title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -183,6 +183,19 @@ document.querySelectorAll('.toggle-active').forEach(btn => {
             }
         });
     });
+});
+
+// Delete confirm
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.delete-btn');
+    if (!btn) return;
+    var form = btn.closest('.delete-form');
+    var name = btn.dataset.name || 'item ini';
+    wwConfirm(
+        'Hapus Produk?',
+        'Produk "' + name + '" akan dihapus secara permanen.',
+        function() { form.submit(); }
+    );
 });
 </script>
 @endpush

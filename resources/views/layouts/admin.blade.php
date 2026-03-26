@@ -183,5 +183,52 @@
         });
     </script>
     @stack('scripts')
+
+    {{-- Global Confirm Modal --}}
+    <div id="wwConfirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:99999; align-items:center; justify-content:center; padding:1rem;">
+        <div style="background:#fff; border-radius:12px; padding:1.75rem 1.5rem 1.5rem; max-width:340px; width:100%; text-align:center; box-shadow:0 16px 40px rgba(0,0,0,0.14); animation:wwPop 0.22s cubic-bezier(0.34,1.56,0.64,1);">
+            <div id="wwConfirmIcon" style="width:48px; height:48px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                <i class="fas fa-trash" style="color:#ef4444; font-size:1.1rem;"></i>
+            </div>
+            <h3 id="wwConfirmTitle" style="font-size:1rem; font-weight:800; color:#111827; margin-bottom:0.4rem;"></h3>
+            <p id="wwConfirmMsg" style="font-size:0.83rem; color:#6b7280; line-height:1.6; margin-bottom:1.35rem;"></p>
+            <div style="display:flex; gap:0.6rem;">
+                <button id="wwConfirmNo" style="flex:1; padding:0.6rem; border-radius:8px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:700; font-size:0.85rem; cursor:pointer;">Batal</button>
+                <button id="wwConfirmYes" style="flex:1; padding:0.6rem; border-radius:8px; border:none; background:#ef4444; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">Hapus</button>
+            </div>
+        </div>
+    </div>
+    <style>
+    @keyframes wwPop { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+    </style>
+    <script>
+    (function(){
+        var modal   = document.getElementById('wwConfirmModal');
+        var btnNo   = document.getElementById('wwConfirmNo');
+        var btnYes  = document.getElementById('wwConfirmYes');
+        var _cb     = null;
+
+        function close(){ modal.style.display='none'; _cb=null; btnYes.textContent='Hapus'; btnYes.disabled=false; }
+
+        btnNo.addEventListener('click', close);
+        modal.addEventListener('click', function(e){ if(e.target===modal) close(); });
+        document.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
+        btnYes.addEventListener('click', function(){
+            btnYes.textContent='Menghapus...'; btnYes.disabled=true;
+            if(_cb) _cb();
+        });
+
+        window.wwConfirm = function(title, msg, cb, opts){
+            opts = opts || {};
+            document.getElementById('wwConfirmTitle').textContent = title;
+            document.getElementById('wwConfirmMsg').textContent   = msg;
+            btnYes.textContent  = opts.confirmText  || 'Hapus';
+            btnYes.style.background = opts.confirmColor || '#ef4444';
+            btnYes.disabled = false;
+            _cb = cb;
+            modal.style.display='flex';
+        };
+    })();
+    </script>
 </body>
 </html>

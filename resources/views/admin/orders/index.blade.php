@@ -64,7 +64,9 @@
                             default             => '',
                         };
                     @endphp
-                    <tr class="order-row {{ $isDone ? 'order-row--done' : '' }}" data-order-id="{{ $order->id }}" onclick="window.location='{{ route('admin.orders.show', $order) }}'">
+                    <tr class="order-row {{ $isDone ? 'order-row--done' : '' }}" data-order-id="{{ $order->id }}"
+                        data-new="{{ $order->created_at->gte(now()->subHours(24)) ? '1' : '0' }}"
+                        onclick="adminMarkOrderSeen({{ $order->id }}); window.location='{{ route('admin.orders.show', $order) }}'">
                         <td>{{ $orders->firstItem() + $index }}</td>
                         <td>
                             <strong>{{ $order->invoice_number }}</strong>
@@ -136,22 +138,33 @@
 @push('scripts')
 <script>
 (function () {
-    const KEY = 'admin_seen_orders';
-    const seen = new Set(JSON.parse(sessionStorage.getItem(KEY) || '[]'));
-    const currentIds = [];
+    const KEY = 'admin_seen_orders_ls';
 
-    document.querySelectorAll('tr[data-order-id]').forEach(function (row) {
-        const id = row.dataset.orderId;
-        currentIds.push(id);
-        if (!seen.has(id)) {
+    function getSeenSet() {
+        try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); }
+        catch(e) { return new Set(); }
+    }
+    function saveSeenSet(set) {
+        try { localStorage.setItem(KEY, JSON.stringify([...set])); } catch(e) {}
+    }
+
+    // On load: show badge only for "new" orders (24h) that have NOT been clicked yet
+    const seen = getSeenSet();
+    document.querySelectorAll('tr[data-order-id][data-new="1"]').forEach(function (row) {
+        if (!seen.has(String(row.dataset.orderId))) {
             const badge = row.querySelector('.order-new-badge');
             if (badge) badge.style.display = 'inline-block';
         }
     });
 
-    // Merge current page IDs into seen set and persist
-    currentIds.forEach(function (id) { seen.add(id); });
-    sessionStorage.setItem(KEY, JSON.stringify([...seen]));
+    // Mark seen only when the row is clicked
+    window.adminMarkOrderSeen = function (orderId) {
+        const set = getSeenSet();
+        set.add(String(orderId));
+        saveSeenSet(set);
+        const badge = document.querySelector('tr[data-order-id="' + orderId + '"] .order-new-badge');
+        if (badge) badge.style.display = 'none';
+    };
 }());
 </script>
 @endpush

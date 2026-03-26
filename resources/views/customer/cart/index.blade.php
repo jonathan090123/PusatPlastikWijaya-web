@@ -88,11 +88,17 @@
             </div>
         </div>
     @else
-        <div class="empty-state" style="padding:3rem;">
-            <i class="fas fa-shopping-cart" style="font-size:3rem;"></i>
-            <h3>Keranjang Kosong</h3>
-            <p>Belum ada produk di keranjang kamu</p>
-            <a href="{{ route('products.index') }}" class="btn btn-primary">
+        <div class="cart-empty-wrap">
+            <div class="cart-empty-illustration">
+                <div class="cart-empty-circle">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="cart-empty-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+            <h2 class="cart-empty-title">Keranjang kamu masih kosong</h2>
+            <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg cart-empty-btn">
                 <i class="fas fa-shopping-bag"></i> Mulai Belanja
             </a>
         </div>
@@ -102,6 +108,73 @@
 
 @push('styles')
 <style>
+/* ── Empty cart state ── */
+.cart-empty-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 3rem 1rem 2.5rem;
+    max-width: 480px;
+    margin: 0 auto;
+}
+.cart-empty-illustration {
+    position: relative;
+    margin-bottom: 1.75rem;
+}
+.cart-empty-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+    border: 3px solid #bfdbfe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.6rem;
+    color: #2563eb;
+    margin: 0 auto;
+    animation: cartBounce 2.8s ease-in-out infinite;
+}
+@keyframes cartBounce {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-8px); }
+}
+.cart-empty-dots {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 0.6rem;
+}
+.cart-empty-dots span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #bfdbfe;
+    animation: dotFade 1.4s ease-in-out infinite;
+}
+.cart-empty-dots span:nth-child(2) { animation-delay: 0.2s; }
+.cart-empty-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotFade {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50%       { opacity: 1;   transform: scale(1.3); }
+}
+.cart-empty-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin-bottom: 1.75rem;
+}
+.cart-empty-btn {
+    padding: 0.65rem 2.25rem;
+}
+@media (max-width: 480px) {
+    .cart-empty-title  { font-size: 1.2rem; }
+    .cart-empty-circle { width: 90px; height: 90px; font-size: 2.1rem; }
+    .cart-empty-btn    { padding: 0.6rem 1.4rem; font-size: 0.88rem; }
+}
+
 .cart-header {
     display: flex;
     align-items: center;
@@ -334,33 +407,37 @@ document.querySelectorAll('.cart-qty-plus').forEach(btn => {
 // Remove item
 document.querySelectorAll('.cart-remove-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        if (!confirm('Hapus item ini dari keranjang?')) return;
         const itemId = this.dataset.itemId;
+        wwConfirm(
+            'Hapus dari Keranjang?',
+            'Item ini akan dihapus dari keranjang belanja Anda.',
+            function() {
+                fetch(`/cart/${itemId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const el = document.getElementById(`cart-item-${itemId}`);
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateX(-20px)';
+                        setTimeout(() => {
+                            el.remove();
+                            document.getElementById('summary-total').textContent = formatRupiah(data.total);
+                            document.getElementById('summary-items').textContent = data.cart_count + ' produk';
+                            const badge = document.getElementById('cart-count');
+                            if (badge) badge.textContent = data.cart_count;
 
-        fetch(`/cart/${itemId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
+                            if (data.cart_count === 0) location.reload();
+                        }, 300);
+                    }
+                });
             }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const el = document.getElementById(`cart-item-${itemId}`);
-                el.style.opacity = '0';
-                el.style.transform = 'translateX(-20px)';
-                setTimeout(() => {
-                    el.remove();
-                    document.getElementById('summary-total').textContent = formatRupiah(data.total);
-                    document.getElementById('summary-items').textContent = data.cart_count + ' produk';
-                    const badge = document.getElementById('cart-count');
-                    if (badge) badge.textContent = data.cart_count;
-
-                    if (data.cart_count === 0) location.reload();
-                }, 300);
-            }
-        });
+        );
     });
 });
 

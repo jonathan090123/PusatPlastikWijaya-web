@@ -18,7 +18,7 @@
 
     {{-- Pickup Card --}}
     <div class="card" id="card-pickup" style="{{ $pickup->is_active ? '' : 'opacity:0.75;' }}">
-        <div class="card-body">
+        <div class="card-body" style="display:flex; flex-direction:column; height:100%;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <i class="fas fa-store" style="color:var(--success); font-size:1.2rem;"></i>
@@ -30,6 +30,7 @@
             </div>
             <p style="font-size:0.85rem; color:var(--gray-500); margin:0 0 0.5rem;">{{ $pickup->description }}</p>
             <p style="font-size:0.85rem; margin:0 0 1rem;"><strong>Biaya:</strong> <span style="color:var(--success);">Gratis</span></p>
+            <div style="flex:1;"></div>
             <button type="button"
                 class="btn {{ $pickup->is_active ? 'btn-danger' : 'btn-success' }} btn-sm toggle-btn"
                 data-type="pickup"
@@ -43,7 +44,7 @@
 
     {{-- Kurir Toko Card --}}
     <div class="card" id="card-local" style="{{ $local->is_active ? '' : 'opacity:0.75;' }}">
-        <div class="card-body">
+        <div class="card-body" style="display:flex; flex-direction:column; height:100%;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <i class="fas fa-motorcycle" style="color:var(--primary); font-size:1.2rem;"></i>
@@ -56,6 +57,7 @@
             <p style="font-size:0.85rem; color:var(--gray-500); margin:0 0 0.25rem;">Blitar dalam kota</p>
             <p style="font-size:0.85rem; margin:0 0 0.25rem;"><strong>Ongkir:</strong> Rp {{ number_format($local->cost, 0, ',', '.') }}</p>
             <p style="font-size:0.85rem; margin:0 0 1rem;"><strong>Estimasi:</strong> {{ $local->estimation ?? '-' }}</p>
+            <div style="flex:1;"></div>
             <button type="button"
                 class="btn {{ $local->is_active ? 'btn-danger' : 'btn-success' }} btn-sm toggle-btn"
                 data-type="local"
@@ -69,7 +71,7 @@
 
     {{-- Luar Kota Card --}}
     <div class="card" id="card-outside" style="opacity:0.75;">
-        <div class="card-body">
+        <div class="card-body" style="display:flex; flex-direction:column; height:100%;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <i class="fas fa-shipping-fast" style="color:var(--gray-400); font-size:1.2rem;"></i>
@@ -81,6 +83,7 @@
             </div>
             <p style="font-size:0.85rem; color:var(--gray-500); margin:0 0 0.5rem;">Via ekspedisi (JNE, J&T, dll) — integrasi RajaOngkir</p>
             <p style="font-size:0.85rem; margin:0 0 1rem;"><strong>Biaya:</strong> <span style="color:var(--gray-400);">Otomatis via API</span></p>
+            <div style="flex:1;"></div>
             <button type="button" disabled class="btn btn-secondary btn-sm" style="width:100%; cursor:not-allowed;" title="Integrasi RajaOngkir belum tersedia">
                 <i class="fas fa-lock"></i> Belum Tersedia
             </button>

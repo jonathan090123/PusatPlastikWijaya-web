@@ -57,8 +57,16 @@
                 </thead>
                 <tbody>
                     @forelse($recentOrders as $order)
-                        <tr class="dashboard-row" style="cursor:pointer;" onclick="window.location='{{ route('admin.orders.show', $order) }}'">
-                            <td><strong>{{ $order->invoice_number }}</strong></td>
+                        <tr class="dashboard-row" style="cursor:pointer;"
+                            data-order-id="{{ $order->id }}"
+                            data-order-url="{{ route('admin.orders.show', $order) }}"
+                            onclick="markOrderSeen({{ $order->id }}); window.location='{{ route('admin.orders.show', $order) }}'">
+                            <td>
+                                <strong>{{ $order->invoice_number }}</strong>
+                                @if($order->created_at->gte(now()->subHours(24)))
+                                    <span class="order-new-badge" data-for="{{ $order->id }}">BARU</span>
+                                @endif
+                            </td>
                             <td>{{ $order->user->name ?? '-' }}</td>
                             <td>Rp {{ number_format($order->total, 0, ',', '.') }}</td>
                             <td><span class="badge-status badge-{{ $order->status }}">{{ $order->status_label }}</span></td>
@@ -129,6 +137,23 @@
 <style>
 .dashboard-row { transition: background 0.15s ease; }
 .dashboard-row:hover { background: #eff6ff !important; }
+.order-new-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+    animation: newPulse 1.5s ease infinite;
+}
+@keyframes newPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.55; }
+}
 @media (max-width: 768px) {
     .admin-content > div[style*="grid-template-columns"] {
         grid-template-columns: 1fr !important;
@@ -139,6 +164,33 @@
 
 @push('scripts')
 <script>
-// notification now handled globally via topbar in layouts/admin.blade.php
+(function () {
+    var KEY = 'admin_seen_orders_ls';
+
+    function getSeenSet() {
+        try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); }
+        catch(e) { return new Set(); }
+    }
+    function saveSeenSet(set) {
+        try { localStorage.setItem(KEY, JSON.stringify([...set])); } catch(e) {}
+    }
+
+    // On load: hide badges for already-seen orders (localStorage persists across refresh)
+    var seen = getSeenSet();
+    document.querySelectorAll('.order-new-badge[data-for]').forEach(function (badge) {
+        if (seen.has(String(badge.dataset.for))) {
+            badge.style.display = 'none';
+        }
+    });
+
+    // Mark as seen only when the row is clicked (not on refresh)
+    window.markOrderSeen = function (orderId) {
+        var set = getSeenSet();
+        set.add(String(orderId));
+        saveSeenSet(set);
+        var badge = document.querySelector('.order-new-badge[data-for="' + orderId + '"]');
+        if (badge) badge.style.display = 'none';
+    };
+})();
 </script>
 @endpush

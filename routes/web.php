@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
 
     // Customer Product Catalog
     Route::get('/products', [CustomerProductController::class , 'index'])->name('products.index');
+    Route::get('/products/suggest', [CustomerProductController::class , 'suggest'])->name('products.suggest');
     Route::get('/products/{slug}', [CustomerProductController::class , 'show'])->name('products.show');
 
     // Cart

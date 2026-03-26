@@ -762,9 +762,25 @@ document.querySelectorAll('input[name="shipping_type"]').forEach(function(radio)
     radio.addEventListener('change', updateShipping);
 });
 
-// Init on page load
-updateCityType();
-updateShipping();
+// Init: sync UI state with current form values
+function initCheckoutForm() {
+    updateCityType();
+    updateShipping();
+}
+
+// Run at script time (DOM already available since script is at </body>)
+initCheckoutForm();
+
+// Re-run after full page load — covers browser form-state restoration
+// which can happen AFTER DOMContentLoaded but BEFORE window.load
+window.addEventListener('load', initCheckoutForm);
+
+// Re-run when page is restored from bfcache (browser Back button)
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        initCheckoutForm();
+    }
+});
 
 // Prevent double submit
 document.getElementById('checkoutForm').addEventListener('submit', function() {

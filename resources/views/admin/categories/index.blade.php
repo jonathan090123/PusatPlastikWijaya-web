@@ -72,11 +72,11 @@
                                 <a href="{{ route('admin.categories.edit', $category) }}" class="btn btn-icon btn-warning" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('admin.categories.destroy', $category) }}" method="POST"
-                                      onsubmit="return confirm('Yakin ingin menghapus kategori ini?')">
+                                <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="delete-form">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-icon btn-danger" title="Hapus">
+                                    <button type="button" class="btn btn-icon btn-danger delete-btn"
+                                        data-name="{{ $category->name }}" title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -134,16 +134,25 @@ document.querySelectorAll('.toggle-active').forEach(btn => {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                if (data.is_active) {
-                    button.className = 'btn btn-sm btn-success toggle-active';
-                    button.innerHTML = '<i class="fas fa-check"></i> Aktif';
-                } else {
-                    button.className = 'btn btn-sm btn-secondary toggle-active';
+                button.className = 'btn btn-sm btn-secondary toggle-active';
                     button.innerHTML = '<i class="fas fa-times"></i> Nonaktif';
                 }
             }
         });
     });
+});
+
+// Delete confirm
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.delete-btn');
+    if (!btn) return;
+    var form = btn.closest('.delete-form');
+    var name = btn.dataset.name || 'item ini';
+    wwConfirm(
+        'Hapus Kategori?',
+        'Kategori "' + name + '" akan dihapus secara permanen.',
+        function() { form.submit(); }
+    );
 });
 </script>
 @endpush
