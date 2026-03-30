@@ -194,16 +194,22 @@
                     {{-- Items --}}
                     <div style="display:flex; flex-direction:column; gap:0.6rem; margin-bottom:1rem;">
                         @foreach($order->items as $item)
-                            <div style="display:flex; align-items:center; gap:0.75rem; padding:0.6rem; background:var(--gray-50); border-radius:var(--radius-sm);">
-                                <div style="width:44px; height:44px; border-radius:var(--radius-sm); overflow:hidden; flex-shrink:0; background:var(--white); border:1px solid var(--gray-200);">
+                            <div style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem; background:var(--gray-50); border-radius:var(--radius-sm);">
+                                <div style="width:64px; height:64px; border-radius:var(--radius-sm); overflow:hidden; flex-shrink:0; background:var(--white); border:1px solid var(--gray-200);">
                                     @if($item->product && $item->product->image)
-                                        <img src="{{ asset('storage/' . $item->product->image) }}" alt="{{ $item->product_name }}" style="width:100%; height:100%; object-fit:contain; padding:2px;">
+                                        <img src="{{ asset('storage/' . $item->product->image) }}" alt="{{ $item->product_name }}" style="width:100%; height:100%; object-fit:contain; padding:4px;">
                                     @else
-                                        <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--gray-400); font-size:0.8rem;"><i class="fas fa-image"></i></div>
+                                        <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--gray-400); font-size:1rem;"><i class="fas fa-image"></i></div>
                                     @endif
                                 </div>
                                 <div style="flex:1; min-width:0;">
-                                    <div style="font-weight:600; font-size:0.85rem; color:var(--gray-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $item->product_name }}</div>
+                                    @if($item->product)
+                                        <a href="{{ route('products.show', $item->product->slug) }}" style="font-weight:600; font-size:0.85rem; color:var(--gray-800); text-decoration:none; display:block; line-height:1.4; transition:color 0.15s;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
+                                            {{ $item->product_name }}
+                                        </a>
+                                    @else
+                                        <div style="font-weight:600; font-size:0.85rem; color:var(--gray-800); line-height:1.4;">{{ $item->product_name }}</div>
+                                    @endif
                                     <div style="font-size:0.78rem; color:var(--gray-500);">{{ $item->quantity }} x Rp {{ number_format($item->product_price, 0, ',', '.') }}</div>
                                 </div>
                                 <div style="font-weight:700; font-size:0.85rem; color:var(--gray-800); white-space:nowrap;">
@@ -246,30 +252,39 @@
                         $earnedHistory = $order->pointHistories->firstWhere('type', 'earned');
                     @endphp
                     @if($earnedHistory)
-                        <div style="margin-top:0.85rem; padding:0.7rem 0.9rem; background:linear-gradient(135deg,#fef9c3 0%,#fefce8 100%); border:1.5px solid #fde047; border-radius:var(--radius-sm); font-size:0.82rem;">
-                            <div style="font-weight:700; color:#854d0e;">
-                                <i class="fas fa-star" style="color:#ca8a04;"></i>
-                                Poin yang kamu dapatkan dari pesanan ini
-                            </div>
-                            <div style="font-size:1.1rem; font-weight:800; color:#ca8a04; margin-top:0.2rem;">
+                        <div style="margin-top:0.75rem; padding:0.45rem 0.75rem; background:linear-gradient(135deg,#fef9c3 0%,#fefce8 100%); border:1.5px solid #fde047; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                            <span style="font-size:0.8rem; font-weight:600; color:#854d0e; white-space:nowrap;">
+                                <i class="fas fa-star" style="color:#ca8a04; font-size:0.75rem;"></i> Poin didapat
+                            </span>
+                            <span style="font-size:0.88rem; font-weight:800; color:#ca8a04; white-space:nowrap;">
                                 +{{ number_format($earnedHistory->amount, 0, ',', '.') }} poin
-                            </div>
+                            </span>
                         </div>
                     @elseif($order->status === 'completed')
-                        {{-- completed but 0 points (total < 1000) --}}
-                        <div style="margin-top:0.85rem; padding:0.6rem 0.9rem; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--gray-500);">
-                            <i class="fas fa-star" style="font-size:0.75rem;"></i>
-                            Tidak ada poin untuk pesanan ini (total transaksi terlalu kecil).
+                        <div style="margin-top:0.75rem; padding:0.4rem 0.75rem; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius-sm); font-size:0.78rem; color:var(--gray-400); display:flex; align-items:center; gap:0.4rem;">
+                            <i class="fas fa-star" style="font-size:0.7rem;"></i>
+                            Tidak ada poin (transaksi terlalu kecil)
                         </div>
                     @elseif(!in_array($order->status, ['cancelled', 'expired']))
-                        <div style="margin-top:0.85rem; padding:0.6rem 0.9rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-sm); font-size:0.8rem; color:#1d4ed8;">
-                            <i class="fas fa-star" style="font-size:0.75rem;"></i>
-                            Kamu akan mendapat <strong>{{ number_format((int) floor($order->total / 1000), 0, ',', '.') }} poin</strong>
-                            saat pesanan selesai.
+                        <div style="margin-top:0.75rem; padding:0.45rem 0.75rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                            <span style="font-size:0.8rem; color:#1d4ed8; white-space:nowrap;">
+                                <i class="fas fa-star" style="font-size:0.72rem;"></i> Estimasi poin
+                            </span>
+                            <span style="font-size:0.88rem; font-weight:700; color:#1d4ed8; white-space:nowrap;">
+                                +{{ number_format((int) floor($order->total / 1000), 0, ',', '.') }} poin
+                            </span>
                         </div>
                     @endif
                 </div>
             </div>
+
+            {{-- Beli Lagi --}}
+            @if(!in_array($order->status, ['pending', 'waiting_payment']))
+            <button type="button" id="reorderBtn"
+                style="width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:1rem; padding:0.75rem 1rem; background:var(--primary); color:#fff; font-weight:700; font-size:0.9rem; border:none; border-radius:var(--radius); cursor:pointer; transition:background 0.2s, box-shadow 0.2s; box-shadow:0 2px 8px rgba(37,99,235,0.22);">
+                <i class="fas fa-redo"></i> Beli Lagi
+            </button>
+            @endif
 
             {{-- Hubungi Admin via WhatsApp --}}
             <div class="card" style="margin-top:1rem; background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);">
@@ -368,6 +383,51 @@
     from { opacity:0; transform:scale(0.9); }
     to   { opacity:1; transform:scale(1); }
 }
+@keyframes toastIn {
+    from { opacity:0; transform:translateY(12px); }
+    to   { opacity:1; transform:translateY(0); }
+}
+#show-reorder-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+#show-reorder-modal.show { display: flex; }
+#show-reorder-modal-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.75rem 1.5rem 1.5rem;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+    animation: cancelPopIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+#show-reorder-modal-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+#show-reorder-modal-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.83rem;
+    color: #7f1d1d;
+    line-height: 1.5;
+}
+#show-reorder-modal-list li i { color: #ef4444; margin-top: 2px; flex-shrink: 0; }
 @media (max-width: 768px) {
     /* Collapse the 1fr 350px grid to single column */
     div[style*="grid-template-columns:1fr 350px"],
@@ -383,6 +443,23 @@
 @endpush
 
 @push('scripts')
+{{-- Stok Tidak Mencukupi Modal --}}
+<div id="show-reorder-modal">
+    <div id="show-reorder-modal-box">
+        <div style="text-align:center; margin-bottom:0.75rem;">
+            <div style="width:52px;height:52px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;">
+                <i class="fas fa-exclamation-triangle" style="color:#ef4444;font-size:1.2rem;"></i>
+            </div>
+            <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0 0 0.3rem;">Stok Tidak Mencukupi</h3>
+            <p style="font-size:0.83rem;color:#6b7280;margin:0;">Produk berikut tidak dapat ditambahkan karena stok tidak mencukupi:</p>
+        </div>
+        <ul id="show-reorder-modal-list"></ul>
+        <button id="show-reorder-modal-ok" style="width:100%;padding:0.65rem;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:700;font-size:0.9rem;cursor:pointer;">
+            Mengerti
+        </button>
+    </div>
+</div>
+
 <script>
 (function () {
     var countdownEl  = document.getElementById('payCountdown');
@@ -414,7 +491,36 @@
         });
     }
 
-    if (!countdownEl) return;
+    // ── Beli Lagi (Reorder) ──
+    var reorderBtn = document.getElementById('reorderBtn');
+    var srModal    = document.getElementById('show-reorder-modal');
+    var srList     = document.getElementById('show-reorder-modal-list');
+    var srOkBtn    = document.getElementById('show-reorder-modal-ok');
+
+    if (srModal) {
+        function closeSrModal() { srModal.classList.remove('show'); }
+        srOkBtn.addEventListener('click', closeSrModal);
+        srModal.addEventListener('click', function(e) { if (e.target === srModal) closeSrModal(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSrModal(); });
+    }
+
+    function showStockModal(insufficient) {
+        srList.innerHTML = '';
+        insufficient.forEach(function(item) {
+            var li = document.createElement('li');
+            var avail = item.available > 0
+                ? 'Tersisa <strong>' + item.available + ' ' + item.unit + '</strong>'
+                : 'Stok habis';
+            li.innerHTML = '<i class="fas fa-box-open"></i><span><strong>' + item.name + '</strong> &mdash; ' + avail + '</span>';
+            srList.appendChild(li);
+        });
+        srModal.classList.add('show');
+    }
+
+    if (!countdownEl) {
+        initReorder();
+        return;
+    }
 
     var seconds = {{ $paySecondsLeft ?? 0 }};
 
@@ -447,6 +553,73 @@
             (m < 10 ? '0' : '') + m + ':' +
             (s < 10 ? '0' : '') + s;
     }, 1000);
+
+    initReorder();
+
+    function initReorder() {
+        if (!reorderBtn) return;
+        reorderBtn.addEventListener('click', function () {
+            var btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+            var csrf = document.querySelector('meta[name="csrf-token"]').content;
+            fetch('{{ route('orders.reorder', $order) }}', {
+                method: 'POST',
+                headers: {'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json'}
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-redo"></i> Beli Lagi';
+
+                if (data.success) {
+                    if (data.insufficient && data.insufficient.length > 0) {
+                        // partial: some added, some not → show modal
+                        showStockModal(data.insufficient);
+                    } else {
+                        // all added → redirect to cart
+                        window.location.href = data.redirect || '{{ route('cart.index') }}';
+                    }
+                } else {
+                    showReorderToast('Gagal', data.message || 'Produk tidak tersedia.', 'error');
+                }
+            })
+            .catch(function () {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-redo"></i> Beli Lagi';
+                showReorderToast('Error', 'Terjadi kesalahan, coba lagi.', 'error');
+            });
+        });
+    }
+
+    function showReorderToast(title, body, type) {
+        var existing = document.getElementById('reorderToast');
+        if (existing) existing.remove();
+
+        var bg   = type === 'success' ? '#16a34a' : '#dc2626';
+        var icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+
+        var toast = document.createElement('div');
+        toast.id = 'reorderToast';
+        toast.innerHTML =
+            '<i class="fas ' + icon + '" style="font-size:1.15rem;"></i>' +
+            '<div><strong>' + title + '</strong>' + body + '</div>' +
+            '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;padding:0;line-height:1;">&times;</button>';
+        toast.style.cssText =
+            'position:fixed;bottom:1.5rem;right:1.5rem;z-index:99999;' +
+            'display:flex;align-items:flex-start;gap:0.75rem;' +
+            'background:' + bg + ';color:#fff;' +
+            'padding:1rem 1.25rem;border-radius:12px;' +
+            'box-shadow:0 8px 24px rgba(0,0,0,0.18);' +
+            'max-width:320px;font-size:0.88rem;line-height:1.5;' +
+            'animation:toastIn 0.3s ease;';
+
+        document.body.appendChild(toast);
+        setTimeout(function () {
+            if (toast.parentElement) toast.remove();
+        }, 5000);
+    }
 })();
 </script>
 @endpush

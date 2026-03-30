@@ -182,6 +182,10 @@
     }
     .btn-reorder { padding: 0.4rem 0.65rem; font-size: 0.75rem; }
 }
+@keyframes reorderToastIn {
+    from { opacity:0; transform:translateY(12px); }
+    to   { opacity:1; transform:translateY(0); }
+}
 #reorder-modal {
     display: none;
     position: fixed;
@@ -200,9 +204,9 @@
     max-width: 380px;
     width: 100%;
     box-shadow: 0 16px 40px rgba(0,0,0,0.15);
-    animation: reorderPop 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    animation: reorderPop 0.25s cubic-bezier(0.34,1.56,0.64,1);
 }
-@keyframes reorderPop { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+@keyframes reorderPop { from{opacity:0;transform:scale(0.88)} to{opacity:1;transform:scale(1)} }
 #reorder-modal-list {
     list-style: none;
     padding: 0;
@@ -248,10 +252,10 @@
 <div id="reorder-modal">
     <div id="reorder-modal-box">
         <div style="text-align:center; margin-bottom:0.75rem;">
-            <div style="width:48px;height:48px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;">
-                <i class="fas fa-exclamation-triangle" style="color:#ef4444;font-size:1.15rem;"></i>
+            <div style="width:52px;height:52px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;">
+                <i class="fas fa-exclamation-triangle" style="color:#ef4444;font-size:1.2rem;"></i>
             </div>
-            <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0 0 0.25rem;">Stok Tidak Mencukupi</h3>
+            <h3 style="font-size:1rem;font-weight:800;color:#111827;margin:0 0 0.3rem;">Stok Tidak Mencukupi</h3>
             <p style="font-size:0.83rem;color:#6b7280;margin:0;">Produk berikut tidak dapat ditambahkan karena stok tidak mencukupi:</p>
         </div>
         <ul id="reorder-modal-list"></ul>
@@ -263,62 +267,77 @@
 
 <script>
 (function () {
-    const modal   = document.getElementById('reorder-modal');
-    const list    = document.getElementById('reorder-modal-list');
-    const okBtn   = document.getElementById('reorder-modal-ok');
+    var modal = document.getElementById('reorder-modal');
+    var list  = document.getElementById('reorder-modal-list');
+    var okBtn = document.getElementById('reorder-modal-ok');
 
     function closeModal() { modal.classList.remove('show'); }
     okBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
 
+    function showModal(insufficient) {
+        list.innerHTML = '';
+        insufficient.forEach(function(item) {
+            var li = document.createElement('li');
+            var avail = item.available > 0
+                ? 'Tersisa <strong>' + item.available + ' ' + item.unit + '</strong>'
+                : 'Stok habis';
+            li.innerHTML = '<i class="fas fa-box-open"></i><span><strong>' + item.name + '</strong> &mdash; ' + avail + '</span>';
+            list.appendChild(li);
+        });
+        modal.classList.add('show');
+    }
+
+    function showToast(title, msg, type) {
+        var existing = document.getElementById('reorderIndexToast');
+        if (existing) existing.remove();
+        var bg   = type === 'success' ? '#16a34a' : '#dc2626';
+        var icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+        var t = document.createElement('div');
+        t.id = 'reorderIndexToast';
+        t.innerHTML = '<i class="fas ' + icon + '" style="font-size:1.15rem;flex-shrink:0;"></i>' +
+            '<div style="flex:1;"><strong>' + title + '</strong>' + (msg ? '<br><small>' + msg + '</small>' : '') + '</div>' +
+            '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;padding:0;line-height:1;flex-shrink:0;">&times;</button>';
+        t.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:99999;display:flex;align-items:flex-start;gap:0.75rem;background:' + bg + ';color:#fff;padding:1rem 1.25rem;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.18);max-width:320px;font-size:0.88rem;line-height:1.5;animation:reorderToastIn 0.3s ease;';
+        document.body.appendChild(t);
+        setTimeout(function() { if (t.parentElement) t.remove(); }, 5000);
+    }
+
     document.querySelectorAll('.btn-reorder-ajax').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const action = btn.dataset.action;
-            const csrf   = btn.dataset.csrf;
-            const orig   = btn.innerHTML;
+            var action = btn.dataset.action;
+            var csrf   = btn.dataset.csrf;
+            var orig   = btn.innerHTML;
 
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             fetch(action, {
                 method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrf,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json', 'Content-Type': 'application/json' },
             })
-            .then(res => res.json())
+            .then(function(res) { return res.json(); })
             .then(function(data) {
                 btn.innerHTML = orig;
                 btn.disabled  = false;
 
-                if (!data.success && !data.insufficient?.length) {
-                    alert(data.message || 'Gagal menambahkan produk ke keranjang.');
-                    return;
-                }
-
-                if (data.insufficient && data.insufficient.length > 0) {
-                    // Build list items
-                    list.innerHTML = '';
-                    data.insufficient.forEach(function(item) {
-                        const li = document.createElement('li');
-                        const avail = item.available > 0
-                            ? `Tersisa <strong>${item.available} ${item.unit}</strong>`
-                            : 'Stok habis';
-                        li.innerHTML = `<i class="fas fa-box-open"></i><span><strong>${item.name}</strong> &mdash; ${avail}</span>`;
-                        list.appendChild(li);
-                    });
-                    modal.classList.add('show');
-                } else if (data.redirect) {
-                    window.location.href = data.redirect;
+                if (data.success) {
+                    if (data.insufficient && data.insufficient.length > 0) {
+                        // partial: some added, some not → show modal
+                        showModal(data.insufficient);
+                    } else {
+                        // all added → redirect to cart
+                        window.location.href = data.redirect || '{{ route("cart.index") }}';
+                    }
+                } else {
+                    showToast('Gagal', data.message || 'Produk tidak tersedia.', 'error');
                 }
             })
             .catch(function() {
                 btn.innerHTML = orig;
                 btn.disabled  = false;
-                alert('Terjadi kesalahan. Silakan coba lagi.');
+                showToast('Error', 'Terjadi kesalahan. Silakan coba lagi.', 'error');
             });
         });
     });

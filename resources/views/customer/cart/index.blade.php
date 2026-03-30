@@ -421,6 +421,10 @@ document.querySelectorAll('.cart-remove-btn').forEach(btn => {
                 })
                 .then(res => res.json())
                 .then(data => {
+                    // Close the confirm modal
+                    var wwModal = document.getElementById('wwConfirmModal');
+                    if (wwModal) { wwModal.style.display = 'none'; }
+
                     if (data.success) {
                         const el = document.getElementById(`cart-item-${itemId}`);
                         el.style.opacity = '0';
@@ -435,6 +439,10 @@ document.querySelectorAll('.cart-remove-btn').forEach(btn => {
                             if (data.cart_count === 0) location.reload();
                         }, 300);
                     }
+                })
+                .catch(function() {
+                    var wwModal = document.getElementById('wwConfirmModal');
+                    if (wwModal) { wwModal.style.display = 'none'; }
                 });
             }
         );
