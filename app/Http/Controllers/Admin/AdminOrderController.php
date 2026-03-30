@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\PointHistory;
 use Illuminate\Http\Request;
 
 class AdminOrderController extends Controller
@@ -27,17 +28,29 @@ class AdminOrderController extends Controller
 
         $orders = $query->paginate(15)->withQueryString();
 
-        // Mark all unread orders as read when admin visits this page
+        // Capture unread IDs BEFORE marking as read — badge shows only on first visit
+        $newOrderIds = Order::whereNull('admin_read_at')
+            ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
+            ->pluck('id')
+            ->flip()
+            ->toArray();
+
         Order::whereNull('admin_read_at')
              ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
              ->update(['admin_read_at' => now()]);
 
-        return view('admin.orders.index', compact('orders'));
+        return view('admin.orders.index', compact('orders', 'newOrderIds'));
     }
 
     public function show(Order $order)
     {
         $order->load(['user', 'items.product', 'payment', 'shippingCost']);
+
+        // Mark this order as read by admin when detail page is opened
+        if (is_null($order->admin_read_at)) {
+            $order->update(['admin_read_at' => now()]);
+        }
+
         return view('admin.orders.show', compact('order'));
     }
 
@@ -47,11 +60,42 @@ class AdminOrderController extends Controller
             'status' => 'required|in:pending,waiting_payment,paid,processing,ready_for_pickup,shipped,completed,cancelled',
         ]);
 
+        $previousStatus = $order->status;
+
         $order->update([
             'status'         => $request->status,
             'status_read_at' => null,  // mark as unread for customer
         ]);
 
+        // Award loyalty points when order is marked completed for the first time
+        if ($request->status === 'completed' && $previousStatus !== 'completed') {
+            $this->awardPoints($order->fresh());
+        }
+
         return redirect()->route('admin.orders.index')->with('success', 'Status pesanan berhasil diperbarui menjadi "' . $order->fresh()->status_label . '".');
+    }
+
+    private function awardPoints(Order $order): void
+    {
+        // Guard: only award once per order
+        if (PointHistory::where('order_id', $order->id)->where('type', 'earned')->exists()) {
+            return;
+        }
+
+        // Rate: 1 poin per Rp 1.000 spent
+        $points = (int) floor($order->total / 1000);
+        if ($points <= 0) {
+            return;
+        }
+
+        $order->user->increment('points', $points);
+
+        PointHistory::create([
+            'user_id'     => $order->user_id,
+            'order_id'    => $order->id,
+            'type'        => 'earned',
+            'amount'      => $points,
+            'description' => 'Poin dari pesanan ' . $order->invoice_number,
+        ]);
     }
 }

@@ -21,6 +21,12 @@ class RoleMiddleware
             return redirect()->route('home');
         }
 
+        // Block inactive customer accounts
+        if ($role === 'customer' && !auth()->user()->is_active) {
+            auth()->logout();
+            return redirect()->route('login')->withErrors(['email' => 'Akun Anda telah dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.']);
+        }
+
         return $next($request);
     }
 }

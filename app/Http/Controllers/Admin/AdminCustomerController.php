@@ -11,7 +11,8 @@ class AdminCustomerController extends Controller
     public function index(Request $request)
     {
         $query = User::where('role', 'customer')
-            ->withCount('orders');
+            ->withCount('orders')
+            ->withSum(['orders as total_spent' => fn($q) => $q->whereIn('status', ['paid','processing','shipped','completed'])], 'total');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -22,7 +23,25 @@ class AdminCustomerController extends Controller
             });
         }
 
-        $customers = $query->latest()->paginate(10)->withQueryString();
+        // Filter: has_orders
+        if ($request->filter === 'has_orders') {
+            $query->has('orders');
+        } elseif ($request->filter === 'no_orders') {
+            $query->doesntHave('orders');
+        } elseif ($request->filter === 'has_points') {
+            $query->where('points', '>', 0);
+        }
+
+        // Sort
+        match ($request->sort) {
+            'points_desc'  => $query->orderByDesc('points'),
+            'orders_desc'  => $query->orderByDesc('orders_count'),
+            'spent_desc'   => $query->orderByDesc('total_spent'),
+            'oldest'       => $query->oldest(),
+            default        => $query->latest(),
+        };
+
+        $customers = $query->paginate(15)->withQueryString();
 
         return view('admin.customers.index', compact('customers'));
     }
@@ -41,5 +60,12 @@ class AdminCustomerController extends Controller
             ->sum('total');
 
         return view('admin.customers.show', compact('customer', 'totalSpent'));
+    }
+
+    public function toggleActive(User $customer)
+    {
+        $customer->update(['is_active' => !$customer->is_active]);
+        $status = $customer->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->back()->with('success', "Akun {$customer->name} berhasil {$status}.");
     }
 }

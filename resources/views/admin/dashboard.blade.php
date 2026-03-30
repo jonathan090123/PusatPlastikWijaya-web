@@ -3,6 +3,7 @@
 @section('title', 'Dashboard - Admin')
 
 @section('content')
+<div id="dashboard-page">
 <div class="page-header">
     <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
 </div>
@@ -38,7 +39,7 @@
     </div>
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+<div class="dashboard-tables">
     {{-- Recent Orders --}}
     <div class="card">
         <div class="card-header">
@@ -58,13 +59,11 @@
                 <tbody>
                     @forelse($recentOrders as $order)
                         <tr class="dashboard-row" style="cursor:pointer;"
-                            data-order-id="{{ $order->id }}"
-                            data-order-url="{{ route('admin.orders.show', $order) }}"
-                            onclick="markOrderSeen({{ $order->id }}); window.location='{{ route('admin.orders.show', $order) }}'">
+                            onclick="window.location='{{ route('admin.orders.show', $order) }}'">
                             <td>
                                 <strong>{{ $order->invoice_number }}</strong>
-                                @if($order->created_at->gte(now()->subHours(24)))
-                                    <span class="order-new-badge" data-for="{{ $order->id }}">BARU</span>
+                                @if(isset($newOrderIds[$order->id]))
+                                    <span class="order-new-badge">BARU</span>
                                 @endif
                             </td>
                             <td>{{ $order->user->name ?? '-' }}</td>
@@ -131,10 +130,55 @@
         </div>
     </div>
 </div>
+</div>
 @endsection
 
 @push('styles')
 <style>
+/* Dashboard: fit entire page in viewport — tables scroll internally */
+#dashboard-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px - 3rem); /* 60px topbar, 3rem = 1.5rem padding top + bottom */
+    overflow: hidden;
+}
+#dashboard-page > .page-header {
+    flex-shrink: 0;
+    margin-bottom: 0.75rem;
+}
+#dashboard-page > .stats-grid {
+    flex-shrink: 0;
+    margin-bottom: 0.75rem;
+    gap: 0.6rem;
+}
+#dashboard-page > .stats-grid .stat-card {
+    padding: 0.75rem 1rem;
+}
+#dashboard-page > .stats-grid .stat-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+.dashboard-tables {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    overflow: hidden;
+}
+.dashboard-tables .card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+.dashboard-tables .card .table-responsive {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
 .dashboard-row { transition: background 0.15s ease; }
 .dashboard-row:hover { background: #eff6ff !important; }
 .order-new-badge {
@@ -155,42 +199,10 @@
     50%       { opacity: 0.55; }
 }
 @media (max-width: 768px) {
-    .admin-content > div[style*="grid-template-columns"] {
-        grid-template-columns: 1fr !important;
-    }
+    #dashboard-page { height: auto; overflow: visible; }
+    .dashboard-tables { grid-template-columns: 1fr !important; }
 }
 </style>
 @endpush
 
-@push('scripts')
-<script>
-(function () {
-    var KEY = 'admin_seen_orders_ls';
 
-    function getSeenSet() {
-        try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); }
-        catch(e) { return new Set(); }
-    }
-    function saveSeenSet(set) {
-        try { localStorage.setItem(KEY, JSON.stringify([...set])); } catch(e) {}
-    }
-
-    // On load: hide badges for already-seen orders (localStorage persists across refresh)
-    var seen = getSeenSet();
-    document.querySelectorAll('.order-new-badge[data-for]').forEach(function (badge) {
-        if (seen.has(String(badge.dataset.for))) {
-            badge.style.display = 'none';
-        }
-    });
-
-    // Mark as seen only when the row is clicked (not on refresh)
-    window.markOrderSeen = function (orderId) {
-        var set = getSeenSet();
-        set.add(String(orderId));
-        saveSeenSet(set);
-        var badge = document.querySelector('.order-new-badge[data-for="' + orderId + '"]');
-        if (badge) badge.style.display = 'none';
-    };
-})();
-</script>
-@endpush

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
+use App\Models\PointHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,15 +28,27 @@ class CustomerOrderController extends Controller
 
         foreach ($expiring as $expOrder) {
             $this->restoreOrderStock($expOrder);
+            $this->refundPointsIfNeeded($expOrder);
             $expOrder->update(['status' => 'expired', 'status_read_at' => null]);
         }
 
         $orders = Order::where('user_id', Auth::id())
-            ->with('items.product')
+            ->with('items.product', 'pointHistories')
             ->latest()
             ->paginate(10);
 
-        return view('customer.orders.index', compact('orders'));
+        // Capture unread IDs BEFORE marking as read — label shows only on first visit
+        $unreadOrderIds = Order::where('user_id', Auth::id())
+            ->whereNull('status_read_at')
+            ->pluck('id')
+            ->flip()
+            ->toArray();
+
+        Order::where('user_id', Auth::id())
+            ->whereNull('status_read_at')
+            ->update(['status_read_at' => now()]);
+
+        return view('customer.orders.index', compact('orders', 'unreadOrderIds'));
     }
 
     public function show(Order $order)
@@ -49,12 +62,13 @@ class CustomerOrderController extends Controller
             $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
             if (now()->gte($deadline)) {
                 $this->restoreOrderStock($order);
+                $this->refundPointsIfNeeded($order);
                 $order->update(['status' => 'expired', 'status_read_at' => null]);
                 $order->refresh();
             }
         }
 
-        $order->load(['items.product', 'payment', 'shippingCost']);
+        $order->load(['items.product', 'payment', 'shippingCost', 'pointHistories']);
 
         // Mark notification as read
         if (is_null($order->status_read_at)) {
@@ -80,6 +94,7 @@ class CustomerOrderController extends Controller
         }
 
         $this->restoreOrderStock($order);
+        $this->refundPointsIfNeeded($order);
         $order->update([
             'status'         => 'cancelled',
             'status_read_at' => null,
@@ -102,6 +117,7 @@ class CustomerOrderController extends Controller
 
         if (in_array($order->status, ['pending', 'waiting_payment']) && now()->gte($deadline)) {
             $this->restoreOrderStock($order);
+            $this->refundPointsIfNeeded($order);
             $order->update([
                 'status'         => 'expired',
                 'status_read_at' => null,
@@ -120,17 +136,38 @@ class CustomerOrderController extends Controller
             abort(403);
         }
 
-        $order->load('items.product');
+        $order->load('items.product.productUnits');
         $cart  = Cart::firstOrCreate(['user_id' => Auth::id()]);
         $added = 0;
+        $insufficient = [];
 
         foreach ($order->items as $item) {
             $product = $item->product;
-            if (!$product || !$product->is_active || $product->stock < 1) {
+            if (!$product || !$product->is_active) {
                 continue;
             }
 
-            $unit     = $item->unit ?: $product->unit;
+            $unit = $item->unit ?: $product->unit;
+
+            $conversionValue = 1;
+            if ($unit !== $product->unit) {
+                $pu = $product->productUnits->firstWhere('unit', $unit);
+                if ($pu) $conversionValue = $pu->conversion_value;
+            }
+
+            $requiredStock = $item->quantity * $conversionValue;
+
+            if ($product->stock < $requiredStock) {
+                $available = $conversionValue > 0 ? (int) floor($product->stock / $conversionValue) : 0;
+                $insufficient[] = [
+                    'name'      => $product->name,
+                    'requested' => $item->quantity,
+                    'available' => $available,
+                    'unit'      => $unit,
+                ];
+                continue;
+            }
+
             $existing = CartItem::where('cart_id', $cart->id)
                 ->where('product_id', $product->id)
                 ->where('unit', $unit)
@@ -149,12 +186,43 @@ class CustomerOrderController extends Controller
             $added++;
         }
 
-        if ($added === 0) {
-            return back()->with('error', 'Produk dari pesanan ini sudah tidak tersedia.');
+        if ($added === 0 && empty($insufficient)) {
+            return response()->json([
+                'success'      => false,
+                'message'      => 'Produk dari pesanan ini sudah tidak tersedia.',
+                'insufficient' => [],
+                'redirect'     => null,
+            ]);
         }
 
-        return redirect()->route('cart.index')
-            ->with('success', $added . ' produk berhasil ditambahkan ke keranjang.');
+        return response()->json([
+            'success'      => true,
+            'added'        => $added,
+            'insufficient' => $insufficient,
+            'redirect'     => empty($insufficient) ? route('cart.index') : null,
+        ]);
+    }
+
+    private function refundPointsIfNeeded(Order $order): void
+    {
+        if (($order->points_used ?? 0) <= 0) return;
+
+        // Guard: don't double-refund
+        $alreadyRefunded = PointHistory::where('order_id', $order->id)
+            ->where('type', 'refunded')
+            ->exists();
+        if ($alreadyRefunded) return;
+
+        $order->loadMissing('user');
+        $order->user->increment('points', $order->points_used);
+
+        PointHistory::create([
+            'user_id'     => $order->user_id,
+            'order_id'    => $order->id,
+            'type'        => 'refunded',
+            'amount'      => $order->points_used,
+            'description' => 'Poin dikembalikan (pesanan ' . $order->invoice_number . ' dibatalkan/kadaluarsa)',
+        ]);
     }
 
     private function restoreOrderStock(Order $order): void

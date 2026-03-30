@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\PointHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -42,6 +43,7 @@ class PaymentController extends Controller
         $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
         if (now()->gt($deadline)) {
             $this->restoreStock($order);
+            $this->refundPointsIfNeeded($order);
             $order->update(['status' => 'expired', 'status_read_at' => null]);
             return redirect()->route('orders.show', $order)
                 ->with('info', 'Waktu pembayaran telah habis. Aktifkan kembali pesanan untuk melanjutkan.');
@@ -67,6 +69,7 @@ class PaymentController extends Controller
         $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
         if (now()->gt($deadline)) {
             $this->restoreStock($order);
+            $this->refundPointsIfNeeded($order);
             $order->update(['status' => 'expired', 'status_read_at' => null]);
             return response()->json(['error' => 'Waktu pembayaran telah habis.'], 422);
         }
@@ -243,6 +246,7 @@ class PaymentController extends Controller
                 if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
                     if (in_array($order->status, ['pending', 'waiting_payment'])) {
                         $this->restoreStock($order);
+                        $this->refundPointsIfNeeded($order);
                         $order->update(['status' => 'cancelled', 'status_read_at' => null]);
                     }
                 }
@@ -320,6 +324,7 @@ class PaymentController extends Controller
                 // Only cancel if not yet processing (stock not yet deducted)
                 if (in_array($order->status, ['pending', 'waiting_payment'])) {
                     $this->restoreStock($order); // return reserved stock
+                    $this->refundPointsIfNeeded($order);
                     $order->update([
                         'status'         => 'cancelled',
                         'status_read_at' => null,
@@ -358,6 +363,27 @@ class PaymentController extends Controller
         $order->update([
             'status'         => 'processing',
             'status_read_at' => null,
+        ]);
+    }
+
+    private function refundPointsIfNeeded(Order $order): void
+    {
+        if (($order->points_used ?? 0) <= 0) return;
+
+        $alreadyRefunded = PointHistory::where('order_id', $order->id)
+            ->where('type', 'refunded')
+            ->exists();
+        if ($alreadyRefunded) return;
+
+        $order->loadMissing('user');
+        $order->user->increment('points', $order->points_used);
+
+        PointHistory::create([
+            'user_id'     => $order->user_id,
+            'order_id'    => $order->id,
+            'type'        => 'refunded',
+            'amount'      => $order->points_used,
+            'description' => 'Poin dikembalikan (pesanan ' . $order->invoice_number . ' dibatalkan/kadaluarsa)',
         ]);
     }
 

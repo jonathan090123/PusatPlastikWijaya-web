@@ -54,6 +54,9 @@
                         <span id="customer-orders-nav-badge" class="nav-badge">{{ $customerUnreadOrdersCount }}</span>
                     @endif
                 </a>
+                <a href="{{ route('points.index') }}" class="sidebar-link {{ request()->routeIs('points.*') ? 'active' : '' }}">
+                    <i class="fas fa-star"></i> <span>Poin Saya</span>
+                </a>
             </nav>
             <div style="margin-top:auto; padding:1rem;">
                 <a href="{{ route('profile.edit') }}" class="sidebar-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" style="margin-bottom:0.5rem; background:rgba(96,165,250,0.15); border:1px solid rgba(96,165,250,0.25); border-radius:var(--radius-sm); font-weight:600; color:#93c5fd;">
@@ -89,7 +92,7 @@
                 <div class="topbar-right">
                     <a href="{{ route('cart.index') }}" style="position:relative; color:var(--gray-300); font-size:1.1rem;">
                         <i class="fas fa-shopping-cart"></i>
-                        <span class="badge" id="cart-count" style="position:absolute; top:-6px; right:-10px; background:var(--danger); color:#fff; font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:999px;">0</span>
+                        <span class="badge" id="cart-count" style="position:absolute; top:-6px; right:-10px; background:var(--danger); color:#fff; font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:999px; display:none;">0</span>
                     </a>
                     <div class="nav-dropdown">
                         <button class="nav-dropdown-toggle">
@@ -203,9 +206,13 @@
             .then(res => res.json())
             .then(data => {
                 const badge = document.getElementById('cart-count');
-                if (badge) badge.textContent = data.count;
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+                }
             })
             .catch(() => {});
+
     </script>
     @stack('scripts')
 

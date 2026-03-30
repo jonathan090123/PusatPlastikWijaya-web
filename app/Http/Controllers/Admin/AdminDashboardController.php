@@ -18,19 +18,28 @@ class AdminDashboardController extends Controller
 
         $recentOrders = Order::with('user')
             ->latest()
-            ->take(5)
+            ->take(9)
             ->get();
 
         $lowStockProducts = Product::with('category')
             ->where('is_active', true)
             ->whereColumn('stock', '<=', 'stock_alert')
             ->orderBy('stock')
-            ->take(5)
+            ->take(10)
             ->get();
 
-        $newOrdersCount = Order::whereNull('admin_read_at')
-            ->whereNotIn('status', ['cancelled', 'completed'])
-            ->count();
+        // Capture unread IDs BEFORE marking as read — badge shows only on first load
+        $newOrderIds = Order::whereNull('admin_read_at')
+            ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
+            ->pluck('id')
+            ->flip()
+            ->toArray();
+
+        Order::whereNull('admin_read_at')
+            ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
+            ->update(['admin_read_at' => now()]);
+
+        $newOrdersCount = count($newOrderIds);
 
         return view('admin.dashboard', compact(
             'totalOrders',
@@ -39,7 +48,8 @@ class AdminDashboardController extends Controller
             'totalCustomers',
             'recentOrders',
             'lowStockProducts',
-            'newOrdersCount'
+            'newOrdersCount',
+            'newOrderIds'
         ));
     }
 }

@@ -233,9 +233,84 @@
                         <span>Ongkos Kirim</span>
                         <span id="checkout-shipping" class="shipping-cost-display">Pilih metode dulu</span>
                     </div>
+
+                    {{-- Points discount row (hidden until toggled) --}}
+                    <div class="summary-row" id="points-discount-row" style="display:none; color:var(--success);">
+                        <span><i class="fas fa-star" style="font-size:0.75rem;"></i> Diskon Poin (<span id="points-used-label">0</span> poin)</span>
+                        <span id="points-discount-display" style="color:var(--success);">-Rp 0</span>
+                    </div>
+
                     <div class="summary-row summary-total">
                         <span>Total</span>
                         <span id="checkout-total">Rp {{ number_format($cart->total, 0, ',', '.') }}</span>
+                    </div>
+
+                    {{-- Earned points preview --}}
+                    <div id="earned-points-row" style="display:flex; align-items:center; justify-content:space-between; padding:0.55rem 1.25rem; background:linear-gradient(135deg,#f0fdf4,#dcfce7); border-top:1px dashed #86efac; font-size:0.8rem;">
+                        <span style="color:#15803d; font-weight:600;">
+                            <i class="fas fa-star" style="color:#16a34a; font-size:0.7rem;"></i>
+                            Poin yang akan didapat
+                        </span>
+                        <span id="earned-points-value" style="color:#15803d; font-weight:700;">+{{ floor($cart->total / 1000) }} poin</span>
+                    </div>
+
+                    {{-- Use Points section (always visible) --}}
+                    <div style="margin:0 1.25rem 0.5rem; padding:0.85rem 1rem; border-radius:var(--radius); font-size:0.85rem;
+                        {{ $user->points > 0 ? 'background:linear-gradient(135deg, #fef9c3 0%, #fefce8 100%); border:1.5px solid #fde047;' : 'background:#f9fafb; border:1.5px solid #e5e7eb;' }}">
+                        @if($user->points > 0)
+                            {{-- Has points — show toggle --}}
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+                                <div>
+                                    <div style="font-weight:700; color:#854d0e; margin-bottom:0.15rem;">
+                                        <i class="fas fa-star" style="color:#ca8a04;"></i> Gunakan Poin
+                                    </div>
+                                    <div style="font-size:0.78rem; color:#a16207;">
+                                        Tersedia: <strong>{{ number_format($user->points, 0, ',', '.') }} poin</strong>
+                                        (senilai Rp {{ number_format($user->points, 0, ',', '.') }})
+                                    </div>
+                                </div>
+                                <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; user-select:none;">
+                                    <div class="points-toggle-wrap">
+                                        <input type="checkbox" id="usePointsToggle" style="display:none;">
+                                        <div class="points-toggle" id="pointsToggleVisual">
+                                            <div class="points-toggle-knob"></div>
+                                        </div>
+                                    </div>
+                                    <span id="pointsToggleLabel" style="font-size:0.78rem; color:#92400e; font-weight:600;">Tidak</span>
+                                </label>
+                            </div>
+                            <div id="pointsInputGroup" style="display:none; margin-top:0.75rem; padding-top:0.65rem; border-top:1px dashed #fde047;">
+                                <label style="font-size:0.78rem; font-weight:600; color:#854d0e; margin-bottom:0.3rem; display:block;">
+                                    Jumlah poin yang digunakan:
+                                </label>
+                                <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <input type="number" id="pointsAmountInput" min="1" max="{{ $user->points }}"
+                                        value="{{ $user->points }}"
+                                        style="width:110px; padding:0.35rem 0.5rem; border:1.5px solid #fde047; border-radius:var(--radius-sm); font-size:0.85rem; font-weight:600; text-align:center; background:#fffbeb; color:#78350f;">
+                                    <button type="button" id="pointsMaxBtn"
+                                        style="padding:0.3rem 0.65rem; background:#ca8a04; color:#fff; border:none; border-radius:var(--radius-sm); font-size:0.75rem; font-weight:700; cursor:pointer;">
+                                        Semua
+                                    </button>
+                                    <span style="font-size:0.78rem; color:#92400e; font-weight:600;">
+                                        = Rp <span id="pointsRpPreview">{{ number_format($user->points, 0, ',', '.') }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <input type="hidden" name="use_points" id="usePointsHidden" value="0">
+                        @else
+                            {{-- No points yet — show info --}}
+                            <div style="display:flex; align-items:center; gap:0.65rem;">
+                                <i class="fas fa-star" style="color:#d1d5db; font-size:1.1rem; flex-shrink:0;"></i>
+                                <div>
+                                    <div style="font-weight:700; color:#6b7280; margin-bottom:0.1rem;">Gunakan Poin</div>
+                                    <div style="font-size:0.78rem; color:#9ca3af;">
+                                        Kamu belum punya poin.
+                                        Selesaikan pesanan untuk mendapat poin belanja.
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="use_points" value="0">
+                        @endif
                     </div>
 
                     {{-- Submit --}}
@@ -521,6 +596,28 @@ a.summary-item-name:hover {
     width: calc(100% - 2.5rem) !important;
 }
 
+/* Points toggle switch */
+.points-toggle-wrap { display: flex; align-items: center; }
+.points-toggle {
+    width: 40px; height: 22px;
+    background: #d1d5db;
+    border-radius: 999px;
+    position: relative;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.points-toggle.active { background: #ca8a04; }
+.points-toggle-knob {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.points-toggle.active .points-toggle-knob { transform: translateX(18px); }
+
 @media (max-width: 900px) {
     .checkout-grid { grid-template-columns: 1fr; }
     .checkout-right { position: static; }
@@ -546,9 +643,35 @@ a.summary-item-name:hover {
 var subtotal           = {{ $cart->total }};
 const customerAddress  = @json($user->address ?? '');
 const csrfToken        = document.querySelector('meta[name="csrf-token"]').content;
+const userPoints       = {{ $user->points }};  // available balance
 
 function formatRupiah(num) {
     return 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function getPointsDiscount() {
+    var hidden = document.getElementById('usePointsHidden');
+    if (!hidden) return 0;
+    return parseInt(hidden.value, 10) || 0;
+}
+
+function recalcTotal() {
+    var shippingSelected = document.querySelector('input[name="shipping_type"]:checked');
+    var shippingCost = shippingSelected ? parseFloat(shippingSelected.closest('.shipping-option').dataset.cost) : 0;
+    var pointsDiscount = getPointsDiscount();
+    var total = subtotal + shippingCost - pointsDiscount;
+    if (total < 0) total = 0;
+    document.getElementById('checkout-total').textContent = formatRupiah(total);
+    // Update earned points preview (floor(total / 1000))
+    var earned = Math.floor(total / 1000);
+    var earnedRow = document.getElementById('earned-points-row');
+    var earnedVal = document.getElementById('earned-points-value');
+    if (earned > 0) {
+        earnedVal.textContent = '+' + earned.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' poin';
+        earnedRow.style.display = 'flex';
+    } else {
+        earnedRow.style.display = 'none';
+    }
 }
 
 function recalcSubtotal() {
@@ -560,14 +683,10 @@ function recalcSubtotal() {
     });
     subtotal = total;
     document.getElementById('checkout-subtotal').textContent = formatRupiah(total);
-    // Refresh shipping display
-    const shippingSelected = document.querySelector('input[name="shipping_type"]:checked');
-    if (shippingSelected) {
-        const cost = parseFloat(shippingSelected.closest('.shipping-option').dataset.cost);
-        document.getElementById('checkout-total').textContent = formatRupiah(total + cost);
-    } else {
-        document.getElementById('checkout-total').textContent = formatRupiah(total);
-    }
+    // Recalculate using shared helper
+    recalcTotal();
+    // Also cap points in case subtotal dropped
+    syncPointsInput();
     // Total items badge
     var count = 0;
     document.querySelectorAll('#summaryItemsList .summary-item').forEach(function(row) {
@@ -707,7 +826,7 @@ function resetShippingDisplay() {
     var shippingEl = document.getElementById('checkout-shipping');
     shippingEl.className = 'shipping-cost-display';
     shippingEl.textContent = 'Pilih metode dulu';
-    document.getElementById('checkout-total').textContent = formatRupiah(subtotal);
+    recalcTotal();
 }
 
 // ── Shipping type change ──
@@ -717,12 +836,11 @@ function updateShipping() {
 
     const option = selected.closest('.shipping-option');
     const cost   = parseFloat(option.dataset.cost);
-    const type   = option.dataset.type;
 
     const shippingEl = document.getElementById('checkout-shipping');
     shippingEl.className = 'shipping-price' + (cost === 0 ? ' free' : '');
     shippingEl.textContent = cost > 0 ? formatRupiah(cost) : 'Gratis';
-    document.getElementById('checkout-total').textContent = formatRupiah(subtotal + cost);
+    recalcTotal();
 
     document.querySelectorAll('.shipping-option').forEach(function(opt) { opt.classList.remove('selected'); });
     option.classList.add('selected');
@@ -788,5 +906,100 @@ document.getElementById('checkoutForm').addEventListener('submit', function() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
 });
+
+// ── Points Toggle ──
+function syncPointsInput() {
+    var toggle = document.getElementById('usePointsToggle');
+    if (!toggle || !toggle.checked) return;
+    // Re-cap the input value based on current subtotal + shipping
+    var input      = document.getElementById('pointsAmountInput');
+    var shippingEl = document.querySelector('input[name="shipping_type"]:checked');
+    var shippingCost = shippingEl ? parseFloat(shippingEl.closest('.shipping-option').dataset.cost) : 0;
+    var maxAllowed = Math.min(userPoints, Math.floor(subtotal + shippingCost));
+    if (parseInt(input.value, 10) > maxAllowed) input.value = maxAllowed;
+    applyPoints();
+}
+
+function applyPoints() {
+    var toggle      = document.getElementById('usePointsToggle');
+    var hidden      = document.getElementById('usePointsHidden');
+    var discRow     = document.getElementById('points-discount-row');
+    var usedLabel   = document.getElementById('points-used-label');
+    var discDisplay = document.getElementById('points-discount-display');
+
+    if (!toggle || !hidden) return;
+
+    if (!toggle.checked) {
+        hidden.value = 0;
+        if (discRow) discRow.style.display = 'none';
+        recalcTotal();
+        return;
+    }
+
+    var input    = document.getElementById('pointsAmountInput');
+    var shippingEl = document.querySelector('input[name="shipping_type"]:checked');
+    var shippingCost = shippingEl ? parseFloat(shippingEl.closest('.shipping-option').dataset.cost) : 0;
+    var maxAllowed = Math.min(userPoints, Math.floor(subtotal + shippingCost));
+    var pts      = Math.min(parseInt(input.value, 10) || 0, maxAllowed);
+    if (pts < 0) pts = 0;
+
+    hidden.value = pts;
+    if (usedLabel)   usedLabel.textContent   = pts.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    if (discDisplay) discDisplay.textContent  = '-Rp ' + pts.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    if (discRow)     discRow.style.display    = pts > 0 ? '' : 'none';
+
+    var rpPreview = document.getElementById('pointsRpPreview');
+    if (rpPreview) rpPreview.textContent = pts.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    recalcTotal();
+}
+
+(function initPointsToggle() {
+    var toggle      = document.getElementById('usePointsToggle');
+    var visual      = document.getElementById('pointsToggleVisual');
+    var lbl         = document.getElementById('pointsToggleLabel');
+    var inputGroup  = document.getElementById('pointsInputGroup');
+    var input       = document.getElementById('pointsAmountInput');
+    var maxBtn      = document.getElementById('pointsMaxBtn');
+
+    if (!toggle) return;
+
+    function getMaxPoints() {
+        var shippingEl = document.querySelector('input[name="shipping_type"]:checked');
+        var shippingCost = shippingEl ? parseFloat(shippingEl.closest('.shipping-option').dataset.cost) : 0;
+        return Math.min(userPoints, Math.floor(subtotal + shippingCost));
+    }
+
+    toggle.addEventListener('change', function() {
+        var on = toggle.checked;
+        visual.classList.toggle('active', on);
+        lbl.textContent = on ? 'Ya' : 'Tidak';
+        inputGroup.style.display = on ? 'block' : 'none';
+        if (on) {
+            var maxPts = getMaxPoints();
+            input.max = maxPts;
+            input.value = maxPts;
+        }
+        applyPoints();
+    });
+
+    if (input) {
+        input.addEventListener('input', function() {
+            var maxPts = getMaxPoints();
+            var v = parseInt(this.value, 10) || 0;
+            if (v > maxPts) { this.value = maxPts; v = maxPts; }
+            if (v < 0) { this.value = 0; v = 0; }
+            applyPoints();
+        });
+    }
+
+    if (maxBtn) {
+        maxBtn.addEventListener('click', function() {
+            var maxPts = getMaxPoints();
+            if (input) input.value = maxPts;
+            applyPoints();
+        });
+    }
+})();
 </script>
 @endpush

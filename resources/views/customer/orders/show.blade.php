@@ -240,6 +240,34 @@
                             <span>Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                         </div>
                     </div>
+
+                    {{-- Earned points notice --}}
+                    @php
+                        $earnedHistory = $order->pointHistories->firstWhere('type', 'earned');
+                    @endphp
+                    @if($earnedHistory)
+                        <div style="margin-top:0.85rem; padding:0.7rem 0.9rem; background:linear-gradient(135deg,#fef9c3 0%,#fefce8 100%); border:1.5px solid #fde047; border-radius:var(--radius-sm); font-size:0.82rem;">
+                            <div style="font-weight:700; color:#854d0e;">
+                                <i class="fas fa-star" style="color:#ca8a04;"></i>
+                                Poin yang kamu dapatkan dari pesanan ini
+                            </div>
+                            <div style="font-size:1.1rem; font-weight:800; color:#ca8a04; margin-top:0.2rem;">
+                                +{{ number_format($earnedHistory->amount, 0, ',', '.') }} poin
+                            </div>
+                        </div>
+                    @elseif($order->status === 'completed')
+                        {{-- completed but 0 points (total < 1000) --}}
+                        <div style="margin-top:0.85rem; padding:0.6rem 0.9rem; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--gray-500);">
+                            <i class="fas fa-star" style="font-size:0.75rem;"></i>
+                            Tidak ada poin untuk pesanan ini (total transaksi terlalu kecil).
+                        </div>
+                    @elseif(!in_array($order->status, ['cancelled', 'expired']))
+                        <div style="margin-top:0.85rem; padding:0.6rem 0.9rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-sm); font-size:0.8rem; color:#1d4ed8;">
+                            <i class="fas fa-star" style="font-size:0.75rem;"></i>
+                            Kamu akan mendapat <strong>{{ number_format((int) floor($order->total / 1000), 0, ',', '.') }} poin</strong>
+                            saat pesanan selesai.
+                        </div>
+                    @endif
                 </div>
             </div>
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PointHistory;
 use App\Models\ShippingCost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +42,7 @@ class CheckoutController extends Controller
             'shipping_address' => 'required|string|max:1000',
             'shipping_type' => 'required|in:pickup,local,outside',
             'notes' => 'nullable|string|max:500',
+            'use_points' => 'nullable|integer|min:0',
         ]);
 
         // Luar Kota Blitar tidak boleh pakai Kurir Toko
@@ -86,15 +88,25 @@ class CheckoutController extends Controller
         $shippingName = $method->name;
         $shippingCostId = $method->id;
 
+        // Determine points to use
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $requestedPoints = (int) ($request->use_points ?? 0);
+        $pointsToUse = min($requestedPoints, $user->points);
+
         try {
-            $order = DB::transaction(function () use ($cart, $shippingFee, $shippingName, $shippingCostId, $request) {
+            $order = DB::transaction(function () use ($cart, $shippingFee, $shippingName, $shippingCostId, $request, $pointsToUse, $user) {
                 // Calculate subtotal (unit-aware pricing)
                 $subtotal = 0;
                 foreach ($cart->items as $item) {
                     $subtotal += $item->product->getPriceForUnit($item->unit) * $item->quantity;
                 }
 
-                $total = $subtotal + $shippingFee;
+                // Cap points discount so total never goes below 0
+                $pointsDiscount = min($pointsToUse, $subtotal + $shippingFee);
+                $pointsUsed = (int) $pointsDiscount; // 1 poin = Rp 1
+
+                $total = $subtotal - $pointsDiscount + $shippingFee;
 
                 // Create order
                 $order = Order::create([
@@ -107,8 +119,8 @@ class CheckoutController extends Controller
                     'shipping_address' => $request->shipping_address,
                     'subtotal' => $subtotal,
                     'discount_amount' => 0,
-                    'points_used' => 0,
-                    'points_discount' => 0,
+                    'points_used' => $pointsUsed,
+                    'points_discount' => $pointsDiscount,
                     'shipping_fee' => $shippingFee,
                     'total' => $total,
                     'status' => 'waiting_payment',
@@ -140,6 +152,18 @@ class CheckoutController extends Controller
 
                 // Clear cart
                 $cart->items()->delete();
+
+                // Deduct used points and record history
+                if ($pointsUsed > 0) {
+                    $user->decrement('points', $pointsUsed);
+                    PointHistory::create([
+                        'user_id'     => $user->id,
+                        'order_id'    => $order->id,
+                        'type'        => 'used',
+                        'amount'      => $pointsUsed,
+                        'description' => 'Penukaran poin untuk pesanan ' . $order->invoice_number,
+                    ]);
+                }
 
                 return $order;
             });

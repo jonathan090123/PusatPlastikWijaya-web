@@ -5,9 +5,21 @@
 @section('content')
 <div class="page-header">
     <h1><i class="fas fa-user"></i> Detail Pelanggan</h1>
-    <a href="{{ route('admin.customers.index') }}" class="btn btn-secondary btn-sm">
-        <i class="fas fa-arrow-left"></i> Kembali
-    </a>
+    <div style="display:flex; gap:.5rem; align-items:center;">
+        <form method="POST" action="{{ route('admin.customers.toggleActive', $customer) }}">
+            @csrf
+            @method('PATCH')
+            <button type="submit"
+                class="btn btn-sm {{ $customer->is_active ? 'btn-outline-danger' : 'btn-success' }}"
+                onclick="return confirm('{{ $customer->is_active ? 'Nonaktifkan' : 'Aktifkan' }} akun {{ addslashes($customer->name) }}?')">
+                <i class="fas {{ $customer->is_active ? 'fa-ban' : 'fa-circle-check' }}"></i>
+                {{ $customer->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}
+            </button>
+        </form>
+        <a href="{{ route('admin.customers.index') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
+    </div>
 </div>
 
 {{-- Customer Info --}}

@@ -15,7 +15,7 @@
                 <input type="text" name="search" placeholder="Cari invoice, nama..." value="{{ request('search') }}">
             </div>
             <div class="form-group" style="min-width:180px; margin:0;">
-                <select name="status">
+                <select name="status" onchange="this.form.submit()">
                     <option value="">Semua Status</option>
                     <option value="waiting_payment" {{ request('status') === 'waiting_payment' ? 'selected' : '' }}>Menunggu Pembayaran</option>
                     <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Diproses</option>
@@ -26,7 +26,7 @@
                     <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Kadaluarsa</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Filter</button>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Cari</button>
             @if(request()->hasAny(['search', 'status']))
                 <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Reset</a>
             @endif
@@ -64,13 +64,18 @@
                             default             => '',
                         };
                     @endphp
-                    <tr class="order-row {{ $isDone ? 'order-row--done' : '' }}" data-order-id="{{ $order->id }}"
-                        data-new="{{ $order->created_at->gte(now()->subHours(24)) ? '1' : '0' }}"
-                        onclick="adminMarkOrderSeen({{ $order->id }}); window.location='{{ route('admin.orders.show', $order) }}'">
+                    @php $isNew = isset($newOrderIds[$order->id]); @endphp
+                    @php $isOngoing = !$isDone && !$isNew; @endphp
+                    <tr class="order-row {{ $isDone ? 'order-row--done' : '' }} {{ $isNew ? 'order-row--new' : '' }}" data-order-id="{{ $order->id }}"
+                        onclick="window.location='{{ route('admin.orders.show', $order) }}'">
                         <td>{{ $orders->firstItem() + $index }}</td>
                         <td>
                             <strong>{{ $order->invoice_number }}</strong>
-                            <span class="order-new-badge" style="display:none;">BARU</span>
+                            @if($isNew)
+                                <span class="order-new-badge">BARU</span>
+                            @elseif($isOngoing)
+                                <i class="fas fa-circle-exclamation order-ongoing-icon" title="Pesanan sedang berlangsung"></i>
+                            @endif
                         </td>
                         <td>{{ $order->user->name ?? '-' }}</td>
                         <td>Rp {{ number_format($order->total, 0, ',', '.') }}</td>
@@ -115,6 +120,13 @@
     opacity: 0.8;
     background: var(--gray-50) !important;
 }
+.order-row--new {
+    background: #fff5f5 !important;
+    border-left: 3px solid #ef4444;
+}
+.order-row--new:hover {
+    background: #fee2e2 !important;
+}
 .order-new-badge {
     display: inline-block;
     font-size: 0.65rem;
@@ -132,39 +144,13 @@
     0%, 100% { opacity: 1; }
     50%       { opacity: 0.6; }
 }
+.order-ongoing-icon {
+    color: #ef4444;
+    font-size: 1.1rem;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
 </style>
 @endpush
 
-@push('scripts')
-<script>
-(function () {
-    const KEY = 'admin_seen_orders_ls';
 
-    function getSeenSet() {
-        try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); }
-        catch(e) { return new Set(); }
-    }
-    function saveSeenSet(set) {
-        try { localStorage.setItem(KEY, JSON.stringify([...set])); } catch(e) {}
-    }
-
-    // On load: show badge only for "new" orders (24h) that have NOT been clicked yet
-    const seen = getSeenSet();
-    document.querySelectorAll('tr[data-order-id][data-new="1"]').forEach(function (row) {
-        if (!seen.has(String(row.dataset.orderId))) {
-            const badge = row.querySelector('.order-new-badge');
-            if (badge) badge.style.display = 'inline-block';
-        }
-    });
-
-    // Mark seen only when the row is clicked
-    window.adminMarkOrderSeen = function (orderId) {
-        const set = getSeenSet();
-        set.add(String(orderId));
-        saveSeenSet(set);
-        const badge = document.querySelector('tr[data-order-id="' + orderId + '"] .order-new-badge');
-        if (badge) badge.style.display = 'none';
-    };
-}());
-</script>
-@endpush

@@ -16,6 +16,7 @@ use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Controllers\Customer\CustomerOrderController;
 use App\Http\Controllers\Customer\PaymentController;
+use App\Http\Controllers\Customer\CustomerPointController;
 use App\Http\Controllers\ProfileController;
 
 /* |-------------------------------------------------------------------------- | Web Routes |-------------------------------------------------------------------------- */
@@ -68,9 +69,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/payment/{order}', [PaymentController::class , 'show'])->name('payment.show');
     Route::post('/payment/{order}/token', [PaymentController::class , 'getToken'])->name('payment.token');
     Route::get('/payment/{order}/finish', [PaymentController::class , 'finish'])->name('payment.finish');
+
+    // Points
+    Route::get('/points', [CustomerPointController::class , 'index'])->name('points.index');
 });
 
-// Midtrans Webhook (no auth, no CSRF)
+// Midtrans Webhook
 Route::post('/midtrans/webhook', [PaymentController::class , 'webhook'])->name('midtrans.webhook');
 
 // Admin Routes
@@ -89,6 +93,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Customers
     Route::get('/customers', [AdminCustomerController::class , 'index'])->name('customers.index');
     Route::get('/customers/{customer}', [AdminCustomerController::class , 'show'])->name('customers.show');
+    Route::patch('/customers/{customer}/toggle-active', [AdminCustomerController::class, 'toggleActive'])->name('customers.toggleActive');
 
     // Orders
     Route::get('/orders', [AdminOrderController::class , 'index'])->name('orders.index');
