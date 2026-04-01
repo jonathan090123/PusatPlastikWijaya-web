@@ -43,6 +43,7 @@
                 <tr>
                     <th>No</th>
                     <th>Nama</th>
+                    <th>Usaha</th>
                     <th>Email</th>
                     <th>No. HP</th>
                     <th>Poin</th>
@@ -55,6 +56,13 @@
                     <tr style="cursor:pointer;" class="{{ $customer->is_active ? '' : 'row-inactive' }}" onclick="window.location='{{ route('admin.customers.show', $customer) }}'">
                         <td>{{ $customers->firstItem() + $index }}</td>
                         <td><strong>{{ $customer->name }}</strong></td>
+                        <td>
+                            @if($customer->customer_type === 'business')
+                                <span style="font-size:0.82rem; color:var(--gray-800);">{{ $customer->business_name ?? '-' }}</span>
+                            @else
+                                <span style="color:var(--gray-400); font-size:0.82rem;">-</span>
+                            @endif
+                        </td>
                         <td>{{ $customer->email }}</td>
                         <td>{{ $customer->phone ?? '-' }}</td>
                         <td>
@@ -65,7 +73,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <i class="fas fa-users"></i>
                                 <h3>Belum ada pelanggan</h3>

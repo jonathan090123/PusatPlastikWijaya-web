@@ -31,13 +31,23 @@ class ProfileController extends Controller
         ];
 
         if (!$user->isAdmin()) {
-            $rules['city_type'] = 'required|in:blitar,outside';
-            $rules['address']   = 'required|string|max:1000';
+            $rules['city_type']     = 'required|in:blitar,outside';
+            $rules['address']       = 'required|string|max:1000';
+            $rules['customer_type'] = 'nullable|in:personal,business';
+            $rules['business_name'] = 'nullable|string|max:255';
         } else {
             $rules['address'] = 'nullable|string|max:1000';
         }
 
         $validated = $request->validate($rules);
+
+        // Default to personal if not submitted, clear business fields if personal
+        if (!$user->isAdmin()) {
+            $validated['customer_type'] = $request->boolean('is_business') ? 'business' : 'personal';
+            if ($validated['customer_type'] === 'personal') {
+                $validated['business_name'] = null;
+            }
+        }
 
         $user->update($validated);
 

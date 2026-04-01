@@ -73,6 +73,31 @@
                 @enderror
             </div>
 
+            {{-- Tipe Pelanggan --}}
+            <div class="form-group">
+                <p style="font-size:0.75rem; color:var(--gray-400); margin-bottom:0.4rem; margin-top:-0.25rem;"><b>(Opsional)</b> - lewati jika Anda bukan dari usaha/perusahaan</p>
+                <label class="business-check-label {{ old('is_business') ? 'active' : '' }}">
+                    <input type="checkbox" id="is_business" name="is_business" value="1"
+                           {{ old('is_business') ? 'checked' : '' }}>
+
+                    <span>Saya mewakili usaha / perusahaan</span>
+                </label>
+            </div>
+
+            {{-- Info Bisnis (muncul jika checkbox dicentang) --}}
+            <div id="businessGroup" style="{{ old('is_business') ? '' : 'display:none;' }}">
+                <div class="form-group">
+                    <label for="business_name"><i class="fas fa-building"></i> Nama Usaha / Perusahaan</label>
+                    <input type="text" id="business_name" name="business_name"
+                           value="{{ old('business_name') }}"
+                           placeholder="Contoh: CV Maju Bersama / Toko Sari Plastik"
+                           class="@error('business_name') is-invalid @enderror">
+                    @error('business_name')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="password"><i class="fas fa-lock"></i> Password</label>
                 <div class="password-input-group">
@@ -133,6 +158,48 @@
     color: var(--primary);
 }
 .city-option input[type="radio"] { display: none; }
+.customer-type-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--gray-600);
+}
+.customer-type-option:hover { border-color: var(--primary-light); }
+.customer-type-option.selected,
+.customer-type-option:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(59,130,246,0.05);
+    color: var(--primary);
+}
+.customer-type-option input[type="radio"] { display: none; }
+.business-check-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: var(--gray-600);
+    user-select: none;
+}
+.business-check-label:hover { color: var(--primary); }
+.business-check-label.active { color: var(--primary); font-weight: 600; }
+.business-check-label input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+    margin: 0;
+    vertical-align: middle;
+}
 </style>
 
 <script>
@@ -154,6 +221,18 @@ document.querySelectorAll('input[name="city_type"]').forEach(function(radio) {
         this.closest('.city-option').classList.add('selected');
         document.getElementById('addressGroup').style.display = '';
     });
+});
+
+document.getElementById('is_business').addEventListener('change', function() {
+    const label = this.closest('.business-check-label');
+    const businessGroup = document.getElementById('businessGroup');
+    if (this.checked) {
+        label.classList.add('active');
+        businessGroup.style.display = '';
+    } else {
+        label.classList.remove('active');
+        businessGroup.style.display = 'none';
+    }
 });
 </script>
 @endsection

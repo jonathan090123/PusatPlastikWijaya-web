@@ -29,7 +29,7 @@
         <div class="stat-info">
             <h3 style="font-size:1rem;">{{ $customer->name }}</h3>
             <p>{{ $customer->email }}</p>
-        </div>
+        </div> 
     </div>
     <div class="stat-card">
         <div class="stat-icon green"><i class="fas fa-phone"></i></div>
@@ -59,6 +59,17 @@
     <div class="card-header"><span><i class="fas fa-map-marker-alt"></i> Alamat</span></div>
     <div class="card-body">
         <p>{{ $customer->address }}</p>
+    </div>
+</div>
+@endif
+
+@if($customer->customer_type === 'business')
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header"><span><i class="fas fa-building"></i> Info Usaha / Perusahaan</span></div>
+    <div class="card-body">
+        <p style="margin:0; color:var(--gray-700);">
+            {{ $customer->business_name ?? '<em style="color:var(--gray-400);">Nama usaha tidak diisi</em>' }}
+        </p>
     </div>
 </div>
 @endif
