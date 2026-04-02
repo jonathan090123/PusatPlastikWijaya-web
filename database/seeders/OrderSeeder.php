@@ -142,7 +142,6 @@ class OrderSeeder extends Seeder
             $orderId = DB::table('orders')->insertGetId([
                 'invoice_number'  => $invoiceNumber,
                 'user_id'         => $o['user'],
-                'voucher_id'      => null,
                 'shipping_cost_id'=> null,
                 'shipping_name'   => $o['ship_name'],
                 'recipient_name'  => DB::table('users')->where('id', $o['user'])->value('name'),

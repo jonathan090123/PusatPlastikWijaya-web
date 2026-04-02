@@ -12,7 +12,6 @@ class Order extends Model
     protected $fillable = [
         'invoice_number',
         'user_id',
-        'voucher_id',
         'shipping_cost_id',
         'shipping_name',
         'recipient_name',

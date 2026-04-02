@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('invoice_number')->unique();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('voucher_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('shipping_cost_id')->nullable()->constrained()->onDelete('set null');
             $table->string('shipping_name')->nullable();
             $table->string('recipient_name');

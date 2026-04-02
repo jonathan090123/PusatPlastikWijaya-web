@@ -227,7 +227,7 @@
                         </div>
                         @if($order->discount_amount > 0)
                             <div style="display:flex; justify-content:space-between; padding:0.35rem 0; color:var(--success);">
-                                <span>Diskon Voucher</span>
+                                <span>Diskon</span>
                                 <span>-Rp {{ number_format($order->discount_amount, 0, ',', '.') }}</span>
                             </div>
                         @endif

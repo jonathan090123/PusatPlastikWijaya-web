@@ -136,7 +136,7 @@ class PaymentController extends Controller
                 'id'       => 'DISCOUNT',
                 'price'    => -1 * (int) $order->discount_amount,
                 'quantity' => 1,
-                'name'     => 'Diskon Voucher',
+                'name'     => 'Diskon',
             ];
         }
 

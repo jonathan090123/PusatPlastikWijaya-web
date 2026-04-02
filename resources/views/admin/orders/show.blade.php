@@ -157,7 +157,7 @@
                     </div>
                     @if($order->discount_amount > 0)
                         <div style="display:flex; justify-content:space-between; padding:0.35rem 0; color:var(--success);">
-                            <span>Diskon Voucher</span>
+                            <span>Diskon</span>
                             <span>-Rp {{ number_format($order->discount_amount, 0, ',', '.') }}</span>
                         </div>
                     @endif
@@ -253,7 +253,7 @@
                     $invoiceLines .= "========================\n";
                     $invoiceLines .= "Subtotal: Rp " . number_format($order->subtotal, 0, ',', '.') . "\n";
                     if($order->discount_amount > 0) {
-                        $invoiceLines .= "Diskon Voucher: -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
+                        $invoiceLines .= "Diskon: -Rp " . number_format($order->discount_amount, 0, ',', '.') . "\n";
                     }
                     if($order->points_discount > 0) {
                         $invoiceLines .= "Diskon Poin ({$order->points_used} poin): -Rp " . number_format($order->points_discount, 0, ',', '.') . "\n";

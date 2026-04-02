@@ -105,9 +105,5 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/shipping', [AdminShippingController::class , 'update'])->name('shipping.update');
     Route::post('/shipping/toggle', [AdminShippingController::class , 'toggleActive'])->name('shipping.toggle');
 
-    // Placeholder routes for remaining admin features
-    Route::get('/vouchers', function () {
-        return 'Admin Vouchers';
-    })->name('vouchers.index');
     Route::get('/reports', [AdminReportsController::class, 'index'])->name('reports.index');
 });
