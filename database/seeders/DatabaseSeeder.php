@@ -17,10 +17,11 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'admin@plastikwijaya.com'],
             [
-                'name'     => 'Admin',
-                'phone'    => '081234567890',
-                'role'     => 'admin',
-                'password' => Hash::make('admin123'),
+                'name'              => 'Admin',
+                'phone'             => '081234567890',
+                'role'              => 'admin',
+                'password'          => Hash::make('admin123'),
+                'email_verified_at' => now(),
             ]
         );
 
@@ -28,10 +29,11 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'customer@test.com'],
             [
-                'name'     => 'Customer Test',
-                'phone'    => '089876543210',
-                'role'     => 'customer',
-                'password' => Hash::make('customer123'),
+                'name'              => 'Customer Test',
+                'phone'             => '089876543210',
+                'role'              => 'customer',
+                'password'          => Hash::make('customer123'),
+                'email_verified_at' => now(),
             ]
         );
 

@@ -17,8 +17,12 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('phone', 20)->nullable();
             $table->text('address')->nullable();
+            $table->enum('city_type', ['blitar', 'outside'])->nullable();
+            $table->enum('customer_type', ['personal', 'business'])->default('personal');
+            $table->string('business_name', 255)->nullable();
             $table->enum('role', ['customer', 'admin'])->default('customer');
             $table->integer('points')->default(0);
+            $table->boolean('is_active')->default(true);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

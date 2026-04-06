@@ -66,7 +66,7 @@
             <div class="form-group" id="addressGroup" style="{{ old('city_type') ? '' : 'display:none;' }}">
                 <label for="address"><i class="fas fa-home"></i> Alamat Lengkap <span style="color:var(--danger);">*</span></label>
                 <textarea id="address" name="address" rows="3"
-                          placeholder="Contoh: Jl. Bali No. 20, RT 03/RW 05, Kel. Sananwetan"
+                          placeholder="{{ old('city_type') === 'outside' ? 'Contoh: Surabaya, Jl. Ahmad Yani No. 5, RT 01/RW 02, Kel. Wonokromo' : 'Contoh: Jl. Bali No. 20, RT 03/RW 05, Kel. Sananwetan' }}"
                           required class="@error('address') is-invalid @enderror">{{ old('address') }}</textarea>
                 @error('address')
                     <span class="error-message">{{ $message }}</span>
@@ -220,6 +220,12 @@ document.querySelectorAll('input[name="city_type"]').forEach(function(radio) {
         document.querySelectorAll('.city-option').forEach(function(opt) { opt.classList.remove('selected'); });
         this.closest('.city-option').classList.add('selected');
         document.getElementById('addressGroup').style.display = '';
+        var addressEl = document.getElementById('address');
+        if (this.value === 'outside') {
+            addressEl.placeholder = 'Contoh: Surabaya, Jl. Ahmad Yani No. 5, RT 01/RW 02, Kel. Wonokromo';
+        } else {
+            addressEl.placeholder = 'Contoh: Jl. Bali No. 20, RT 03/RW 05, Kel. Sananwetan';
+        }
     });
 });
 

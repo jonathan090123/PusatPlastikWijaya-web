@@ -51,6 +51,7 @@
                     <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}>
                     <span>Ingat saya</span>
                 </label>
+                <a href="{{ route('password.request') }}" class="forgot-link">Lupa password?</a>
             </div>
 
             <button type="submit" class="btn btn-primary btn-block">
@@ -61,13 +62,6 @@
         <div class="auth-footer">
             <p>Belum punya akun? <a href="{{ route('register') }}">Daftar sekarang</a></p>
         </div>
-
-        <div style="margin-top: 1rem; padding: 0.75rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 0.75rem; color: #1e40af;">
-            <strong><i class="fas fa-info-circle"></i> Demo Admin:</strong><br>
-            Email: <code>admin@plastikwijaya.com</code><br>
-            Password: <code>admin123</code>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -104,6 +98,17 @@ function togglePassword(id) {
     color: #16a34a;
     flex-shrink: 0;
 }
+.form-check {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.forgot-link {
+    font-size: 0.85rem;
+    color: var(--primary);
+    text-decoration: none;
+}
+.forgot-link:hover { text-decoration: underline; }
 </style>
 @endpush
 @endsection

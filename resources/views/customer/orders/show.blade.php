@@ -47,7 +47,7 @@
             {{-- Payment Deadline PHP vars --}}
             @if(in_array($order->status, ['pending', 'waiting_payment']))
             @php
-                $payDeadline    = $order->payment_deadline ?? $order->created_at->addHours(2);
+                $payDeadline    = $order->payment_deadline ?? $order->created_at->addHours(12);
                 $paySecondsLeft = max(0, (int) now()->diffInSeconds($payDeadline, false));
                 $isPayExpired   = now()->gt($payDeadline);
             @endphp
@@ -227,7 +227,7 @@
                         </div>
                         @if($order->discount_amount > 0)
                             <div style="display:flex; justify-content:space-between; padding:0.35rem 0; color:var(--success);">
-                                <span>Diskon</span>
+                                <span>Diskon Voucher</span>
                                 <span>-Rp {{ number_format($order->discount_amount, 0, ',', '.') }}</span>
                             </div>
                         @endif

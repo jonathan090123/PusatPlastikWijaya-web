@@ -40,7 +40,7 @@ class PaymentController extends Controller
         }
 
         // Server-side deadline check: auto-expire if time has passed
-        $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
+        $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
         if (now()->gt($deadline)) {
             $this->restoreStock($order);
             $this->refundPointsIfNeeded($order);
@@ -66,7 +66,7 @@ class PaymentController extends Controller
         }
 
         // Server-side deadline check
-        $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
+        $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
         if (now()->gt($deadline)) {
             $this->restoreStock($order);
             $this->refundPointsIfNeeded($order);
@@ -136,7 +136,7 @@ class PaymentController extends Controller
                 'id'       => 'DISCOUNT',
                 'price'    => -1 * (int) $order->discount_amount,
                 'quantity' => 1,
-                'name'     => 'Diskon',
+                'name'     => 'Diskon Voucher',
             ];
         }
 

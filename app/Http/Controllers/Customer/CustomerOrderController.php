@@ -59,7 +59,7 @@ class CustomerOrderController extends Controller
 
         // Auto-expire if deadline already passed
         if (in_array($order->status, ['pending', 'waiting_payment'])) {
-            $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
+            $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
             if (now()->gte($deadline)) {
                 $this->restoreOrderStock($order);
                 $this->refundPointsIfNeeded($order);
@@ -88,7 +88,7 @@ class CustomerOrderController extends Controller
             return back()->with('error', 'Pesanan ini tidak dapat dibatalkan.');
         }
 
-        $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
+        $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
         if (now()->gt($deadline)) {
             return back()->with('error', 'Batas waktu pembatalan telah habis.');
         }
@@ -113,7 +113,7 @@ class CustomerOrderController extends Controller
             abort(403);
         }
 
-        $deadline = $order->payment_deadline ?? $order->created_at->addHours(2);
+        $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
 
         if (in_array($order->status, ['pending', 'waiting_payment']) && now()->gte($deadline)) {
             $this->restoreOrderStock($order);

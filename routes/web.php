@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\VerifyEmailOtpController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminProductController;
@@ -26,10 +28,21 @@ Route::get('/', [HomeController::class , 'index'])->name('home');
 
 // Auth Routes (Guest only)
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class , 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class , 'login']);
-    Route::get('/register', [RegisterController::class , 'showRegistrationForm'])->name('register');
-    Route::post('/register', [RegisterController::class , 'register']);
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [RegisterController::class, 'register']);
+
+    // OTP Email Verification (after register)
+    Route::get('/verify-email', [VerifyEmailOtpController::class, 'show'])->name('verify-email');
+    Route::post('/verify-email', [VerifyEmailOtpController::class, 'verify'])->name('verify-email.store');
+    Route::post('/verify-email/resend', [VerifyEmailOtpController::class, 'resend'])->name('verify-email.resend');
+
+    // Forgot Password
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOtp'])->name('password.email');
+    Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset.form');
+    Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])->name('password.update');
 });
 
 // Logout
