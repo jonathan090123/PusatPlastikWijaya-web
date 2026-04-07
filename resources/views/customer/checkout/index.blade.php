@@ -251,7 +251,7 @@
                             <i class="fas fa-star" style="color:#16a34a; font-size:0.7rem;"></i>
                             Poin yang akan didapat
                         </span>
-                        <span id="earned-points-value" style="color:#15803d; font-weight:700;">+{{ floor($cart->total / 1000) }} poin</span>
+                        <span id="earned-points-value" style="color:#15803d; font-weight:700;">+{{ floor($cart->total / 100) }} poin</span>
                     </div>
 
                     {{-- Use Points section (always visible) --}}
@@ -662,8 +662,8 @@ function recalcTotal() {
     var total = subtotal + shippingCost - pointsDiscount;
     if (total < 0) total = 0;
     document.getElementById('checkout-total').textContent = formatRupiah(total);
-    // Update earned points preview (floor(total / 1000))
-    var earned = Math.floor(total / 1000);
+    // Update earned points preview (floor(total / 100))
+    var earned = Math.floor(total / 100);
     var earnedRow = document.getElementById('earned-points-row');
     var earnedVal = document.getElementById('earned-points-value');
     if (earned > 0) {

@@ -31,7 +31,28 @@ class RegisterController extends Controller
             'city_type'     => 'required|in:blitar,outside',
             'address'       => 'required|string|max:1000',
             'customer_type' => 'nullable|in:personal,business',
-            'business_name' => 'nullable|string|max:255',
+            'business_name' => [
+                'nullable', 'string', 'max:255',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!$request->boolean('is_business') || blank($value)) {
+                        return;
+                    }
+                    $normalizedName = strtolower(trim($value));
+
+                    // Cek di database (akun yang sudah selesai verifikasi OTP)
+                    $existsInDb = \App\Models\User::where('customer_type', 'business')
+                        ->whereIn('business_verified', ['pending', 'approved'])
+                        ->whereRaw('LOWER(TRIM(business_name)) = ?', [$normalizedName])
+                        ->exists();
+
+                    // Cek di cache (akun yang sedang proses OTP, belum masuk DB)
+                    $existsInCache = Cache::has('pending_biz_' . md5($normalizedName));
+
+                    if ($existsInDb || $existsInCache) {
+                        $fail('Nama bisnis ini sudah terdaftar. Jika Anda berhak mendaftar atas nama bisnis ini, hubungi admin 082313505557.');
+                    }
+                },
+            ],
             'password'      => 'required|string|min:8|confirmed',
         ], [
             'name.required'             => 'Nama wajib diisi.',
@@ -45,6 +66,9 @@ class RegisterController extends Controller
             'password.confirmed'        => 'Konfirmasi password tidak cocok.',
         ]);
 
+        $isBusiness    = $request->boolean('is_business');
+        $businessName  = $isBusiness ? $request->business_name : null;
+
         // Simpan data pendaftaran sementara di cache — belum masuk DB
         $pendingKey = 'pending_reg_' . md5($request->email);
         Cache::put($pendingKey, [
@@ -53,10 +77,15 @@ class RegisterController extends Controller
             'phone'         => $request->phone,
             'city_type'     => $request->city_type,
             'address'       => $request->address,
-            'customer_type' => $request->boolean('is_business') ? 'business' : 'personal',
-            'business_name' => $request->boolean('is_business') ? $request->business_name : null,
+            'customer_type' => $isBusiness ? 'business' : 'personal',
+            'business_name' => $businessName,
             'password'      => Hash::make($request->password),
         ], now()->addMinutes(15));
+
+        // Tandai nama bisnis sebagai "sedang dalam proses registrasi" selama 15 menit
+        if ($isBusiness && filled($businessName)) {
+            Cache::put('pending_biz_' . md5(strtolower(trim($businessName))), true, now()->addMinutes(15));
+        }
 
         $otp      = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $otpKey   = 'email_otp_' . md5($request->email);

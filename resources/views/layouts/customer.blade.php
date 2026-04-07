@@ -534,8 +534,10 @@
                 <div class="footer-col">
                     <h4>Kontak</h4>
                     <ul>
-                        <li><i class="fas fa-phone"></i> +62 xxx-xxxx-xxxx</li>
-                        <li><i class="fas fa-envelope"></i> info@plastikwijaya.com</li>
+                        <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/6282313505557" target="_blank">+62 823-1350-5557</a></li>
+                        <li><i class="fas fa-envelope"></i> <a href="mailto:pwp5758wijaya@gmail.com">pwp5758wijaya@gmail.com</a></li>
+                        <li><i class="fab fa-instagram"></i> <a href="https://www.instagram.com/pusatplastikwijaya/" target="_blank">Instagram</a></li>
+                        <li><i class="fab fa-tiktok"></i> <a href="https://www.tiktok.com/@plastikwijaya" target="_blank">TikTok</a></li>
                     </ul>
                 </div>
             </div>

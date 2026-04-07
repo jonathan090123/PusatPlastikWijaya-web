@@ -61,6 +61,8 @@ class VerifyEmailOtpController extends Controller
                 ->with('error', 'Sesi pendaftaran habis. Silakan daftar ulang.');
         }
 
+        $isBusiness = $pending['customer_type'] === 'business';
+
         $user = User::create([
             'name'              => $pending['name'],
             'email'             => $pending['email'],
@@ -69,6 +71,7 @@ class VerifyEmailOtpController extends Controller
             'address'           => $pending['address'],
             'customer_type'     => $pending['customer_type'],
             'business_name'     => $pending['business_name'],
+            'business_verified' => $isBusiness ? 'pending' : null,
             'password'          => $pending['password'],
             'role'              => 'customer',
             'email_verified_at' => now(),
@@ -76,6 +79,12 @@ class VerifyEmailOtpController extends Controller
 
         Cache::forget($otpKey);
         Cache::forget($pendingKey);
+
+        // Hapus kunci nama bisnis yang sedang pending — data sudah masuk DB
+        if ($user->customer_type === 'business' && filled($user->business_name)) {
+            Cache::forget('pending_biz_' . md5(strtolower(trim($user->business_name))));
+        }
+
         $request->session()->forget('otp_email');
 
         Auth::login($user);

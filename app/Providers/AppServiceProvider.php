@@ -27,9 +27,17 @@ class AppServiceProvider extends ServiceProvider
                     Order::whereIn('status', ['waiting_payment', 'paid', 'processing', 'ready_for_pickup', 'shipped'])
                          ->count()
                 );
+                // Pending business verification count — for sidebar badge
+                $view->with('pendingBusinessCount',
+                    \App\Models\User::where('role', 'customer')
+                        ->where('customer_type', 'business')
+                        ->where('business_verified', 'pending')
+                        ->count()
+                );
             } else {
                 $view->with('adminNewOrdersCount', 0);
                 $view->with('adminActiveOrdersCount', 0);
+                $view->with('pendingBusinessCount', 0);
             }
         });
 

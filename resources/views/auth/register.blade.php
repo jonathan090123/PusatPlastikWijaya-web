@@ -240,5 +240,42 @@ document.getElementById('is_business').addEventListener('change', function() {
         businessGroup.style.display = 'none';
     }
 });
+
+// Auto-trigger wwAlert jika ada error business_name
+(function() {
+    @error('business_name')
+        wwAlert('Nama Bisnis Sudah Terdaftar', '{{ addslashes($message) }}');
+    @enderror
+})();
+</script>
+
+{{-- wwAlert Modal (same design as wwConfirm) --}}
+<div id="wwAlertModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:99999; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:#fff; border-radius:12px; padding:1.75rem 1.5rem 1.5rem; max-width:340px; width:100%; text-align:center; box-shadow:0 16px 40px rgba(0,0,0,0.14); animation:wwAlertPop 0.22s cubic-bezier(0.34,1.56,0.64,1);">
+        <div style="width:52px; height:52px; border-radius:50%; background:#fef3c7; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+            <i class="fas fa-exclamation-triangle" style="color:#d97706; font-size:1.2rem;"></i>
+        </div>
+        <h3 id="wwAlertTitle" style="font-size:1rem; font-weight:800; color:#111827; margin-bottom:0.4rem;"></h3>
+        <p id="wwAlertMsg" style="font-size:0.83rem; color:#6b7280; line-height:1.6; margin-bottom:1.35rem;"></p>
+        <button id="wwAlertOk" style="width:100%; padding:0.65rem; border-radius:8px; border:none; background:#2563eb; color:#fff; font-weight:700; font-size:0.875rem; cursor:pointer;">OK, Mengerti</button>
+    </div>
+</div>
+<style>
+@keyframes wwAlertPop { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+</style>
+<script>
+(function(){
+    var modal = document.getElementById('wwAlertModal');
+    var btnOk = document.getElementById('wwAlertOk');
+    function closeAlert(){ modal.style.display = 'none'; }
+    btnOk.addEventListener('click', closeAlert);
+    modal.addEventListener('click', function(e){ if(e.target === modal) closeAlert(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeAlert(); });
+    window.wwAlert = function(title, msg) {
+        document.getElementById('wwAlertTitle').textContent = title;
+        document.getElementById('wwAlertMsg').textContent   = msg;
+        modal.style.display = 'flex';
+    };
+})();
 </script>
 @endsection

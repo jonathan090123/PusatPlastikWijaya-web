@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCustomerController;
+use App\Http\Controllers\Admin\AdminBusinessVerificationController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminShippingController;
 use App\Http\Controllers\Admin\AdminReportsController;
@@ -107,6 +108,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/customers', [AdminCustomerController::class , 'index'])->name('customers.index');
     Route::get('/customers/{customer}', [AdminCustomerController::class , 'show'])->name('customers.show');
     Route::patch('/customers/{customer}/toggle-active', [AdminCustomerController::class, 'toggleActive'])->name('customers.toggleActive');
+
+    // Business Verification
+    Route::get('/business-verification', [AdminBusinessVerificationController::class, 'index'])->name('business-verification.index');
+    Route::patch('/business-verification/{customer}/approve', [AdminBusinessVerificationController::class, 'approve'])->name('business-verification.approve');
+    Route::patch('/business-verification/{customer}/reject', [AdminBusinessVerificationController::class, 'reject'])->name('business-verification.reject');
 
     // Orders
     Route::get('/orders', [AdminOrderController::class , 'index'])->name('orders.index');

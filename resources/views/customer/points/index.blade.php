@@ -24,7 +24,7 @@
                 </div>
                 <div style="font-size:0.8rem; opacity:0.75; margin-top:0.5rem;">
                     <i class="fas fa-info-circle"></i>
-                    Kamu mendapatkan <strong>1 poin</strong> untuk setiap <strong>Rp 1.000</strong> belanja yang selesai.
+                    Kamu mendapatkan <strong>10 poin</strong> untuk setiap <strong>Rp 1.000</strong> belanja yang selesai.
                 </div>
             </div>
         </div>

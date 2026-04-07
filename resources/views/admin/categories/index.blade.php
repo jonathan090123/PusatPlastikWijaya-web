@@ -41,7 +41,7 @@
             </thead>
             <tbody>
                 @forelse($categories as $index => $category)
-                    <tr>
+                    <tr style="cursor:pointer;" onclick="if(!window.getSelection().toString())window.location='{{ route('admin.products.index') }}?category={{ $category->id }}'">
                         <td>{{ $categories->firstItem() + $index }}</td>
                         <td>
                             @if($category->image)
@@ -68,7 +68,7 @@
                             </button>
                         </td>
                         <td>
-                            <div style="display: flex; gap: 0.4rem;">
+                            <div style="display: flex; gap: 0.4rem;" onclick="event.stopPropagation()">
                                 <a href="{{ route('admin.categories.edit', $category) }}" class="btn btn-icon btn-warning" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -104,6 +104,16 @@
     @endif
 </div>
 @endsection
+
+@push('styles')
+<style>
+.card .table-responsive table tbody tr[style*="cursor:pointer"]:hover {
+    background: #eff6ff;
+    box-shadow: inset 3px 0 0 var(--primary);
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>

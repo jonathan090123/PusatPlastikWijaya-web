@@ -271,7 +271,7 @@
                                 <i class="fas fa-star" style="font-size:0.72rem;"></i> Estimasi poin
                             </span>
                             <span style="font-size:0.88rem; font-weight:700; color:#1d4ed8; white-space:nowrap;">
-                                +{{ number_format((int) floor($order->total / 1000), 0, ',', '.') }} poin
+                                +{{ number_format((int) floor($order->total / 100), 0, ',', '.') }} poin
                             </span>
                         </div>
                     @endif
@@ -295,7 +295,7 @@
                         </div>
                         Ada pertanyaan tentang pesanan ini? Hubungi admin kami.
                     </div>
-                    <a href="https://wa.me/6282294777070?text={{ urlencode('Halo admin, saya ingin menanyakan pesanan saya dengan no. ' . $order->invoice_number) }}"
+                    <a href="https://wa.me/6282313505557?text={{ urlencode('Halo admin, saya ingin menanyakan pesanan saya dengan no. ' . $order->invoice_number) }}"
                        target="_blank" rel="noopener noreferrer"
                        class="btn-wa-admin" style="width:100%; justify-content:center;">
                         <i class="fab fa-whatsapp" style="font-size:1.2rem;"></i> Hubungi Admin via WhatsApp

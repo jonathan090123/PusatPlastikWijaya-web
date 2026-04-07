@@ -91,7 +91,12 @@
             <tbody>
                 @forelse($customer->orders as $order)
                     <tr>
-                        <td><strong>{{ $order->invoice_number }}</strong></td>
+                        <td>
+                            <a href="{{ route('admin.orders.show', $order) }}" style="font-weight:600; color:var(--primary); text-decoration:none;"
+                               title="Lihat detail pesanan">
+                                {{ $order->invoice_number }}
+                            </a>
+                        </td>
                         <td>{{ $order->created_at->format('d M Y H:i') }}</td>
                         <td>{{ $order->items->count() }} item</td>
                         <td>Rp {{ number_format($order->total, 0, ',', '.') }}</td>

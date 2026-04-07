@@ -18,6 +18,7 @@ class User extends Authenticatable
         'city_type',
         'customer_type',
         'business_name',
+        'business_verified',
         'role',
         'points',
         'is_active',

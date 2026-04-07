@@ -53,6 +53,12 @@
                 <a href="{{ route('admin.customers.index') }}" class="sidebar-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> <span>Pelanggan</span>
                 </a>
+                <a href="{{ route('admin.business-verification.index') }}" class="sidebar-link {{ request()->routeIs('admin.business-verification.*') ? 'active' : '' }}">
+                    <i class="fas fa-building"></i> <span>Verifikasi Bisnis</span>
+                    @if($pendingBusinessCount > 0)
+                        <span class="nav-badge">{{ $pendingBusinessCount }}</span>
+                    @endif
+                </a>
                 <a href="{{ route('admin.shipping.index') }}" class="sidebar-link {{ request()->routeIs('admin.shipping.*') ? 'active' : '' }}">
                     <i class="fas fa-truck"></i> <span>Pengiriman</span>
                 </a>

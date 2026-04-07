@@ -94,6 +94,9 @@
                             @error('business_name')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
+                            <small style="color:var(--warning); display:block; margin-top:0.35rem; font-size:0.78rem;">
+                                <i class="fas fa-info-circle"></i> Harap konfirmasi admin 082313505557 jika anda mengganti nama usaha.
+                            </small>
                         </div>
                     </div>
 

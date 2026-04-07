@@ -13,7 +13,7 @@
         <form action="{{ route('admin.customers.index') }}" method="GET"
               style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
             <div class="form-group" style="flex:2; min-width:180px; margin:0;">
-                <input type="text" name="search" placeholder="Cari nama, email, atau HP..." value="{{ request('search') }}">
+                <input type="text" name="search" placeholder="Cari nama, email, HP, atau nama bisnis..." value="{{ request('search') }}">
             </div>
             <select name="filter" style="flex:1; min-width:150px; height:38px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:0 0.75rem; font-size:0.85rem; background:#fff; color:var(--gray-700);">
                 <option value="">Semua Pelanggan</option>
@@ -43,7 +43,7 @@
                 <tr>
                     <th>No</th>
                     <th>Nama</th>
-                    <th>Usaha</th>
+                    <th>Bisnis</th>
                     <th>Email</th>
                     <th>No. HP</th>
                     <th>Poin</th>
@@ -53,7 +53,7 @@
             </thead>
             <tbody>
                 @forelse($customers as $index => $customer)
-                    <tr style="cursor:pointer;" class="{{ $customer->is_active ? '' : 'row-inactive' }}" onclick="window.location='{{ route('admin.customers.show', $customer) }}'">
+                    <tr style="cursor:pointer;" class="{{ $customer->is_active ? '' : 'row-inactive' }}" onclick="if(!window.getSelection().toString())window.location='{{ route('admin.customers.show', $customer) }}'">
                         <td>{{ $customers->firstItem() + $index }}</td>
                         <td><strong>{{ $customer->name }}</strong></td>
                         <td>
