@@ -37,13 +37,16 @@ class RegisterController extends Controller
                     if (!$request->boolean('is_business') || blank($value)) {
                         return;
                     }
-                    $normalizedName = strtolower(trim($value));
+                    // Normalisasi: lowercase, trim, spasi ganda → 1, strip non-alfanumerik kecuali spasi
+                    $normalize = fn($s) => preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9\s]/u', '', strtolower(trim($s))));
+                    $normalizedName  = $normalize($value);
 
-                    // Cek di database (akun yang sudah selesai verifikasi OTP)
+                    // Cek di database — bandingkan versi ternormalisasi
                     $existsInDb = \App\Models\User::where('customer_type', 'business')
                         ->whereIn('business_verified', ['pending', 'approved'])
-                        ->whereRaw('LOWER(TRIM(business_name)) = ?', [$normalizedName])
-                        ->exists();
+                        ->whereNotNull('business_name')
+                        ->get(['business_name'])
+                        ->contains(fn($u) => $normalize($u->business_name) === $normalizedName);
 
                     // Cek di cache (akun yang sedang proses OTP, belum masuk DB)
                     $existsInCache = Cache::has('pending_biz_' . md5($normalizedName));
@@ -84,7 +87,8 @@ class RegisterController extends Controller
 
         // Tandai nama bisnis sebagai "sedang dalam proses registrasi" selama 15 menit
         if ($isBusiness && filled($businessName)) {
-            Cache::put('pending_biz_' . md5(strtolower(trim($businessName))), true, now()->addMinutes(15));
+            $normalizedForCache = preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9\s]/u', '', strtolower(trim($businessName))));
+            Cache::put('pending_biz_' . md5($normalizedForCache), true, now()->addMinutes(15));
         }
 
         $otp      = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
