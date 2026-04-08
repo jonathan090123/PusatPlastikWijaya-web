@@ -27,6 +27,20 @@ use App\Http\Controllers\ProfileController;
 // Public Routes
 Route::get('/', [HomeController::class , 'index'])->name('home');
 
+// Public Product Catalog (accessible without login)
+Route::get('/products', [CustomerProductController::class , 'index'])->name('products.index');
+Route::get('/products/suggest', [CustomerProductController::class , 'suggest'])->name('products.suggest');
+Route::get('/products/{slug}', [CustomerProductController::class , 'show'])->name('products.show');
+
+// Guest: store intended URL then redirect to login (for "Login untuk membeli" flow)
+Route::get('/goto-login', function (Illuminate\Http\Request $request) {
+    $from = $request->input('from', '');
+    if ($from && (str_starts_with($from, '/') || str_starts_with($from, config('app.url')))) {
+        session()->put('url.intended', $from);
+    }
+    return redirect()->route('login');
+})->name('goto-login')->middleware('guest');
+
 // Auth Routes (Guest only)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -56,10 +70,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class , 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class , 'updatePassword'])->name('profile.password');
 
-    // Customer Product Catalog
-    Route::get('/products', [CustomerProductController::class , 'index'])->name('products.index');
-    Route::get('/products/suggest', [CustomerProductController::class , 'suggest'])->name('products.suggest');
-    Route::get('/products/{slug}', [CustomerProductController::class , 'show'])->name('products.show');
+    // Customer Product Catalog (now public – keep names for backward compat, but routes removed from here)
+    // Products routes are public above
 
     // Cart
     Route::get('/cart', [CartController::class , 'index'])->name('cart.index');

@@ -507,6 +507,15 @@
             <a href="{{ route('home') }}" class="navbar-brand">
                 <i class="fas fa-store"></i> Pusat Plastik Wijaya
             </a>
+            {{-- Search bar (hidden on auth pages) --}}
+            @unless(request()->routeIs('login') || request()->routeIs('register') || request()->routeIs('verify-email') || request()->routeIs('password.*'))
+            <form action="{{ route('products.index') }}" method="GET" class="guest-navbar-search" autocomplete="off">
+                <div class="guest-search-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" placeholder="Cari produk..." value="{{ request('search') }}">
+                </div>
+            </form>
+            @endunless
             <div class="navbar-actions">
                 @if(request()->routeIs('login'))
                     <a href="{{ route('register') }}" class="btn btn-light btn-sm">Daftar</a>

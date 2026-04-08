@@ -116,6 +116,12 @@
                     </div>
                     <input type="hidden" id="selectedUnit" value="{{ $product->unit }}">
                     <div class="action-buttons">
+                        @guest
+                        <a href="{{ route('goto-login', ['from' => url()->current()]) }}"
+                           class="btn btn-primary btn-lg" style="flex:1; text-align:center;">
+                            <i class="fas fa-sign-in-alt"></i> Login untuk Membeli
+                        </a>
+                        @else
                         <button class="btn btn-outline-primary btn-lg" id="addToCartBtn"
                                 data-product-id="{{ $product->id }}">
                             <i class="fas fa-cart-plus"></i> Keranjang
@@ -124,6 +130,7 @@
                                 data-product-id="{{ $product->id }}">
                             <i class="fas fa-bolt"></i> Beli Langsung
                         </button>
+                        @endguest
                     </div>
                 </div>
             @else

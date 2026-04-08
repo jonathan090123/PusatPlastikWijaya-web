@@ -10,9 +10,27 @@ class HomeController extends Controller
 {
     public function index()
     {
-        // Guest → landing page
+        // Guest → landing page with featured products
         if (!Auth::check()) {
-            return view('welcome');
+            $categories = Category::where('is_active', true)
+                ->withCount(['products' => fn($q) => $q->where('is_active', true)])
+                ->get();
+
+            $featuredProducts = Product::with('category')
+                ->where('is_active', true)
+                ->latest()
+                ->take(8)
+                ->get();
+
+            $promoProducts = Product::with('category')
+                ->where('is_active', true)
+                ->whereNotNull('discount_price')
+                ->where('discount_price', '>', 0)
+                ->latest()
+                ->take(4)
+                ->get();
+
+            return view('welcome', compact('categories', 'featuredProducts', 'promoProducts'));
         }
 
         // Customer → home with products & categories

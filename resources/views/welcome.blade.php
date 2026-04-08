@@ -8,41 +8,112 @@
     <div class="container lp-hero-inner">
         <h1>Selamat Datang di <span>Pusat Plastik Wijaya</span></h1>
         <p>Menyediakan berbagai produk plastik berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan terpercaya.</p>
+
         <div class="lp-hero-actions">
-            <a href="{{ route('register') }}" class="btn btn-primary btn-lg lp-btn-main">
-                <i class="fas fa-user-plus"></i> Daftar Sekarang
+            <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg lp-btn-main">
+                <i class="fas fa-box-open"></i> Lihat Semua Produk
             </a>
-            <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg">
-                <i class="fas fa-sign-in-alt"></i> Masuk
+            <a href="{{ route('register') }}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-user-plus"></i> Daftar Gratis
             </a>
         </div>
     </div>
 </section>
 
-{{-- Keunggulan Section --}}
-<section class="lp-features">
+
+{{-- Kategori --}}
+@if($categories->count() > 0)
+<section class="lp-categories">
     <div class="container">
-        <h2 class="lp-section-title">Mengapa Belanja di Sini?</h2>
-        <div class="lp-features-grid">
-            <div class="lp-feature-card">
-                <div class="lp-feature-icon"><i class="fas fa-medal"></i></div>
-                <h3>Kualitas Terjamin</h3>
-                <p>Produk plastik yang telah melalui seleksi ketat dengan standar kualitas tinggi.</p>
-            </div>
-            <div class="lp-feature-card">
-                <div class="lp-feature-icon"><i class="fas fa-tags"></i></div>
-                <h3>Harga Terjangkau</h3>
-                <p>Harga kompetitif langsung dari distributor tanpa perantara.</p>
-            </div>
-            <div class="lp-feature-card">
-                <div class="lp-feature-icon"><i class="fas fa-truck-fast"></i></div>
-                <h3>Pengiriman Cepat</h3>
-                <p>Pesanan diproses dengan cepat dan dikirim ke seluruh Indonesia.</p>
-            </div>
+        <h2 class="lp-section-title">Kategori Produk</h2>
+        <div class="lp-cat-grid">
+            @foreach($categories as $cat)
+            <a href="{{ route('products.index', ['category' => $cat->slug]) }}" class="lp-cat-item">
+                <i class="fas fa-tag"></i>
+                <span>{{ $cat->name }}</span>
+                <small>{{ $cat->products_count }} produk</small>
+            </a>
+            @endforeach
         </div>
     </div>
 </section>
+@endif
 
+{{-- Promo Products --}}
+@if($promoProducts->count() > 0)
+<section class="lp-products-section" style="background:#fff8f0;">
+    <div class="container">
+        <div class="lp-products-header">
+            <h2 class="lp-section-title" style="margin-bottom:0;"><i class="fas fa-fire" style="color:#f97316;"></i> Produk Promo</h2>
+            <a href="{{ route('products.index') }}" class="lp-see-all">Lihat Semua <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="lp-products-grid">
+            @foreach($promoProducts as $product)
+            <a href="{{ route('products.show', $product->slug) }}" class="lp-product-card">
+                <div class="lp-product-img">
+                    @if($product->hasDiscount())
+                        <span class="lp-badge-discount">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</span>
+                    @endif
+                    @if($product->image)
+                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}">
+                    @else
+                        <img src="https://placehold.co/300x240/e2e8f0/64748b?text={{ urlencode($product->name) }}" alt="{{ $product->name }}">
+                    @endif
+                </div>
+                <div class="lp-product-body">
+                    <div class="lp-product-cat">{{ $product->category->name }}</div>
+                    <h3 class="lp-product-name">{{ $product->name }}</h3>
+                    <div class="lp-product-price">
+                        <span class="lp-price-original">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                        <span class="lp-price-discount">Rp {{ number_format($product->discount_price, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </a>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
+{{-- Featured Products --}}
+@if($featuredProducts->count() > 0)
+<section class="lp-products-section">
+    <div class="container">
+        <div class="lp-products-header">
+            <h2 class="lp-section-title" style="margin-bottom:0;"><i class="fas fa-star" style="color:#f59e0b;"></i> Produk Terbaru</h2>
+            <a href="{{ route('products.index') }}" class="lp-see-all">Lihat Semua <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="lp-products-grid">
+            @foreach($featuredProducts as $product)
+            <a href="{{ route('products.show', $product->slug) }}" class="lp-product-card">
+                <div class="lp-product-img">
+                    @if($product->hasDiscount())
+                        <span class="lp-badge-discount">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</span>
+                    @endif
+                    @if($product->image)
+                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}">
+                    @else
+                        <img src="https://placehold.co/300x240/e2e8f0/64748b?text={{ urlencode($product->name) }}" alt="{{ $product->name }}">
+                    @endif
+                </div>
+                <div class="lp-product-body">
+                    <div class="lp-product-cat">{{ $product->category->name }}</div>
+                    <h3 class="lp-product-name">{{ $product->name }}</h3>
+                    <div class="lp-product-price">
+                        @if($product->hasDiscount())
+                            <span class="lp-price-original">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                            <span class="lp-price-discount">Rp {{ number_format($product->discount_price, 0, ',', '.') }}</span>
+                        @else
+                            <span class="lp-price-normal">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
 
 @endsection
 
@@ -51,11 +122,11 @@
 /* Hero */
 .lp-hero {
     background: linear-gradient(135deg, var(--secondary) 0%, #1e3a5f 50%, var(--primary-dark) 100%);
-    padding: 5rem 0 4rem;
+    padding: 4rem 0 3rem;
     color: #fff;
     text-align: center;
 }
-.lp-hero-inner { max-width: 620px; margin: 0 auto; }
+.lp-hero-inner { max-width: 680px; margin: 0 auto; }
 .lp-hero h1 {
     font-size: 2.2rem;
     font-weight: 800;
@@ -66,7 +137,7 @@
 .lp-hero p {
     font-size: 1.05rem;
     color: rgba(255,255,255,0.8);
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     line-height: 1.7;
 }
 .lp-hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
@@ -79,13 +150,13 @@
 .lp-btn-main:hover { opacity: 0.9; }
 
 /* Features */
-.lp-features { padding: 3.5rem 0; background: #f8fafc; }
+.lp-features { padding: 3rem 0; background: #f8fafc; }
 .lp-section-title {
     text-align: center;
     font-size: 1.4rem;
     font-weight: 700;
     color: var(--gray-900);
-    margin-bottom: 2rem;
+    margin-bottom: 1.75rem;
 }
 .lp-features-grid {
     display: grid;
@@ -101,10 +172,7 @@
     border: 1px solid #e8eff5;
     transition: var(--transition);
 }
-.lp-feature-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-}
+.lp-feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 .lp-feature-icon {
     width: 50px; height: 50px;
     border-radius: 12px;
@@ -116,6 +184,98 @@
 }
 .lp-feature-card h3 { font-size: 1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 0.4rem; }
 .lp-feature-card p { font-size: 0.85rem; color: var(--gray-500); line-height: 1.6; }
+
+/* Categories */
+.lp-categories { padding: 2.5rem 0; background: #fff; }
+.lp-cat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+}
+.lp-cat-item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    background: #f0f9ff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    text-decoration: none;
+    color: var(--primary-dark);
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: var(--transition);
+    min-width: 100px;
+    text-align: center;
+}
+.lp-cat-item:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); }
+.lp-cat-item i { font-size: 1rem; margin-bottom: 0.15rem; }
+.lp-cat-item small { font-size: 0.72rem; opacity: 0.7; font-weight: 400; }
+
+/* Products sections */
+.lp-products-section { padding: 2.5rem 0; }
+.lp-products-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.lp-see-all {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+.lp-see-all:hover { color: var(--primary-dark); }
+.lp-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+.lp-product-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    border: 1px solid var(--gray-100);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: var(--transition);
+    display: block;
+}
+.lp-product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+.lp-product-img {
+    position: relative;
+    aspect-ratio: 4/3;
+    background: var(--gray-100);
+    overflow: hidden;
+}
+.lp-product-img img { width: 100%; height: 100%; object-fit: cover; }
+.lp-badge-discount {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+}
+.lp-product-body { padding: 0.875rem; }
+.lp-product-cat { font-size: 0.72rem; color: var(--primary); font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem; }
+.lp-product-name { font-size: 0.9rem; font-weight: 600; color: var(--gray-800); margin: 0 0 0.5rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lp-product-price { display: flex; flex-direction: column; gap: 0.1rem; }
+.lp-price-original { text-decoration: line-through; color: var(--gray-400); font-size: 0.78rem; }
+.lp-price-discount { color: #ef4444; font-weight: 700; font-size: 1rem; }
+.lp-price-normal { color: var(--gray-800); font-weight: 700; font-size: 1rem; }
 
 /* CTA */
 .lp-cta {
@@ -129,7 +289,8 @@
 
 @media (max-width: 768px) {
     .lp-hero h1 { font-size: 1.6rem; }
-    .lp-hero { padding: 3rem 0 2.5rem; }
+    .lp-hero { padding: 2.5rem 0 2rem; }
+    .lp-products-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); }
 }
 </style>
 @endpush

@@ -225,6 +225,36 @@ img {
     gap: 0.75rem;
     margin-left: auto;
 }
+
+/* Guest navbar search bar */
+.guest-navbar-search {
+    flex: 1;
+    max-width: 400px;
+}
+.guest-search-wrap {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.15);
+    border-radius: var(--radius-xl);
+    padding: 0 1rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    height: 38px;
+    transition: var(--transition);
+}
+.guest-search-wrap:focus-within {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.35);
+}
+.guest-search-wrap i { color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-right: 0.5rem; }
+.guest-search-wrap input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 0.875rem;
+    width: 100%;
+}
+.guest-search-wrap input::placeholder { color: rgba(255,255,255,0.55); }
 .nav-icon-link {
     position: relative;
     color: var(--white) !important;
