@@ -82,8 +82,8 @@ class AdminOrderController extends Controller
             return;
         }
 
-        // Rate: 5 poin per Rp 1.000 spent
-        $points = (int) floor($order->total / 200);
+        // Rate: 10 poin per Rp 1.000 spent
+        $points = (int) floor($order->total / 100);
         if ($points <= 0) {
             return;
         }

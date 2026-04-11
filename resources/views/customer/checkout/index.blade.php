@@ -18,7 +18,31 @@
             {{-- ======================== LEFT COLUMN ======================== --}}
             <div class="checkout-left">
 
-                {{-- Metode Pengiriman --}}
+                {{-- Lokasi Pengiriman --}}
+                <div class="card checkout-section" id="locationCard">
+                    <div class="card-body">
+                        <h3 class="section-title">
+                            <i class="fas fa-map-marker-alt" style="color:var(--primary);"></i> Lokasi Pengiriman
+                        </h3>
+                        <div style="display:flex; gap:0.75rem; margin-top:0.25rem;">
+                            <label class="city-option {{ old('shipping_city_type', $user->city_type) === 'blitar' ? 'selected' : '' }}">
+                                <input type="radio" name="shipping_city_type" value="blitar"
+                                    {{ old('shipping_city_type', $user->city_type) === 'blitar' ? 'checked' : '' }} required>
+                                <i class="fas fa-city"></i>
+                                <span>Kota Blitar</span>
+                            </label>
+                            <label class="city-option {{ old('shipping_city_type', $user->city_type) === 'outside' ? 'selected' : '' }}">
+                                <input type="radio" name="shipping_city_type" value="outside"
+                                    {{ old('shipping_city_type', $user->city_type) === 'outside' ? 'checked' : '' }}>
+                                <i class="fas fa-globe-asia"></i>
+                                <span>Luar Kota Blitar</span>
+                            </label>
+                        </div>
+                        @error('shipping_city_type')<span class="error-message">{{ $message }}</span>@enderror
+                    </div>
+                </div>
+
+            {{-- Metode Pengiriman --}}
                 <div class="card checkout-section" id="shippingMethodCard">
                     <div class="card-body">
                         <h3 class="section-title">
@@ -59,6 +83,19 @@
                             </label>
                             @endif
 
+                            @if($rajaOngkirAvailable)
+                            <div class="shipping-option" id="outsideOptionDiv" data-cost="0" data-type="outside" data-allow="outside" style="cursor:pointer;">
+                                <input type="radio" id="outsideRadioInput" style="width:17px;height:17px;flex-shrink:0;cursor:pointer;" tabindex="-1">
+                                <div class="shipping-info">
+                                    <div class="shipping-name">
+                                        <i class="fas fa-shipping-fast" style="color:var(--primary);"></i>
+                                        <strong>Pengiriman Luar Kota</strong>
+                                    </div>
+                                    <p class="shipping-desc">Via ekspedisi (JNE, TIKI, POS) — pilih kurir & layanan di bawah</p>
+                                </div>
+                                <span class="shipping-price" style="color:var(--gray-400);" id="outsideShippingPrice">-</span>
+                            </div>
+                            @else
                             <div class="shipping-option disabled" data-allow="outside">
                                 <input type="radio" disabled>
                                 <div class="shipping-info">
@@ -67,10 +104,74 @@
                                         <strong>Pengiriman Luar Kota</strong>
                                         <span class="badge-coming">Segera Hadir</span>
                                     </div>
-                                    <p class="shipping-desc">Via ekspedisi (JNE, J&T, dll) — segera tersedia</p>
+                                    <p class="shipping-desc">Via ekspedisi (JNE, TIKI, POS) — pilih kurir & layanan di bawah</p>
                                 </div>
                                 <span class="shipping-price" style="color:var(--gray-400);">-</span>
                             </div>
+                            @endif
+
+                            @if($rajaOngkirAvailable)
+                            {{-- RajaOngkir Ekspedisi Section --}}
+                            <div id="rajaongkirSection" style="display:none; margin-top:0.5rem;">
+                                <div style="padding:1rem; background:var(--gray-50); border-radius:var(--radius); border:1.5px solid var(--gray-200);">
+
+                                    <h4 style="font-size:0.88rem; font-weight:700; color:var(--gray-700); margin:0 0 0.35rem; display:flex; align-items:center; gap:0.4rem;">
+                                        <i class="fas fa-map-marker-alt" style="color:var(--primary);"></i> Kode Pos Tujuan
+                                    </h4>
+                                    <p style="font-size:0.78rem; color:var(--gray-500); margin:0 0 0.75rem;">
+                                        Masukkan kode pos (5 digit) atau nama kecamatan/kelurahan tujuan Anda.
+                                    </p>
+
+                                    {{-- Input + tombol cari --}}
+                                    <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                                        <div style="position:relative; flex:1;">
+                                            <input type="text" id="ongkirSearch"
+                                                placeholder="Contoh: 60243 (atau nama kecamatan)"
+                                                maxlength="60"
+                                                autocomplete="off"
+                                                inputmode="text"
+                                                style="width:100%; padding:0.5rem 0.75rem; border:1.5px solid var(--gray-200); border-radius:var(--radius-sm); font-size:0.9rem; box-sizing:border-box; font-weight:500; letter-spacing:0.03em;">
+                                            <div id="ongkirSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--gray-300); border-top:none; border-radius:0 0 var(--radius-sm) var(--radius-sm); max-height:220px; overflow-y:auto; z-index:999; box-shadow:0 4px 16px rgba(0,0,0,0.12);"></div>
+                                        </div>
+                                    </div>                
+
+                                    {{-- Selected destination label --}}
+                                    <div id="ongkirSelectedLabel" style="display:none; font-size:0.82rem; color:#065f46; margin-bottom:0.75rem; padding:0.5rem 0.75rem; background:#d1fae5; border-radius:var(--radius-sm); align-items:center; gap:0.5rem;">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span id="ongkirSelectedText" style="font-weight:600;"></span>
+                                    </div>
+
+                                    <button type="button" id="btnCekOngkir" disabled class="btn btn-primary btn-sm" style="width:100%; margin-bottom:0.75rem;">
+                                        <i class="fas fa-search"></i> Cek Ongkos Kirim
+                                    </button>
+
+                                    {{-- Loading --}}
+                                    <div id="ongkirLoading" style="display:none; text-align:center; padding:1rem; color:var(--gray-400);">
+                                        <i class="fas fa-spinner fa-spin"></i> Mengambil data ongkir...
+                                    </div>
+
+                                    {{-- Error --}}
+                                    <div id="ongkirError" style="display:none; padding:0.75rem; background:#fee2e2; border:1px solid #fca5a5; border-radius:var(--radius-sm); color:#991b1b; font-size:0.82rem;">
+                                    </div>
+
+                                    {{-- Results --}}
+                                    <div id="ongkirResults" style="display:none;">
+                                        <p style="font-size:0.8rem; font-weight:600; color:var(--gray-600); margin:0 0 0.5rem;">
+                                            <i class="fas fa-box"></i> Berat: <span id="ongkirWeight">0</span> gram &middot; Pilih layanan:
+                                        </p>
+                                        <div id="ongkirList" class="shipping-list" style="max-height:240px; overflow-y:auto;"></div>
+                                    </div>
+
+                                    {{-- Hidden fields --}}
+                                    <input type="hidden" name="ongkir_service" id="ongkirServiceHidden" value="">
+                                    <input type="hidden" name="ongkir_cost" id="ongkirCostHidden" value="0">
+                                    <input type="hidden" name="ongkir_destination_id" id="ongkirDestinationIdHidden" value="">
+                                    <input type="hidden" name="ongkir_destination" id="ongkirDestinationHidden" value="">
+                                    <input type="hidden" name="ongkir_courier" id="ongkirCourierHidden" value="">
+                                    <input type="hidden" name="ongkir_etd" id="ongkirEtdHidden" value="">
+                                </div>
+                            </div>
+                            @endif
 
                             @if((!$pickup || !$pickup->is_active) && (!$local || !$local->is_active))
                             <div class="no-shipping-warning">
@@ -110,26 +211,6 @@
                                     placeholder="08xxxxxxxxxx" required>
                                 @error('recipient_phone')<span class="error-message">{{ $message }}</span>@enderror
                             </div>
-                        </div>
-
-                        {{-- City type selector --}}
-                        <div class="form-group">
-                            <label>Lokasi Pengiriman <span class="required-star">*</span></label>
-                            <div style="display:flex; gap:0.75rem; margin-top:0.25rem;">
-                                <label class="city-option {{ old('shipping_city_type', $user->city_type) === 'blitar' ? 'selected' : '' }}">
-                                    <input type="radio" name="shipping_city_type" value="blitar"
-                                        {{ old('shipping_city_type', $user->city_type) === 'blitar' ? 'checked' : '' }} required>
-                                    <i class="fas fa-city"></i>
-                                    <span>Kota Blitar</span>
-                                </label>
-                                <label class="city-option {{ old('shipping_city_type', $user->city_type) === 'outside' ? 'selected' : '' }}">
-                                    <input type="radio" name="shipping_city_type" value="outside"
-                                        {{ old('shipping_city_type', $user->city_type) === 'outside' ? 'checked' : '' }}>
-                                    <i class="fas fa-globe-asia"></i>
-                                    <span>Luar Kota Blitar</span>
-                                </label>
-                            </div>
-                            @error('shipping_city_type')<span class="error-message">{{ $message }}</span>@enderror
                         </div>
 
                         <div class="form-group" id="addressGroup">
@@ -817,6 +898,13 @@ function updateCityType() {
         }
     });
 
+    // If switching to outside, auto-activate ekspedisi option as default
+    if (cityType === 'outside') {
+        document.querySelectorAll('input[name="shipping_type"]').forEach(function(r) { r.checked = false; });
+        document.querySelectorAll('.shipping-option').forEach(function(o) { o.classList.remove('selected'); });
+        if (typeof window.activateOutsideOption === 'function') window.activateOutsideOption();
+    }
+
     // Toggle address requirement based on shipping type
     updateAddressField();
 }
@@ -844,6 +932,12 @@ function updateShipping() {
 
     document.querySelectorAll('.shipping-option').forEach(function(opt) { opt.classList.remove('selected'); });
     option.classList.add('selected');
+
+    // If pickup chosen while city_type=outside, collapse the ongkir section
+    if (selected.value === 'pickup' && typeof window.deactivateOutsideOption === 'function') {
+        var ct = document.querySelector('input[name="shipping_city_type"]:checked');
+        if (ct && ct.value === 'outside') window.deactivateOutsideOption();
+    }
 
     updateAddressField();
 }
@@ -1001,5 +1095,356 @@ function applyPoints() {
         });
     }
 })();
+
+// ── RajaOngkir Integration (V2 — Komerce API) ──
+@if($rajaOngkirAvailable ?? false)
+(function initRajaOngkir() {
+    var totalWeight     = {{ $totalWeight ?? 500 }};
+    var searchInput     = document.getElementById('ongkirSearch');
+    var searchResults   = document.getElementById('ongkirSearchResults');
+    var selectedLabel   = document.getElementById('ongkirSelectedLabel');
+    var selectedText    = document.getElementById('ongkirSelectedText');
+    var btnCek          = document.getElementById('btnCekOngkir');
+    var loadingEl       = document.getElementById('ongkirLoading');
+    var errorEl         = document.getElementById('ongkirError');
+    var resultsEl       = document.getElementById('ongkirResults');
+    var listEl          = document.getElementById('ongkirList');
+    var weightEl        = document.getElementById('ongkirWeight');
+    var sectionEl       = document.getElementById('rajaongkirSection');
+
+    if (!searchInput || !sectionEl) return;
+
+    var selectedDestId   = null;
+    var selectedDestName = '';
+    var searchTimer      = null;
+
+    if (weightEl) weightEl.textContent = totalWeight.toLocaleString('id-ID');
+
+    var outsideDiv  = document.getElementById('outsideOptionDiv');
+    var radioVisual = document.getElementById('outsideRadioInput');
+
+    window.activateOutsideOption = function() {
+        document.querySelectorAll('.shipping-option:not(.ongkir-option)').forEach(function(o) { o.classList.remove('selected'); });
+        if (outsideDiv) outsideDiv.classList.add('selected');
+        if (radioVisual) radioVisual.checked = true;
+        if (sectionEl) sectionEl.style.display = 'block';
+        var shippingEl = document.getElementById('checkout-shipping');
+        if (shippingEl) { shippingEl.className = 'shipping-cost-display'; shippingEl.textContent = 'Pilih kurir dulu'; }
+    };
+
+    window.deactivateOutsideOption = function() {
+        if (outsideDiv) outsideDiv.classList.remove('selected');
+        if (radioVisual) radioVisual.checked = false;
+        if (sectionEl) sectionEl.style.display = 'none';
+        clearOngkirSelection();
+        clearOngkirResults();
+    };
+
+    // Show/hide section based on city type
+    function toggleSection() {
+        var ct = document.querySelector('input[name="shipping_city_type"]:checked');
+        if (ct && ct.value === 'outside') {
+            var pickupChecked = document.querySelector('input[name="shipping_type"][value="pickup"]:checked');
+            if (!pickupChecked) window.activateOutsideOption();
+        } else {
+            window.deactivateOutsideOption();
+        }
+    }
+
+    document.querySelectorAll('input[name="shipping_city_type"]').forEach(function(r) {
+        r.addEventListener('change', toggleSection);
+    });
+    toggleSection();
+
+    // Click on outsideOptionDiv to activate ongkir section
+    if (outsideDiv) {
+        outsideDiv.addEventListener('click', function() {
+            document.querySelectorAll('.shipping-option:not(#outsideOptionDiv) input[type="radio"]').forEach(function(r) {
+                r.checked = false;
+                r.closest('.shipping-option').classList.remove('selected');
+            });
+            window.activateOutsideOption();
+            recalcTotal();
+            updateAddressField();
+        });
+    }
+
+    // Debounced search — auto-trigger on 5 digits (kode pos)
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimer);
+        var q = this.value.trim();
+
+        // Auto-search instantly when exactly 5 digits (kode pos)
+        var isZip = /^\d{5}$/.test(q);
+        if (isZip) {
+            doSearch(q);
+            return;
+        }
+
+        // Name search: min 3 chars, debounced 400ms
+        if (q.length < 3) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        searchTimer = setTimeout(function() { doSearch(q); }, 400);
+    });
+
+    searchInput.addEventListener('blur', function() {
+        setTimeout(function() { searchResults.style.display = 'none'; }, 200);
+    });
+
+    function doSearch(q) {
+        searchResults.innerHTML = '<div style="padding:0.6rem 0.75rem; color:var(--gray-400); font-size:0.82rem;"><i class="fas fa-spinner fa-spin"></i> Mencari...</div>';
+        searchResults.style.display = 'block';
+
+        fetch('/api/shipping/search-destinations?query=' + encodeURIComponent(q), {
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            searchResults.innerHTML = '';
+            if (!data.success || !data.data || !data.data.length) {
+                var d = document.createElement('div');
+                d.style.cssText = 'padding:0.6rem 0.75rem; color:var(--gray-400); font-size:0.82rem;';
+                d.textContent = 'Tidak ditemukan. Coba kode pos lain.';
+                searchResults.appendChild(d);
+            } else {
+                data.data.forEach(function(item) {
+                    var d = document.createElement('div');
+                    d.style.cssText = 'padding:0.6rem 0.75rem; cursor:pointer; font-size:0.83rem; border-bottom:1px solid var(--gray-100); line-height:1.4;';
+                    // Format: Kel. WONOKROMO — Kec. WONOKROMO, Kota SURABAYA (60243)
+                    var parts = item.label.split(', ');
+                    var sub  = parts[0] || '';
+                    var dist = parts[1] || '';
+                    var city = parts[2] || '';
+                    var prov = parts[3] || '';
+                    var zip  = parts[4] || '';
+                    d.innerHTML =
+                        '<span style="font-weight:700; color:var(--gray-800);">' + toTitle(sub) + '</span>' +
+                        ' <span style="color:var(--gray-400); font-size:0.78rem;">Kec. ' + toTitle(dist) + '</span>' +
+                        '<br><span style="color:var(--gray-600); font-size:0.78rem;">' +
+                            toTitle(city) + ', ' + toTitle(prov) +
+                            (zip ? ' <span style="background:#e0e7ff; color:#3730a3; padding:1px 5px; border-radius:3px; font-weight:600;">' + zip.trim() + '</span>' : '') +
+                        '</span>';
+                    d.addEventListener('mousedown', function() { onDestSelect(item); });
+                    searchResults.appendChild(d);
+                });
+            }
+            searchResults.style.display = 'block';
+        })
+        .catch(function() { searchResults.style.display = 'none'; });
+    }
+
+    function toTitle(str) {
+        if (!str) return '';
+        return str.trim().replace(/\w\S*/g, function(t) {
+            return t.charAt(0).toUpperCase() + t.substr(1).toLowerCase();
+        });
+    }
+
+    function onDestSelect(item) {
+        selectedDestId   = item.id;
+        selectedDestName = item.label;
+
+        // Show friendly name: "Wonokromo, Surabaya, Jawa Timur (60243)"
+        var parts = item.label.split(', ');
+        var sub  = toTitle(parts[0] || '');
+        var city = toTitle(parts[2] || '');
+        var prov = toTitle(parts[3] || '');
+        var zip  = (parts[4] || '').trim();
+        var friendlyName = sub + ', ' + city + ', ' + prov + (zip ? ' (' + zip + ')' : '');
+
+        searchInput.value = friendlyName;
+        searchResults.style.display = 'none';
+        selectedText.textContent = friendlyName;
+        selectedLabel.style.display = 'flex';
+        btnCek.disabled = false;
+        clearOngkirResults();
+    }
+
+    // Cek Ongkir button
+    btnCek.addEventListener('click', function() {
+        if (!selectedDestId) return;
+
+        loadingEl.style.display = 'block';
+        errorEl.style.display = 'none';
+        resultsEl.style.display = 'none';
+        btnCek.disabled = true;
+        btnCek.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengecek...';
+
+        fetch('/api/shipping/cost', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ destination_id: selectedDestId, weight: totalWeight })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            loadingEl.style.display = 'none';
+            btnCek.disabled = false;
+            btnCek.innerHTML = '<i class="fas fa-search"></i> Cek Ongkos Kirim';
+            if (!data.success || !data.data || !data.data.length) {
+                errorEl.textContent = 'Tidak ada layanan pengiriman yang tersedia untuk tujuan ini.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            renderOngkirOptions(data.data);
+        })
+        .catch(function() {
+            loadingEl.style.display = 'none';
+            errorEl.textContent = 'Gagal mengambil data ongkir. Silakan coba lagi.';
+            errorEl.style.display = 'block';
+            btnCek.disabled = false;
+            btnCek.innerHTML = '<i class="fas fa-search"></i> Cek Ongkos Kirim';
+        });
+    });
+
+    // Layanan yang di-skip: trucking, kargo, motor, barang bahaya/berharga, dan layanan khusus kurang relevan
+    var SKIP_SERVICES = ['JTR', 'JTR<130', 'JTR>130', 'JTR>200', 'TRC', 'T15', 'T25', 'T60', 'SRP', 'TRX', 'PDG', 'PVG', 'PJB'];
+    var SKIP_KEYWORDS = ['trucking', 'kargo', 'motor', 'dangerous', 'valuable', 'sirip', 'tirex'];
+
+    function isSkipped(opt) {
+        var svc  = (opt.service || '').toUpperCase().trim();
+        var desc = (opt.description || '').toLowerCase();
+        if (SKIP_SERVICES.indexOf(svc) !== -1) return true;
+        for (var i = 0; i < SKIP_KEYWORDS.length; i++) {
+            if (desc.indexOf(SKIP_KEYWORDS[i]) !== -1) return true;
+        }
+        return false;
+    }
+
+    function renderOngkirOptions(options) {
+        listEl.innerHTML = '';
+        resultsEl.style.display = 'block';
+
+        var filtered = options.filter(function(opt) { return !isSkipped(opt); });
+
+        if (!filtered.length) {
+            listEl.innerHTML = '<p style="font-size:0.82rem;color:var(--gray-400);padding:0.5rem 0;">Tidak ada layanan reguler tersedia untuk rute ini.</p>';
+            return;
+        }
+
+        filtered.forEach(function(opt, idx) {
+            var courierKey = opt.code.toUpperCase() + ' ' + opt.service;
+            var etdText    = opt.etd ? opt.etd.replace(/day/i, '').trim() : '-';
+            var label      = document.createElement('label');
+            label.className = 'shipping-option ongkir-option';
+            label.dataset.cost = opt.cost;
+            label.dataset.type = 'outside';
+            label.innerHTML =
+                '<input type="radio" name="shipping_type" value="outside"' +
+                ' data-courier="' + courierKey + '"' +
+                ' data-cost="' + opt.cost + '"' +
+                ' data-etd="' + etdText + '">' +
+                '<div class="shipping-info">' +
+                    '<div class="shipping-name">' +
+                        '<i class="fas fa-shipping-fast" style="color:var(--info);"></i> ' +
+                        '<strong>' + opt.code.toUpperCase() + ' — ' + opt.service + '</strong>' +
+                    '</div>' +
+                    '<p class="shipping-desc">' + (opt.description || '') +
+                        ' &middot; Est. ' + etdText + ' hari</p>' +
+                '</div>' +
+                '<span class="shipping-price">' + formatRupiah(opt.cost) + '</span>';
+            listEl.appendChild(label);
+        });
+
+        listEl.querySelectorAll('input[name="shipping_type"]').forEach(function(radio) {
+            radio.addEventListener('change', function() { onOngkirSelect(this); });
+        });
+    }
+
+    function onOngkirSelect(radio) {
+        var cost    = parseInt(radio.dataset.cost, 10);
+        var courier = radio.dataset.courier;
+        var etd     = radio.dataset.etd;
+
+        document.getElementById('ongkirServiceHidden').value        = courier;
+        document.getElementById('ongkirCostHidden').value           = cost;
+        document.getElementById('ongkirDestinationIdHidden').value  = selectedDestId;
+        document.getElementById('ongkirDestinationHidden').value    = selectedDestName;
+        document.getElementById('ongkirCourierHidden').value        = courier;
+        document.getElementById('ongkirEtdHidden').value            = etd;
+
+        document.querySelectorAll('.ongkir-option').forEach(function(o) { o.classList.remove('selected'); });
+        radio.closest('.ongkir-option').classList.add('selected');
+
+        // Uncheck pickup/local (outsideOptionDiv has no radio, skip it)
+        document.querySelectorAll('.shipping-option:not(.ongkir-option):not(#outsideOptionDiv) input[name="shipping_type"]').forEach(function(r) {
+            r.checked = false;
+            r.closest('.shipping-option').classList.remove('selected');
+        });
+        // Keep outsideOptionDiv visually selected as the active category
+        if (outsideDiv) outsideDiv.classList.add('selected');
+        if (radioVisual) radioVisual.checked = true;
+
+        recalcTotal();
+    }
+
+    function clearOngkirSelection() {
+        document.getElementById('ongkirServiceHidden').value       = '';
+        document.getElementById('ongkirCostHidden').value          = '0';
+        document.getElementById('ongkirDestinationIdHidden').value = '';
+        document.getElementById('ongkirDestinationHidden').value   = '';
+        document.getElementById('ongkirCourierHidden').value       = '';
+        document.getElementById('ongkirEtdHidden').value           = '';
+    }
+
+    function clearOngkirResults() {
+        if (resultsEl) resultsEl.style.display = 'none';
+        if (errorEl)   errorEl.style.display   = 'none';
+        if (listEl)    listEl.innerHTML         = '';
+        clearOngkirSelection();
+        // Reset shipping cost display if outside option is still the active category
+        var ct = document.querySelector('input[name="shipping_city_type"]:checked');
+        if (ct && ct.value === 'outside' && outsideDiv && outsideDiv.classList.contains('selected')) {
+            var shippingEl = document.getElementById('checkout-shipping');
+            if (shippingEl) { shippingEl.className = 'shipping-cost-display'; shippingEl.textContent = 'Pilih kurir dulu'; }
+        }
+    }
+
+    // Override recalcTotal to support ongkir cost
+    var _origRecalcTotal = window.recalcTotal;
+    window.recalcTotal = function() {
+        var ongkirRadio = document.querySelector('.ongkir-option input[name="shipping_type"]:checked');
+        if (ongkirRadio) {
+            var shippingCost   = parseInt(ongkirRadio.dataset.cost, 10) || 0;
+            var pointsDiscount = getPointsDiscount();
+            var total          = Math.max(0, subtotal + shippingCost - pointsDiscount);
+
+            // Update ongkos kirim di ringkasan
+            var shippingDisplay = document.getElementById('checkout-shipping');
+            shippingDisplay.className = 'shipping-price';
+            shippingDisplay.textContent = formatRupiah(shippingCost);
+
+            document.getElementById('checkout-total').textContent = formatRupiah(total);
+            var earned    = Math.floor(total / 100);
+            var earnedRow = document.getElementById('earned-points-row');
+            var earnedVal = document.getElementById('earned-points-value');
+            if (earned > 0) {
+                earnedVal.textContent = '+' + earned.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' poin';
+                earnedRow.style.display = 'flex';
+            } else {
+                earnedRow.style.display = 'none';
+            }
+            return;
+        }
+        _origRecalcTotal();
+    };
+
+    // When pickup/local selected, clear ongkir selection
+    document.querySelectorAll('.shipping-option:not(.ongkir-option) input[name="shipping_type"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.ongkir-option').forEach(function(o) {
+                o.classList.remove('selected');
+                o.querySelector('input').checked = false;
+            });
+            clearOngkirSelection();
+        });
+    });
+})();
+@endif
 </script>
 @endpush

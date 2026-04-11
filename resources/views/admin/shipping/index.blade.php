@@ -70,23 +70,42 @@
     </div>
 
     {{-- Luar Kota Card --}}
-    <div class="card" id="card-outside" style="opacity:0.75;">
+    <div class="card" id="card-outside" style="{{ $outside->is_active ? '' : 'opacity:0.75;' }}">
         <div class="card-body" style="display:flex; flex-direction:column; height:100%;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
                 <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <i class="fas fa-shipping-fast" style="color:var(--gray-400); font-size:1.2rem;"></i>
+                    <i class="fas fa-shipping-fast" style="color:{{ $outside->is_active ? 'var(--primary)' : 'var(--gray-400)' }}; font-size:1.2rem;"></i>
                     <strong style="font-size:1rem;">Luar Kota</strong>
                 </div>
-                <span id="badge-outside" class="badge-status" style="background:#fef3c7; color:#92400e;">
-                    Segera Hadir
+                <span id="badge-outside" class="badge-status" style="background:{{ $outside->is_active ? '#d1fae5' : '#fee2e2' }}; color:{{ $outside->is_active ? '#065f46' : '#991b1b' }};">
+                    {{ $outside->is_active ? 'Aktif' : 'Nonaktif' }}
                 </span>
             </div>
-            <p style="font-size:0.85rem; color:var(--gray-500); margin:0 0 0.5rem;">Via ekspedisi (JNE, J&T, dll) — integrasi RajaOngkir</p>
-            <p style="font-size:0.85rem; margin:0 0 1rem;"><strong>Biaya:</strong> <span style="color:var(--gray-400);">Otomatis via API</span></p>
+            <p style="font-size:0.85rem; color:var(--gray-500); margin:0 0 0.5rem;">Via ekspedisi (JNE, J&T, dll)</p>
+            <p style="font-size:0.85rem; margin:0 0 0.25rem;"><strong>Biaya:</strong> <span style="color:var(--gray-500);">Otomatis via API</span></p>
+            <p style="font-size:0.85rem; margin:0 0 1rem;">
+                <strong>API Status:</strong>
+                @if($rajaOngkirConfigured)
+                    <span style="color:var(--success);"><i class="fas fa-check-circle"></i> Terkonfigurasi</span>
+                @else
+                    <span style="color:var(--danger);"><i class="fas fa-times-circle"></i> Belum dikonfigurasi</span>
+                @endif
+            </p>
             <div style="flex:1;"></div>
-            <button type="button" disabled class="btn btn-secondary btn-sm" style="width:100%; cursor:not-allowed;" title="Integrasi RajaOngkir belum tersedia">
-                <i class="fas fa-lock"></i> Belum Tersedia
-            </button>
+            @if($rajaOngkirConfigured)
+                <button type="button"
+                    class="btn {{ $outside->is_active ? 'btn-danger' : 'btn-success' }} btn-sm toggle-btn"
+                    data-type="outside"
+                    id="toggle-outside"
+                    style="width:100%;">
+                    <i class="fas {{ $outside->is_active ? 'fa-power-off' : 'fa-check-circle' }}"></i>
+                    {{ $outside->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                </button>
+            @else
+                <button type="button" disabled class="btn btn-secondary btn-sm" style="width:100%; cursor:not-allowed;" title="Tambahkan RAJAONGKIR_API_KEY di .env terlebih dahulu">
+                    <i class="fas fa-lock"></i> Konfigurasi API Diperlukan
+                </button>
+            @endif
         </div>
     </div>
 </div>

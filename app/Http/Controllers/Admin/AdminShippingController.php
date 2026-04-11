@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ShippingCost;
+use App\Services\RajaOngkirService;
 use Illuminate\Http\Request;
 
 class AdminShippingController extends Controller
@@ -24,15 +25,16 @@ class AdminShippingController extends Controller
         );
     }
 
-    public function index()
+    public function index(RajaOngkirService $rajaOngkir)
     {
         $this->ensureAllMethods();
 
         $pickup  = ShippingCost::where('type', 'pickup')->first();
         $local   = ShippingCost::where('type', 'local')->first();
         $outside = ShippingCost::where('type', 'outside')->first();
+        $rajaOngkirConfigured = $rajaOngkir->isConfigured();
 
-        return view('admin.shipping.index', compact('pickup', 'local', 'outside'));
+        return view('admin.shipping.index', compact('pickup', 'local', 'outside', 'rajaOngkirConfigured'));
     }
 
     public function update(Request $request)
@@ -62,9 +64,12 @@ class AdminShippingController extends Controller
             return response()->json(['success' => false], 404);
         }
 
-        // Luar kota belum bisa diaktifkan (RajaOngkir belum diintegrasikan)
+        // Luar kota hanya bisa diaktifkan jika RajaOngkir sudah dikonfigurasi
         if ($request->type === 'outside' && !$method->is_active) {
-            return response()->json(['success' => false, 'message' => 'Integrasi RajaOngkir belum tersedia.'], 422);
+            $rajaOngkir = app(RajaOngkirService::class);
+            if (!$rajaOngkir->isConfigured()) {
+                return response()->json(['success' => false, 'message' => 'API Key RajaOngkir belum dikonfigurasi. Tambahkan RAJAONGKIR_API_KEY di file .env.'], 422);
+            }
         }
 
         $method->update(['is_active' => !$method->is_active]);

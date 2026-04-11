@@ -42,4 +42,10 @@ return [
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
     ],
 
+    'rajaongkir' => [
+        'api_key' => env('RAJAONGKIR_API_KEY'),
+        'package' => env('RAJAONGKIR_PACKAGE', 'starter'),
+        'origin_city_id' => env('RAJAONGKIR_ORIGIN_CITY_ID', '62'),
+    ],
+
 ];

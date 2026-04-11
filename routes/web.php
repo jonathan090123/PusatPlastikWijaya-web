@@ -21,6 +21,7 @@ use App\Http\Controllers\Customer\CustomerOrderController;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\Customer\CustomerPointController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Api\ShippingController;
 
 /* |-------------------------------------------------------------------------- | Web Routes |-------------------------------------------------------------------------- */
 
@@ -102,6 +103,12 @@ Route::middleware('auth')->group(function () {
 
 // Midtrans Webhook
 Route::post('/midtrans/webhook', [PaymentController::class , 'webhook'])->name('midtrans.webhook');
+
+// Shipping API (RajaOngkir V2) — requires auth
+Route::middleware('auth')->prefix('api/shipping')->name('api.shipping.')->group(function () {
+    Route::get('/search-destinations', [ShippingController::class, 'searchDestinations'])->name('search-destinations');
+    Route::post('/cost', [ShippingController::class, 'cost'])->name('cost');
+});
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {

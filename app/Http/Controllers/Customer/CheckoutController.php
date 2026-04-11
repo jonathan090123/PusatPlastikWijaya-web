@@ -11,6 +11,7 @@ use App\Models\ShippingCost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\RajaOngkirService;
 
 class CheckoutController extends Controller
 {
@@ -30,7 +31,23 @@ class CheckoutController extends Controller
             ->keyBy('type');
         $user = Auth::user();
 
-        return view('customer.checkout.index', compact('cart', 'shippingMethods', 'user'));
+        // Check if RajaOngkir is configured
+        $rajaOngkir = app(RajaOngkirService::class);
+        $rajaOngkirAvailable = $rajaOngkir->isConfigured();
+
+        // Calculate total weight (grams) for ongkir — default 500g per item if no weight set
+        $totalWeight = 0;
+        foreach ($cart->items as $item) {
+            $conv = 1;
+            if ($item->unit && $item->unit !== $item->product->unit) {
+                $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
+                if ($pu) $conv = (int) $pu->conversion_value;
+            }
+            $productWeight = $item->product->weight > 0 ? $item->product->weight : 500;
+            $totalWeight += $productWeight * $item->quantity * $conv;
+        }
+
+        return view('customer.checkout.index', compact('cart', 'shippingMethods', 'user', 'rajaOngkirAvailable', 'totalWeight'));
     }
 
     public function store(Request $request)
@@ -43,6 +60,13 @@ class CheckoutController extends Controller
             'shipping_type' => 'required|in:pickup,local,outside',
             'notes' => 'nullable|string|max:500',
             'use_points' => 'nullable|integer|min:0',
+            // RajaOngkir fields (required when shipping_type = outside)
+            'ongkir_cost'           => 'required_if:shipping_type,outside|nullable|numeric|min:0',
+            'ongkir_courier'        => 'required_if:shipping_type,outside|nullable|string|max:100',
+            'ongkir_service'        => 'required_if:shipping_type,outside|nullable|string|max:100',
+            'ongkir_destination_id' => 'required_if:shipping_type,outside|nullable|integer|min:1',
+            'ongkir_destination'    => 'nullable|string|max:200',
+            'ongkir_etd'            => 'nullable|string|max:50',
         ]);
 
         // Luar Kota Blitar tidak boleh pakai Kurir Toko
@@ -78,15 +102,62 @@ class CheckoutController extends Controller
 
         // Determine shipping
         $shippingType = $request->shipping_type;
-        $method = ShippingCost::where('type', $shippingType)->first();
 
-        if (!$method || !$method->is_active) {
-            return back()->with('error', 'Metode pengiriman yang dipilih tidak tersedia.');
+        if ($shippingType === 'outside') {
+            // RajaOngkir — dynamic cost from the selected courier
+            $method = ShippingCost::where('type', 'outside')->first();
+            if (!$method || !$method->is_active) {
+                return back()->with('error', 'Pengiriman luar kota belum tersedia.');
+            }
+
+            $shippingFee = (int) $request->ongkir_cost;
+            $courierInfo = $request->ongkir_courier;
+            $etd = $request->ongkir_etd;
+            $shippingName = "Ekspedisi {$courierInfo}" . ($etd ? " (Est. {$etd} hari)" : '');
+            $shippingCostId = $method->id;
+
+            // Server-side re-verify cost via RajaOngkir API to prevent manipulation
+            if ($request->ongkir_destination) {
+                $rajaOngkir = app(RajaOngkirService::class);
+
+                // Calculate weight
+                $totalWeight = 0;
+                foreach ($cart->items as $item) {
+                    $conv = 1;
+                    if ($item->unit && $item->unit !== $item->product->unit) {
+                        $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
+                        if ($pu) $conv = (int) $pu->conversion_value;
+                    }
+                    $productWeight = $item->product->weight > 0 ? $item->product->weight : 500;
+                    $totalWeight += $productWeight * $item->quantity * $conv;
+                }
+
+                $options = $rajaOngkir->getShippingOptions($request->ongkir_destination_id, $totalWeight);
+                $verified = false;
+                foreach ($options as $opt) {
+                    $optCourier = strtoupper($opt['code']) . ' ' . $opt['service'];
+                    if ($optCourier === $request->ongkir_service && (int) $opt['cost'] === $shippingFee) {
+                        $verified = true;
+                        break;
+                    }
+                }
+
+                if (!$verified) {
+                    return back()->with('error', 'Ongkir tidak valid. Silakan cek ulang ongkos kirim.');
+                }
+            }
+        } else {
+            // Pickup or Local
+            $method = ShippingCost::where('type', $shippingType)->first();
+
+            if (!$method || !$method->is_active) {
+                return back()->with('error', 'Metode pengiriman yang dipilih tidak tersedia.');
+            }
+
+            $shippingFee = $method->cost;
+            $shippingName = $method->name;
+            $shippingCostId = $method->id;
         }
-
-        $shippingFee = $method->cost;
-        $shippingName = $method->name;
-        $shippingCostId = $method->id;
 
         // Determine points to use
         /** @var \App\Models\User $user */
