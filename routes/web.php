@@ -137,6 +137,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/orders', [AdminOrderController::class , 'index'])->name('orders.index');
     Route::get('/orders/{order}', [AdminOrderController::class , 'show'])->name('orders.show');
     Route::patch('/orders/{order}/status', [AdminOrderController::class , 'updateStatus'])->name('orders.updateStatus');
+    Route::patch('/orders/{order}/tracking', [AdminOrderController::class , 'updateTracking'])->name('orders.updateTracking');
 
     // Shipping Settings
     Route::get('/shipping', [AdminShippingController::class , 'index'])->name('shipping.index');

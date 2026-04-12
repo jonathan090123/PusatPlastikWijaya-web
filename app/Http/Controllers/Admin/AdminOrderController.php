@@ -75,6 +75,21 @@ class AdminOrderController extends Controller
         return redirect()->route('admin.orders.index')->with('success', 'Status pesanan berhasil diperbarui menjadi "' . $order->fresh()->status_label . '".');
     }
 
+    public function updateTracking(Request $request, Order $order)
+    {
+        $request->validate([
+            'tracking_number' => 'nullable|string|max:100',
+        ]);
+
+        $order->update([
+            'tracking_number' => $request->tracking_number ?: null,
+        ]);
+
+        return back()->with('success', $request->tracking_number
+            ? 'Nomor resi berhasil disimpan.'
+            : 'Nomor resi berhasil dihapus.');
+    }
+
     private function awardPoints(Order $order): void
     {
         // Guard: only award once per order

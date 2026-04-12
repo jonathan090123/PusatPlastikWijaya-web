@@ -77,6 +77,63 @@
             </div>
         </div>
 
+        {{-- Tracking Number Card (non-pickup only) --}}
+        @if(!$order->shippingCost || $order->shippingCost->type !== 'pickup')
+        <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-body">
+                <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.75rem;">
+                    <i class="fas fa-search-location" style="color:var(--primary);"></i> Nomor Resi
+                </h3>
+                @if(session('success'))
+                    <div style="margin-bottom:0.75rem; padding:0.6rem 0.85rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:var(--radius-sm); font-size:0.82rem; color:#166534;">
+                        <i class="fas fa-check-circle"></i> {{ session('success') }}
+                    </div>
+                @endif
+                <form action="{{ route('admin.orders.updateTracking', $order) }}" method="POST">
+                    @csrf
+                    @method('PATCH')
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <input type="text" name="tracking_number"
+                            value="{{ old('tracking_number', $order->tracking_number) }}"
+                            placeholder="Masukkan nomor resi ekspedisi..."
+                            maxlength="100"
+                            style="flex:1; padding:0.5rem 0.75rem; border:1.5px solid var(--gray-200); border-radius:var(--radius-sm); font-size:0.9rem; font-weight:600; letter-spacing:0.04em;">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-save"></i> Simpan
+                        </button>
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--gray-400); margin:0.4rem 0 0;">
+                        <i class="fas fa-info-circle"></i>
+                        Setelah disimpan, customer dapat melihat nomor resi dan melacak paket di halaman pesanan mereka.
+                    </p>
+                </form>
+                @if($order->tracking_number)
+                    @php
+                        $resi = $order->tracking_number;
+                        $shName = strtolower($order->shipping_name ?? '');
+                        $trackUrl = match(true) {
+                            str_contains($shName, 'jne')      => 'https://www.jne.co.id/id/tracking/trace?awb=' . $resi,
+                            str_contains($shName, 'j&t') || str_contains($shName, 'jnt') => 'https://jet.co.id/id/track?awbNo=' . $resi,
+                            str_contains($shName, 'tiki')     => 'https://tiki.id/tracking?searchVal=' . $resi,
+                            str_contains($shName, 'sicepat')  => 'https://sicepat.com/checkAwb?awb=' . $resi,
+                            str_contains($shName, 'pos')      => 'https://posindonesia.co.id/id/tracking?awb=' . $resi,
+                            default                           => 'https://cekresi.com/?noresi=' . $resi,
+                        };
+                    @endphp
+                    <div style="margin-top:0.75rem; padding:0.6rem 0.85rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:0.5rem; flex-wrap:wrap;">
+                        <span style="font-size:0.85rem; font-weight:700; color:var(--primary); letter-spacing:0.05em;">
+                            <i class="fas fa-barcode"></i> {{ $resi }}
+                        </span>
+                        <a href="{{ $trackUrl }}" target="_blank" rel="noopener noreferrer"
+                            style="font-size:0.78rem; font-weight:600; color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:0.3rem;">
+                            <i class="fas fa-external-link-alt"></i> Lacak
+                        </a>
+                    </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
         {{-- Payment Info Card --}}
         @if($order->payment)
             <div class="card" style="margin-bottom:1.5rem;">

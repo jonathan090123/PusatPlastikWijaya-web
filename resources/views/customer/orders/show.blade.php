@@ -104,6 +104,55 @@
                 </div>
             </div>
 
+            {{-- Tracking card: shown when order is shipped/completed and has a tracking number --}}
+            @if(in_array($order->status, ['shipped', 'completed']) && $order->tracking_number)
+            @php
+                $resi = $order->tracking_number;
+                $shName = strtolower($order->shipping_name ?? '');
+                $trackUrl = match(true) {
+                    str_contains($shName, 'jne')      => 'https://www.jne.co.id/id/tracking/trace?awb=' . $resi,
+                    str_contains($shName, 'j&t') || str_contains($shName, 'jnt') => 'https://jet.co.id/id/track?awbNo=' . $resi,
+                    str_contains($shName, 'tiki')     => 'https://tiki.id/tracking?searchVal=' . $resi,
+                    str_contains($shName, 'sicepat')  => 'https://sicepat.com/checkAwb?awb=' . $resi,
+                    str_contains($shName, 'pos')      => 'https://posindonesia.co.id/id/tracking?awb=' . $resi,
+                    default                           => 'https://cekresi.com/?noresi=' . $resi,
+                };
+            @endphp
+            <div class="card" style="margin-bottom:1.5rem; border:2px solid var(--primary); background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+                <div class="card-body" style="padding:1.25rem;">
+                    <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.75rem;">
+                        <i class="fas fa-search-location" style="color:var(--primary);"></i> Lacak Paket
+                    </h3>
+                    <p style="font-size:0.82rem; color:var(--gray-500); margin:0 0 0.75rem;">
+                        Paket Anda telah dikirim via <strong>{{ $order->shipping_name }}</strong>. Gunakan nomor resi di bawah untuk melacak status pengiriman.
+                    </p>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; padding:0.75rem 1rem; background:#fff; border:1.5px solid #bfdbfe; border-radius:var(--radius); flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:0.73rem; font-weight:600; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.2rem;">Nomor Resi</div>
+                            <div style="font-size:1.05rem; font-weight:800; color:var(--gray-900); letter-spacing:0.08em;">{{ $resi }}</div>
+                        </div>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <button type="button" onclick="navigator.clipboard.writeText('{{ $resi }}').then(function(){ this.innerHTML='<i class=\'fas fa-check\'></i> Disalin'; setTimeout(function(){ document.getElementById('copyResiBtn').innerHTML='<i class=\'fas fa-copy\'></i> Salin'; },2000); }.bind(this))" id="copyResiBtn"
+                                style="padding:0.5rem 0.85rem; background:#fff; border:1.5px solid var(--primary); border-radius:var(--radius-sm); color:var(--primary); font-size:0.8rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:0.3rem;">
+                                <i class="fas fa-copy"></i> Salin
+                            </button>
+                            <a href="{{ $trackUrl }}" target="_blank" rel="noopener noreferrer"
+                                style="padding:0.5rem 1rem; background:var(--primary); border:1.5px solid var(--primary); border-radius:var(--radius-sm); color:#fff; font-size:0.8rem; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:0.3rem;">
+                                <i class="fas fa-external-link-alt"></i> Lacak Paket
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @elseif($order->status === 'shipped' && !$order->tracking_number)
+            <div class="card" style="margin-bottom:1.5rem; background:#fefce8; border:1px solid #fde68a;">
+                <div class="card-body" style="padding:0.9rem 1.25rem; font-size:0.82rem; color:#92400e;">
+                    <i class="fas fa-info-circle"></i>
+                    Paket Anda sedang dalam proses pengiriman. Nomor resi akan ditampilkan di sini segera setelah tersedia.
+                </div>
+            </div>
+            @endif
+
             {{-- Red: Payment Deadline Timer + Cancel (below shipping) --}}
             @if(in_array($order->status, ['pending', 'waiting_payment']))
             @if(!$isPayExpired)

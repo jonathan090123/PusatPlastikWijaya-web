@@ -51,7 +51,11 @@ class ProfileController extends Controller
 
         $user->update($validated);
 
-        return back()->with('success', 'Profil berhasil diperbarui!');
+        if ($user->isAdmin()) {
+            return back()->with('success', 'Profil berhasil diperbarui!');
+        }
+
+        return redirect()->route('home')->with('success', 'Profil berhasil diperbarui!');
     }
 
     public function updatePassword(Request $request)
@@ -69,6 +73,10 @@ class ProfileController extends Controller
 
         $user->update(['password' => Hash::make($request->password)]);
 
-        return back()->with('success', 'Password berhasil diperbarui!');
+        if ($user->isAdmin()) {
+            return back()->with('success', 'Password berhasil diperbarui!');
+        }
+
+        return redirect()->route('home')->with('success', 'Password berhasil diperbarui!');
     }
 }
