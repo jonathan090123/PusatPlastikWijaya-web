@@ -203,6 +203,49 @@ class CustomerOrderController extends Controller
         ]);
     }
 
+    public function complete(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (!in_array($order->status, ['shipped', 'ready_for_pickup'])) {
+            return back()->with('error', 'Pesanan ini tidak dapat diselesaikan.');
+        }
+
+        $order->update([
+            'status'         => 'completed',
+            'status_read_at' => null,
+        ]);
+
+        $this->awardPoints($order->fresh());
+
+        return back()->with('success', 'Pesanan ' . $order->invoice_number . ' telah diselesaikan. Terima kasih!');
+    }
+
+    private function awardPoints(Order $order): void
+    {
+        // Guard: only award once per order
+        if (PointHistory::where('order_id', $order->id)->where('type', 'earned')->exists()) {
+            return;
+        }
+
+        $points = (int) floor($order->total / 100);
+        if ($points <= 0) {
+            return;
+        }
+
+        $order->user->increment('points', $points);
+
+        PointHistory::create([
+            'user_id'     => $order->user_id,
+            'order_id'    => $order->id,
+            'type'        => 'earned',
+            'amount'      => $points,
+            'description' => 'Poin dari pesanan ' . $order->invoice_number,
+        ]);
+    }
+
     private function refundPointsIfNeeded(Order $order): void
     {
         if (($order->points_used ?? 0) <= 0) return;

@@ -104,8 +104,8 @@
                 </div>
             </div>
 
-            {{-- Tracking card: shown when order is shipped/completed and has a tracking number --}}
-            @if(in_array($order->status, ['shipped', 'completed']) && $order->tracking_number)
+            {{-- Tracking card: shown whenever a tracking number has been set --}}
+            @if($order->tracking_number)
             @php
                 $resi = $order->tracking_number;
                 $shName = strtolower($order->shipping_name ?? '');
@@ -144,11 +144,42 @@
                     </div>
                 </div>
             </div>
-            @elseif($order->status === 'shipped' && !$order->tracking_number)
+            @elseif(in_array($order->status, ['shipped', 'completed']) && !$order->tracking_number)
             <div class="card" style="margin-bottom:1.5rem; background:#fefce8; border:1px solid #fde68a;">
                 <div class="card-body" style="padding:0.9rem 1.25rem; font-size:0.82rem; color:#92400e;">
                     <i class="fas fa-info-circle"></i>
                     Paket Anda sedang dalam proses pengiriman. Nomor resi akan ditampilkan di sini segera setelah tersedia.
+                </div>
+            </div>
+            @endif
+
+            {{-- Green: Selesaikan Pesanan (shipped / ready_for_pickup only) --}}
+            @if(in_array($order->status, ['shipped', 'ready_for_pickup']))
+            <div class="card" style="margin-bottom:1.5rem; border:1.5px solid #86efac; background:#f0fdf4;">
+                <div class="card-body" style="padding:0.85rem 1.1rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:0.6rem; flex:1; min-width:0;">
+                        <i class="fas fa-check-circle" style="color:var(--success); font-size:1.15rem; flex-shrink:0;"></i>
+                        <div>
+                            <div style="font-size:0.85rem; font-weight:700; color:#166534;">
+                                @if($order->status === 'ready_for_pickup') Pesanan Siap Diambil @else Pesanan Sudah Diterima? @endif
+                            </div>
+                            <div style="font-size:0.76rem; color:#15803d; line-height:1.4; margin-top:0.1rem;">
+                                @if($order->status === 'ready_for_pickup')
+                                    Klik tombol setelah Anda mengambil pesanan di toko.
+                                @else
+                                    Konfirmasi jika pesanan sudah diterima dengan baik.
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ route('orders.complete', $order) }}" id="completeForm" style="flex-shrink:0;">
+                        @csrf
+                        <button type="button" id="completeBtn"
+                            style="padding:0.5rem 1rem; background:var(--success); color:#fff; font-weight:700; font-size:0.82rem; border:none; border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:0.4rem; white-space:nowrap; transition:opacity 0.2s;">
+                            <i class="fas fa-check-double"></i>
+                            @if($order->status === 'ready_for_pickup') Sudah Diambil @else Selesaikan @endif
+                        </button>
+                    </form>
                 </div>
             </div>
             @endif
@@ -405,6 +436,37 @@
     </div>
 </div>
 
+{{-- ── Complete Confirmation Modal ── --}}
+@if(in_array($order->status, ['shipped', 'ready_for_pickup']))
+<div id="completeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:#fff; border-radius:14px; padding:2rem 1.75rem 1.75rem; max-width:360px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.15); animation:cancelPopIn 0.25s cubic-bezier(0.34,1.56,0.64,1);">
+        <div style="width:52px; height:52px; border-radius:50%; background:#f0fdf4; border:2px solid #86efac; display:flex; align-items:center; justify-content:center; margin:0 auto 1.1rem;">
+            <i class="fas fa-check-double" style="color:#16a34a; font-size:1.2rem;"></i>
+        </div>
+        <h3 style="font-size:1.1rem; font-weight:800; color:#111827; margin-bottom:0.45rem;">
+            @if($order->status === 'ready_for_pickup') Sudah Diambil? @else Pesanan Sudah Diterima? @endif
+        </h3>
+        <p style="font-size:0.85rem; color:#6b7280; line-height:1.65; margin-bottom:1.5rem;">
+            @if($order->status === 'ready_for_pickup')
+                Pastikan Anda sudah mengambil pesanan <strong style="color:#111827;">{{ $order->invoice_number }}</strong> di toko sebelum mengkonfirmasi.
+            @else
+                Pastikan pesanan <strong style="color:#111827;">{{ $order->invoice_number }}</strong> sudah diterima dengan baik sebelum mengkonfirmasi.
+            @endif
+        </p>
+        <div style="display:flex; gap:0.65rem;">
+            <button type="button" id="completeModalClose"
+                style="flex:1; padding:0.65rem; border-radius:8px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:700; font-size:0.88rem; cursor:pointer;">
+                Belum
+            </button>
+            <button type="button" id="completeModalConfirm"
+                style="flex:1; padding:0.65rem; border-radius:8px; border:none; background:#16a34a; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer;">
+                Ya, Selesaikan
+            </button>
+        </div>
+    </div>
+</div>
+@endif
+
 @endsection
 
 @push('styles')
@@ -537,6 +599,33 @@
         });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') cancelModal.style.display = 'none';
+        });
+    }
+
+    // ── Selesaikan Pesanan ──
+    var completeBtn         = document.getElementById('completeBtn');
+    var completeForm        = document.getElementById('completeForm');
+    var completeModal       = document.getElementById('completeModal');
+    var completeModalClose  = document.getElementById('completeModalClose');
+    var completeModalConfirm = document.getElementById('completeModalConfirm');
+
+    if (completeBtn && completeModal) {
+        completeBtn.addEventListener('click', function () {
+            completeModal.style.display = 'flex';
+        });
+        completeModalClose.addEventListener('click', function () {
+            completeModal.style.display = 'none';
+        });
+        completeModal.addEventListener('click', function (e) {
+            if (e.target === completeModal) completeModal.style.display = 'none';
+        });
+        completeModalConfirm.addEventListener('click', function () {
+            this.disabled = true;
+            this.textContent = 'Memproses...';
+            completeForm.submit();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && completeModal.style.display === 'flex') completeModal.style.display = 'none';
         });
     }
 

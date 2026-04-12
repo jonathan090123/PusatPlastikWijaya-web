@@ -30,13 +30,13 @@ class AdminOrderController extends Controller
 
         // Capture unread IDs BEFORE marking as read — badge shows only on first visit
         $newOrderIds = Order::whereNull('admin_read_at')
-            ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
+            ->whereIn('status', ['pending', 'waiting_payment'])
             ->pluck('id')
             ->flip()
             ->toArray();
 
         Order::whereNull('admin_read_at')
-             ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
+             ->whereIn('status', ['pending', 'waiting_payment'])
              ->update(['admin_read_at' => now()]);
 
         return view('admin.orders.index', compact('orders', 'newOrderIds'));
@@ -83,6 +83,7 @@ class AdminOrderController extends Controller
 
         $order->update([
             'tracking_number' => $request->tracking_number ?: null,
+            'status_read_at'  => null, // notify customer of update
         ]);
 
         return back()->with('success', $request->tracking_number

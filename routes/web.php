@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [CustomerOrderController::class , 'index'])->name('orders.index');
     Route::get('/orders/{order}', [CustomerOrderController::class , 'show'])->name('orders.show');
     Route::post('/orders/{order}/cancel', [CustomerOrderController::class , 'cancel'])->name('orders.cancel');
+    Route::post('/orders/{order}/complete', [CustomerOrderController::class , 'complete'])->name('orders.complete');
     Route::post('/orders/{order}/expire', [CustomerOrderController::class , 'expire'])->name('orders.expire');
     Route::post('/orders/{order}/reorder', [CustomerOrderController::class , 'reorder'])->name('orders.reorder');
 

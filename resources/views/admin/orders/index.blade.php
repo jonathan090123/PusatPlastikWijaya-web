@@ -65,7 +65,7 @@
                         };
                     @endphp
                     @php $isNew = isset($newOrderIds[$order->id]); @endphp
-                    @php $isOngoing = !$isDone && !$isNew; @endphp
+                    @php $isOngoing = $order->status === 'processing'; @endphp
                     <tr class="order-row {{ $isDone ? 'order-row--done' : '' }} {{ $isNew ? 'order-row--new' : '' }}" data-order-id="{{ $order->id }}"
                         onclick="window.location='{{ route('admin.orders.show', $order) }}'">
                         <td>{{ $orders->firstItem() + $index }}</td>
