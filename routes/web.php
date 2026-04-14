@@ -115,6 +115,7 @@ Route::middleware('auth')->prefix('api/shipping')->name('api.shipping.')->group(
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class , 'index'])->name('dashboard');
+    Route::get('/dashboard/recent-orders', [AdminDashboardController::class, 'recentOrdersAjax'])->name('dashboard.recent-orders');
 
     // Categories
     Route::resource('categories', AdminCategoryController::class);

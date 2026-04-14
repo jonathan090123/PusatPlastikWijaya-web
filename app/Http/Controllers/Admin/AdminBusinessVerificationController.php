@@ -14,6 +14,16 @@ class AdminBusinessVerificationController extends Controller
             ->where('customer_type', 'business')
             ->whereNotNull('business_verified');
 
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('business_name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('status')) {
             $query->where('business_verified', $request->status);
         } else {

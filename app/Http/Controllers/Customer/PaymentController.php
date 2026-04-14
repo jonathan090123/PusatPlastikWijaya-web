@@ -59,7 +59,9 @@ class PaymentController extends Controller
      */
     public function getToken(Request $request, Order $order)
     {
-        if ($order->user_id !== Auth::id()) abort(403);
+        if (!Auth::check() || $order->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Sesi tidak valid. Silakan login kembali.'], 403);
+        }
 
         if (!in_array($order->status, ['pending', 'waiting_payment'])) {
             return response()->json(['error' => 'Pesanan tidak dapat dibayar.'], 422);
@@ -195,8 +197,8 @@ class PaymentController extends Controller
      */
     public function finish(Request $request, Order $order)
     {
-        if ($order->user_id !== Auth::id()) {
-            abort(403);
+        if (!Auth::check() || $order->user_id !== Auth::id()) {
+            return redirect()->route('orders.index');
         }
 
         // Already paid? Skip API check.
@@ -244,11 +246,15 @@ class PaymentController extends Controller
                 }
 
                 if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
-                    if (in_array($order->status, ['pending', 'waiting_payment'])) {
-                        $this->restoreStock($order);
-                        $this->refundPointsIfNeeded($order);
-                        $order->update(['status' => 'cancelled', 'status_read_at' => null]);
+                    if (in_array($transactionStatus, ['cancel', 'deny'])) {
+                        // Explicit cancel/deny — cancel the order
+                        if (in_array($order->status, ['pending', 'waiting_payment'])) {
+                            $this->restoreStock($order);
+                            $this->refundPointsIfNeeded($order);
+                            $order->update(['status' => 'cancelled', 'status_read_at' => null]);
+                        }
                     }
+                    // For 'expire': order stays waiting_payment so customer can retry
                 }
             }
         } catch (\Exception $e) {
@@ -321,15 +327,19 @@ class PaymentController extends Controller
                 $this->markAsPaid($order, $payment);
             } elseif (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
                 $payment->update(['transaction_status' => $transactionStatus]);
-                // Only cancel if not yet processing (stock not yet deducted)
-                if (in_array($order->status, ['pending', 'waiting_payment'])) {
-                    $this->restoreStock($order); // return reserved stock
-                    $this->refundPointsIfNeeded($order);
-                    $order->update([
-                        'status'         => 'cancelled',
-                        'status_read_at' => null,
-                    ]);
+                // 'expire' = Midtrans session timed out; customer can retry with a new token
+                // Only cancel the order for explicit cancel/deny (not expire)
+                if (in_array($transactionStatus, ['cancel', 'deny'])) {
+                    if (in_array($order->status, ['pending', 'waiting_payment'])) {
+                        $this->restoreStock($order);
+                        $this->refundPointsIfNeeded($order);
+                        $order->update([
+                            'status'         => 'cancelled',
+                            'status_read_at' => null,
+                        ]);
+                    }
                 }
+                // For 'expire': leave order as waiting_payment so customer can generate new token
             } elseif ($transactionStatus === 'pending') {
                 $payment->update(['transaction_status' => 'pending']);
                 if ($order->status === 'pending') {

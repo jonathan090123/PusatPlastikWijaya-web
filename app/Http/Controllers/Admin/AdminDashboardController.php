@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class AdminDashboardController extends Controller
 {
+    private array $recentStatuses = ['processing', 'shipped', 'ready_for_pickup', 'pending'];
+
     public function index()
     {
         $totalOrders   = Order::count();
@@ -16,10 +19,13 @@ class AdminDashboardController extends Controller
         $totalProducts  = Product::count();
         $totalCustomers = User::where('role', 'customer')->count();
 
-        $recentOrders = Order::with('user')
+        $recentPaginator = Order::with('user')
+            ->whereIn('status', $this->recentStatuses)
             ->latest()
-            ->take(9)
-            ->get();
+            ->paginate(9);
+
+        $recentOrders          = $recentPaginator->items();
+        $recentOrdersHasMore   = $recentPaginator->hasMorePages();
 
         $lowStockProducts = Product::with('category')
             ->where('is_active', true)
@@ -47,9 +53,36 @@ class AdminDashboardController extends Controller
             'totalProducts',
             'totalCustomers',
             'recentOrders',
+            'recentOrdersHasMore',
             'lowStockProducts',
             'newOrdersCount',
             'newOrderIds'
         ));
+    }
+
+    public function recentOrdersAjax(Request $request)
+    {
+        $page = max(1, (int) $request->query('page', 1));
+
+        $paginator = Order::with('user')
+            ->whereIn('status', $this->recentStatuses)
+            ->latest()
+            ->paginate(9, ['*'], 'page', $page);
+
+        $orders = collect($paginator->items())->map(fn($order) => [
+            'id'             => $order->id,
+            'invoice_number' => $order->invoice_number,
+            'user_name'      => $order->user->name ?? '-',
+            'total'          => number_format($order->total, 0, ',', '.'),
+            'status'         => $order->status,
+            'status_label'   => $order->status_label,
+            'url'            => route('admin.orders.show', $order),
+        ]);
+
+        return response()->json([
+            'orders'    => $orders,
+            'has_more'  => $paginator->hasMorePages(),
+            'next_page' => $page + 1,
+        ]);
     }
 }

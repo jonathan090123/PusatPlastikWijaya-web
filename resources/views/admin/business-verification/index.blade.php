@@ -18,14 +18,17 @@
     <div class="card-body" style="padding:0.75rem 1.25rem;">
         <form action="{{ route('admin.business-verification.index') }}" method="GET"
               style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+            <div class="form-group" style="flex:1; min-width:200px; margin:0;">
+                <input type="text" name="search" placeholder="Cari nama, bisnis, no. HP..." value="{{ request('search') }}">
+            </div>
             <select name="status" style="height:38px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:0 0.75rem; font-size:0.85rem; background:#fff; color:var(--gray-700); min-width:180px;">
                 <option value="">Semua Status</option>
                 <option value="pending"  {{ request('status')==='pending'   ? 'selected' : '' }}>Menunggu Verifikasi</option>
                 <option value="approved" {{ request('status')==='approved'  ? 'selected' : '' }}>Sudah Diverifikasi</option>
                 <option value="rejected" {{ request('status')==='rejected'  ? 'selected' : '' }}>Ditolak</option>
             </select>
-            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Terapkan</button>
-            @if(request()->filled('status'))
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Cari</button>
+            @if(request()->hasAny(['search', 'status']))
                 <a href="{{ route('admin.business-verification.index') }}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Reset</a>
             @endif
         </form>
@@ -53,12 +56,10 @@
                         $isDuplicate = $customer->business_verified !== 'approved'
                                        && in_array($nameLower, $approvedBusinessNames);
                     @endphp
-                    <tr>
+                    <tr class="bv-row" data-href="{{ route('admin.customers.show', $customer) }}">
                         <td>{{ $customers->firstItem() + $index }}</td>
                         <td>
-                            <a href="{{ route('admin.customers.show', $customer) }}" style="color:var(--primary); font-weight:600;">
-                                {{ $customer->name }}
-                            </a>
+                            <span style="font-weight:600; color:var(--gray-800);">{{ $customer->name }}</span>
                         </td>
                         <td>
                             <span style="font-weight:600;">{{ $customer->business_name ?? '-' }}</span>
@@ -178,7 +179,20 @@
 </div>
 
 @push('scripts')
+<style>
+.bv-row { cursor: pointer; transition: background 0.15s; }
+.bv-row:hover { background: #eff6ff !important; }
+</style>
 <script>
+// Clickable row — skip if user is selecting text or clicking a button/form element
+document.querySelectorAll('.bv-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+        if (window.getSelection && window.getSelection().toString().length > 0) return;
+        if (e.target.closest('button, a, form, input, select, textarea')) return;
+        window.location.href = row.dataset.href;
+    });
+});
+
 let _modalFormId   = null;
 let _modalAction   = null;
 

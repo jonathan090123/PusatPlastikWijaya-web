@@ -48,7 +48,11 @@ class CustomerOrderController extends Controller
             ->whereNull('status_read_at')
             ->update(['status_read_at' => now()]);
 
-        return view('customer.orders.index', compact('orders', 'unreadOrderIds'));
+        $confirmableCount = Order::where('user_id', Auth::id())
+            ->whereIn('status', ['shipped', 'ready_for_pickup'])
+            ->count();
+
+        return view('customer.orders.index', compact('orders', 'unreadOrderIds', 'confirmableCount'));
     }
 
     public function show(Order $order)
@@ -230,7 +234,7 @@ class CustomerOrderController extends Controller
             return;
         }
 
-        $points = (int) floor($order->total / 100);
+        $points = (int) floor($order->total / 200);
         if ($points <= 0) {
             return;
         }

@@ -104,8 +104,8 @@
                 </div>
             </div>
 
-            {{-- Tracking card: shown whenever a tracking number has been set --}}
-            @if($order->tracking_number)
+            {{-- Tracking card: only for outside (ekspedisi) shipping --}}
+            @if($order->shippingCost && $order->shippingCost->type === 'outside' && $order->tracking_number)
             @php
                 $resi = $order->tracking_number;
                 $shName = strtolower($order->shipping_name ?? '');
@@ -144,7 +144,7 @@
                     </div>
                 </div>
             </div>
-            @elseif(in_array($order->status, ['shipped', 'completed']) && !$order->tracking_number)
+            @elseif($order->shippingCost && $order->shippingCost->type === 'outside' && in_array($order->status, ['shipped', 'completed']) && !$order->tracking_number)
             <div class="card" style="margin-bottom:1.5rem; background:#fefce8; border:1px solid #fde68a;">
                 <div class="card-body" style="padding:0.9rem 1.25rem; font-size:0.82rem; color:#92400e;">
                     <i class="fas fa-info-circle"></i>
@@ -153,29 +153,33 @@
             </div>
             @endif
 
-            {{-- Green: Selesaikan Pesanan (shipped / ready_for_pickup only) --}}
+            {{-- Yellow: Selesaikan Pesanan (shipped / ready_for_pickup only) --}}
             @if(in_array($order->status, ['shipped', 'ready_for_pickup']))
-            <div class="card" style="margin-bottom:1.5rem; border:1.5px solid #86efac; background:#f0fdf4;">
+            <div class="card" style="margin-bottom:1.5rem; border:1.5px solid #fcd34d; background:#fffbeb;">
                 <div class="card-body" style="padding:0.85rem 1.1rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
                     <div style="display:flex; align-items:center; gap:0.6rem; flex:1; min-width:0;">
-                        <i class="fas fa-check-circle" style="color:var(--success); font-size:1.15rem; flex-shrink:0;"></i>
+                        <i class="fas fa-bell" style="color:#d97706; font-size:1.15rem; flex-shrink:0;"></i>
                         <div>
-                            <div style="font-size:0.85rem; font-weight:700; color:#166534;">
-                                @if($order->status === 'ready_for_pickup') Pesanan Siap Diambil @else Pesanan Sudah Diterima? @endif
+                            <div style="font-size:0.85rem; font-weight:700; color:#92400e;">
+                                Konfirmasi Pesanan
                             </div>
-                            <div style="font-size:0.76rem; color:#15803d; line-height:1.4; margin-top:0.1rem;">
+                            <div style="font-size:0.76rem; color:#b45309; line-height:1.4; margin-top:0.1rem;">
                                 @if($order->status === 'ready_for_pickup')
-                                    Klik tombol setelah Anda mengambil pesanan di toko.
+                                    Konfirmasi bahwa pesanan sudah Anda ambil di toko.
                                 @else
-                                    Konfirmasi jika pesanan sudah diterima dengan baik.
+                                    Konfirmasi bahwa pesanan sudah Anda terima dengan baik.
                                 @endif
+                            </div>
+                            <div style="display:inline-flex; align-items:center; gap:0.3rem; margin-top:0.35rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:0.2rem 0.55rem; font-size:0.72rem; font-weight:700; color:#1d4ed8;">
+                                <i class="fas fa-star" style="font-size:0.65rem; color:#1d4ed8;"></i>
+                                Konfirmasi sekarang &amp; dapatkan <span style="margin-left:0.2rem;">+{{ number_format(floor($order->total / 200), 0, ',', '.') }} poin</span>
                             </div>
                         </div>
                     </div>
                     <form method="POST" action="{{ route('orders.complete', $order) }}" id="completeForm" style="flex-shrink:0;">
                         @csrf
                         <button type="button" id="completeBtn"
-                            style="padding:0.5rem 1rem; background:var(--success); color:#fff; font-weight:700; font-size:0.82rem; border:none; border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:0.4rem; white-space:nowrap; transition:opacity 0.2s;">
+                            style="padding:0.5rem 1rem; background:#d97706; color:#fff; font-weight:700; font-size:0.82rem; border:none; border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:0.4rem; white-space:nowrap; transition:opacity 0.2s;">
                             <i class="fas fa-check-double"></i>
                             @if($order->status === 'ready_for_pickup') Sudah Diambil @else Selesaikan @endif
                         </button>
@@ -332,11 +336,11 @@
                         $earnedHistory = $order->pointHistories->firstWhere('type', 'earned');
                     @endphp
                     @if($earnedHistory)
-                        <div style="margin-top:0.75rem; padding:0.45rem 0.75rem; background:linear-gradient(135deg,#fef9c3 0%,#fefce8 100%); border:1.5px solid #fde047; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
-                            <span style="font-size:0.8rem; font-weight:600; color:#854d0e; white-space:nowrap;">
-                                <i class="fas fa-star" style="color:#ca8a04; font-size:0.75rem;"></i> Poin didapat
+                        <div style="margin-top:0.75rem; padding:0.45rem 0.75rem; background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                            <span style="font-size:0.8rem; font-weight:600; color:#1d4ed8; white-space:nowrap;">
+                                <i class="fas fa-star" style="color:#2563eb; font-size:0.75rem;"></i> Poin didapat
                             </span>
-                            <span style="font-size:0.88rem; font-weight:800; color:#ca8a04; white-space:nowrap;">
+                            <span style="font-size:0.88rem; font-weight:800; color:#1d4ed8; white-space:nowrap;">
                                 +{{ number_format($earnedHistory->amount, 0, ',', '.') }} poin
                             </span>
                         </div>
@@ -348,10 +352,10 @@
                     @elseif(!in_array($order->status, ['cancelled', 'expired']))
                         <div style="margin-top:0.75rem; padding:0.45rem 0.75rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
                             <span style="font-size:0.8rem; color:#1d4ed8; white-space:nowrap;">
-                                <i class="fas fa-star" style="font-size:0.72rem;"></i> Estimasi poin
+                                <i class="fas fa-star" style="font-size:0.72rem;"></i> Poin didapat
                             </span>
                             <span style="font-size:0.88rem; font-weight:700; color:#1d4ed8; white-space:nowrap;">
-                                +{{ number_format((int) floor($order->total / 100), 0, ',', '.') }} poin
+                                +{{ number_format((int) floor($order->total / 200), 0, ',', '.') }} poin
                             </span>
                         </div>
                     @endif

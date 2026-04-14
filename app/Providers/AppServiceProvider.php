@@ -13,6 +13,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Ensure WIB (Asia/Jakarta, UTC+7) is used for all date/time display
+        date_default_timezone_set('Asia/Jakarta');
         // Share pending orders count to all admin views (badge on sidebar)
         View::composer('layouts.admin', function ($view) {
             if (Auth::check() && Auth::user()->isAdmin()) {

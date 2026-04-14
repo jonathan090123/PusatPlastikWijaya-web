@@ -26,8 +26,13 @@
                     <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Kadaluarsa</option>
                 </select>
             </div>
+            <div class="form-group" style="margin:0; display:flex; align-items:center; gap:0.4rem;">
+                <input type="date" name="date_from" value="{{ request('date_from') }}" title="Dari tanggal" style="min-width:140px;">
+                <span style="color:#94a3b8; font-size:0.85rem;">—</span>
+                <input type="date" name="date_to" value="{{ request('date_to') }}" title="Sampai tanggal" style="min-width:140px;">
+            </div>
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Cari</button>
-            @if(request()->hasAny(['search', 'status']))
+            @if(request()->hasAny(['search', 'status', 'date_from', 'date_to']))
                 <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Reset</a>
             @endif
         </form>

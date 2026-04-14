@@ -8,6 +8,17 @@
         <h1><i class="fas fa-clipboard-list"></i> Pesanan Saya</h1>
     </div>
 
+    @if($confirmableCount > 0)
+    <div style="margin-bottom:1rem; background:#fffbeb; border:1.5px solid #fcd34d; border-radius:10px; padding:0.75rem 1rem; display:flex; align-items:center; gap:0.75rem;">
+        <i class="fas fa-bell" style="color:#d97706; font-size:1.1rem; flex-shrink:0;"></i>
+        <div style="flex:1; font-size:0.85rem; color:#92400e; line-height:1.5;">
+            <strong>Perlu konfirmasi:</strong>
+            Kamu punya {{ $confirmableCount }} pesanan yang menunggu dikonfirmasi.
+            Konfirmasi pesanan untuk mendapatkan poin reward!
+        </div>
+    </div>
+    @endif
+
     @if($orders->count() > 0)
         <div style="display:flex; flex-direction:column; gap:1rem;">
             @foreach($orders as $order)
@@ -39,6 +50,12 @@
                                         <span class="order-unread-label">
                                             <span class="order-unread-dot" style="width:6px;height:6px;"></span>
                                             Ada pembaruan
+                                        </span>
+                                    @endif
+                                    @if(in_array($order->status, ['shipped', 'ready_for_pickup']))
+                                        <span style="display:inline-flex; align-items:center; gap:0.3rem; background:#fffbeb; border:1px solid #fcd34d; border-radius:5px; padding:0.1rem 0.45rem; font-size:0.7rem; font-weight:700; color:#92400e; white-space:nowrap;">
+                                            <i class="fas fa-bell" style="font-size:0.62rem; color:#d97706;"></i>
+                                            {{ $order->status === 'ready_for_pickup' ? 'Perlu konfirmasi' : 'Perlu konfirmasi' }}
                                         </span>
                                     @endif
                                 </div>

@@ -24,16 +24,17 @@
                         <h3 class="section-title">
                             <i class="fas fa-map-marker-alt" style="color:var(--primary);"></i> Lokasi Pengiriman
                         </h3>
+                        @php $defaultCityType = old('shipping_city_type', $user->city_type ?? 'blitar'); @endphp
                         <div style="display:flex; gap:0.75rem; margin-top:0.25rem;">
-                            <label class="city-option {{ old('shipping_city_type', $user->city_type) === 'blitar' ? 'selected' : '' }}">
+                            <label class="city-option {{ $defaultCityType === 'blitar' ? 'selected' : '' }}">
                                 <input type="radio" name="shipping_city_type" value="blitar"
-                                    {{ old('shipping_city_type', $user->city_type) === 'blitar' ? 'checked' : '' }} required>
+                                    {{ $defaultCityType === 'blitar' ? 'checked' : '' }} required>
                                 <i class="fas fa-city"></i>
                                 <span>Kota Blitar</span>
                             </label>
-                            <label class="city-option {{ old('shipping_city_type', $user->city_type) === 'outside' ? 'selected' : '' }}">
+                            <label class="city-option {{ $defaultCityType === 'outside' ? 'selected' : '' }}">
                                 <input type="radio" name="shipping_city_type" value="outside"
-                                    {{ old('shipping_city_type', $user->city_type) === 'outside' ? 'checked' : '' }}>
+                                    {{ $defaultCityType === 'outside' ? 'checked' : '' }}>
                                 <i class="fas fa-globe-asia"></i>
                                 <span>Luar Kota Blitar</span>
                             </label>
@@ -327,12 +328,12 @@
                     </div>
 
                     {{-- Earned points preview --}}
-                    <div id="earned-points-row" style="display:flex; align-items:center; justify-content:space-between; padding:0.55rem 1.25rem; background:linear-gradient(135deg,#f0fdf4,#dcfce7); border-top:1px dashed #86efac; font-size:0.8rem;">
-                        <span style="color:#15803d; font-weight:600;">
-                            <i class="fas fa-star" style="color:#16a34a; font-size:0.7rem;"></i>
+                    <div id="earned-points-row" style="display:flex; align-items:center; justify-content:space-between; padding:0.55rem 1.25rem; background:#eff6ff; border-top:1px dashed #bfdbfe; font-size:0.8rem;">
+                        <span style="color:#1d4ed8; font-weight:600;">
+                            <i class="fas fa-star" style="color:#2563eb; font-size:0.7rem;"></i>
                             Poin yang akan didapat
                         </span>
-                        <span id="earned-points-value" style="color:#15803d; font-weight:700;">+{{ floor($cart->total / 100) }} poin</span>
+                        <span id="earned-points-value" style="color:#1d4ed8; font-weight:700;">+{{ floor($cart->total / 200) }} poin</span>
                     </div>
 
                     {{-- Use Points section (always visible) --}}
@@ -743,8 +744,8 @@ function recalcTotal() {
     var total = subtotal + shippingCost - pointsDiscount;
     if (total < 0) total = 0;
     document.getElementById('checkout-total').textContent = formatRupiah(total);
-    // Update earned points preview (floor(total / 100))
-    var earned = Math.floor(total / 100);
+    // Update earned points preview (floor(total / 200))
+    var earned = Math.floor(total / 200);
     var earnedRow = document.getElementById('earned-points-row');
     var earnedVal = document.getElementById('earned-points-value');
     if (earned > 0) {

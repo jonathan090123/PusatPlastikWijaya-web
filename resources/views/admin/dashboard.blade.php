@@ -46,7 +46,7 @@
             <span><i class="fas fa-clock"></i> Pesanan Terbaru</span>
             <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-primary btn-sm">Lihat Semua</a>
         </div>
-        <div class="table-responsive">
+        <div class="table-responsive" id="recent-orders-scroll">
             <table>
                 <thead>
                     <tr>
@@ -56,7 +56,7 @@
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="recent-orders-tbody">
                     @forelse($recentOrders as $order)
                         <tr class="dashboard-row" style="cursor:pointer;"
                             onclick="window.location='{{ route('admin.orders.show', $order) }}'">
@@ -64,6 +64,8 @@
                                 <strong>{{ $order->invoice_number }}</strong>
                                 @if(isset($newOrderIds[$order->id]))
                                     <span class="order-new-badge">BARU</span>
+                                @elseif($order->status === 'processing')
+                                    <i class="fas fa-circle-exclamation order-ongoing-icon" title="Pesanan sedang berlangsung"></i>
                                 @endif
                             </td>
                             <td>{{ $order->user->name ?? '-' }}</td>
@@ -83,6 +85,10 @@
                     @endforelse
                 </tbody>
             </table>
+            <div id="recent-orders-sentinel" style="height:1px;"></div>
+            <div id="recent-orders-loader" style="display:none; text-align:center; padding:0.6rem 0; color:#94a3b8; font-size:0.82rem;">
+                <i class="fas fa-spinner fa-spin" style="margin-right:0.3rem;"></i> Memuat data...
+            </div>
         </div>
     </div>
 
@@ -198,6 +204,12 @@
     0%, 100% { opacity: 1; }
     50%       { opacity: 0.55; }
 }
+.order-ongoing-icon {
+    color: #ef4444;
+    font-size: 1.1rem;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
 @media (max-width: 768px) {
     #dashboard-page { height: auto; overflow: visible; }
     .dashboard-tables { grid-template-columns: 1fr !important; }
@@ -205,4 +217,69 @@
 </style>
 @endpush
 
+@push('scripts')
+<script>
+(function () {
+    const tbody     = document.getElementById('recent-orders-tbody');
+    const sentinel  = document.getElementById('recent-orders-sentinel');
+    const loader    = document.getElementById('recent-orders-loader');
+    const scrollEl  = document.getElementById('recent-orders-scroll');
+
+    let page    = 2;
+    let loading = false;
+    let hasMore = {{ $recentOrdersHasMore ? 'true' : 'false' }};
+
+    function renderRow(order) {
+        const tr = document.createElement('tr');
+        tr.className = 'dashboard-row';
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', () => { window.location = order.url; });
+
+        let badge = '';
+        if (order.status === 'processing') {
+            badge = '<i class="fas fa-circle-exclamation order-ongoing-icon" title="Pesanan sedang berlangsung"></i>';
+        }
+
+        tr.innerHTML =
+            '<td><strong>' + order.invoice_number + '</strong>' + badge + '</td>' +
+            '<td>' + order.user_name + '</td>' +
+            '<td>Rp ' + order.total + '</td>' +
+            '<td><span class="badge-status badge-' + order.status + '">' + order.status_label + '</span></td>';
+
+        return tr;
+    }
+
+    async function loadMore() {
+        if (loading || !hasMore) return;
+        loading = true;
+        loader.style.display = 'block';
+
+        try {
+            const res = await fetch('{{ route('admin.dashboard.recent-orders') }}?page=' + page, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+
+            data.orders.forEach(order => tbody.appendChild(renderRow(order)));
+            hasMore = data.has_more;
+            page    = data.next_page;
+        } catch (e) {
+            hasMore = false;
+        } finally {
+            loading = false;
+            loader.style.display = 'none';
+            if (!hasMore) observer.disconnect();
+        }
+    }
+
+    const observer = new IntersectionObserver(
+        (entries) => { if (entries[0].isIntersecting) loadMore(); },
+        { root: scrollEl, threshold: 0 }
+    );
+
+    if (hasMore) observer.observe(sentinel);
+})();
+</script>
+@endpush
 

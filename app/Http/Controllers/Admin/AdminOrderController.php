@@ -11,7 +11,11 @@ class AdminOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with('user')->latest();
+        $doneStatuses = ['completed', 'cancelled', 'expired'];
+
+        $query = Order::with('user')
+            ->orderByRaw("CASE WHEN status IN ('" . implode("','", $doneStatuses) . "') THEN 1 ELSE 0 END ASC")
+            ->latest();
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -24,6 +28,14 @@ class AdminOrderController extends Controller
                   ->orWhere('recipient_name', 'like', "%{$search}%")
                   ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
             });
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
         }
 
         $orders = $query->paginate(15)->withQueryString();
@@ -98,8 +110,8 @@ class AdminOrderController extends Controller
             return;
         }
 
-        // Rate: 10 poin per Rp 1.000 spent
-        $points = (int) floor($order->total / 100);
+        // Rate: 5 poin per Rp 1.000 spent
+        $points = (int) floor($order->total / 200);
         if ($points <= 0) {
             return;
         }

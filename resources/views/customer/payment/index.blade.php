@@ -4,6 +4,15 @@
 
 @section('content')
 <div style="padding: 0.5rem;">
+    {{-- Toast Notification --}}
+    <div id="payment-toast" style="display:none; position:fixed; top:1.25rem; left:50%; transform:translateX(-50%); z-index:9999; min-width:300px; max-width:480px; width:90%; padding:1rem 1.25rem; border-radius:var(--radius); box-shadow:0 8px 30px rgba(0,0,0,0.15); display:none; align-items:center; gap:0.85rem; animation:slideDown .25s ease;">
+        <div id="payment-toast-icon" style="font-size:1.3rem; flex-shrink:0;"></div>
+        <div style="flex:1;">
+            <div id="payment-toast-title" style="font-weight:700; font-size:0.9rem;"></div>
+            <div id="payment-toast-msg" style="font-size:0.82rem; margin-top:0.15rem; opacity:0.85;"></div>
+        </div>
+        <button onclick="document.getElementById('payment-toast').style.display='none'" style="background:none; border:none; cursor:pointer; color:inherit; opacity:0.6; font-size:1rem; padding:0; flex-shrink:0;"><i class="fas fa-times"></i></button>
+    </div>
     <div class="page-header">
         <h1><i class="fas fa-credit-card"></i> Pembayaran</h1>
         <a href="{{ route('orders.show', $order) }}" class="btn btn-secondary btn-sm">
@@ -206,6 +215,10 @@
         grid-template-columns: 1fr !important;
     }
 }
+@keyframes slideDown {
+    from { opacity:0; transform:translateX(-50%) translateY(-12px); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
 </style>
 @endpush
 
@@ -247,10 +260,21 @@
             },
             body: JSON.stringify({ method: selectedMethod })
         })
-        .then(function (res) { return res.json(); })
+        .then(function (res) {
+            // If redirected to login (session expired) or forbidden — reload page
+            if (res.redirected || res.status === 401 || res.status === 419) {
+                window.location.reload();
+                return Promise.reject('reload');
+            }
+            return res.json().catch(function () {
+                // Non-JSON response (500 HTML etc.) — treat as server error
+                return { error: 'Server error (' + res.status + '). Silakan refresh & coba lagi.' };
+            });
+        })
         .then(function (data) {
+            if (!data) return; // reload in progress
             if (data.error) {
-                alert(data.error);
+                showToast('error', 'Gagal Memuat Pembayaran', data.error);
                 resetButton();
                 return;
             }
@@ -258,17 +282,47 @@
                 onSuccess: function () { window.location.href = finishUrl; },
                 onPending: function () { window.location.href = finishUrl; },
                 onError:   function () {
-                    alert('Pembayaran gagal. Silakan coba lagi.');
-                    resetButton();
+                    showToast('error', 'Pembayaran Gagal', 'Pembayaran tidak berhasil. Halaman akan dimuat ulang agar Anda bisa mencoba lagi.');
+                    setTimeout(function () { window.location.reload(); }, 3000);
                 },
                 onClose:   function () { resetButton(); }
             });
         })
-        .catch(function () {
-            alert('Terjadi kesalahan. Silakan coba lagi.');
+        .catch(function (err) {
+            if (err === 'reload') return;
+            showToast('error', 'Koneksi Bermasalah', 'Terjadi kesalahan jaringan. Silakan refresh & coba lagi.');
             resetButton();
         });
     });
+
+    let toastTimer = null;
+    function showToast(type, title, msg) {
+        const toast = document.getElementById('payment-toast');
+        const icon  = document.getElementById('payment-toast-icon');
+        const ttl   = document.getElementById('payment-toast-title');
+        const txt   = document.getElementById('payment-toast-msg');
+        if (type === 'error') {
+            toast.style.background = '#fef2f2';
+            toast.style.border     = '1.5px solid #fca5a5';
+            toast.style.color      = '#991b1b';
+            icon.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#dc2626;"></i>';
+        } else if (type === 'warning') {
+            toast.style.background = '#fffbeb';
+            toast.style.border     = '1.5px solid #fcd34d';
+            toast.style.color      = '#92400e';
+            icon.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#d97706;"></i>';
+        } else {
+            toast.style.background = '#eff6ff';
+            toast.style.border     = '1.5px solid #93c5fd';
+            toast.style.color      = '#1e40af';
+            icon.innerHTML = '<i class="fas fa-info-circle" style="color:#2563eb;"></i>';
+        }
+        ttl.textContent = title;
+        txt.textContent = msg;
+        toast.style.display = 'flex';
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() { toast.style.display = 'none'; }, 6000);
+    }
 
     function resetButton() {
         payBtn.disabled = false;
