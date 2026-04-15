@@ -38,16 +38,6 @@
             </div>
             <h1 class="product-detail-name">{{ $product->name }}</h1>
 
-            <div class="product-detail-price">
-                @if($product->hasDiscount())
-                    <span class="price-original-lg">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
-                    <span class="price-discount-lg">Rp {{ number_format($product->discount_price, 0, ',', '.') }}</span>
-                    <span class="discount-save">Hemat Rp {{ number_format($product->price - $product->discount_price, 0, ',', '.') }}</span>
-                @else
-                    <span class="price-normal-lg">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
-                @endif
-            </div>
-
             <div class="product-detail-meta">
                 <div class="meta-item">
                     <i class="fas fa-weight-hanging"></i>
