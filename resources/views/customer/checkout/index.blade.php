@@ -744,8 +744,8 @@ function recalcTotal() {
     var total = subtotal + shippingCost - pointsDiscount;
     if (total < 0) total = 0;
     document.getElementById('checkout-total').textContent = formatRupiah(total);
-    // Update earned points preview (floor(total / 200))
-    var earned = Math.floor(total / 200);
+    // Update earned points preview (floor((subtotal - pointsDiscount) / 200), tidak termasuk ongkir)
+    var earned = Math.floor((subtotal - pointsDiscount) / 200);
     var earnedRow = document.getElementById('earned-points-row');
     var earnedVal = document.getElementById('earned-points-value');
     if (earned > 0) {
@@ -1421,7 +1421,7 @@ function applyPoints() {
             shippingDisplay.textContent = formatRupiah(shippingCost);
 
             document.getElementById('checkout-total').textContent = formatRupiah(total);
-            var earned    = Math.floor(total / 100);
+            var earned    = Math.floor((subtotal - pointsDiscount) / 200);
             var earnedRow = document.getElementById('earned-points-row');
             var earnedVal = document.getElementById('earned-points-value');
             if (earned > 0) {

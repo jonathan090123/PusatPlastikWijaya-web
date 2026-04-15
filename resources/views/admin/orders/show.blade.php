@@ -89,24 +89,6 @@
                         <i class="fas fa-check-circle"></i> {{ session('success') }}
                     </div>
                 @endif
-                <form action="{{ route('admin.orders.updateTracking', $order) }}" method="POST">
-                    @csrf
-                    @method('PATCH')
-                    <div style="display:flex; gap:0.5rem; align-items:center;">
-                        <input type="text" name="tracking_number"
-                            value="{{ old('tracking_number', $order->tracking_number) }}"
-                            placeholder="Masukkan nomor resi ekspedisi..."
-                            maxlength="100"
-                            style="flex:1; padding:0.5rem 0.75rem; border:1.5px solid var(--gray-200); border-radius:var(--radius-sm); font-size:0.9rem; font-weight:600; letter-spacing:0.04em;">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            <i class="fas fa-save"></i> Simpan
-                        </button>
-                    </div>
-                    <p style="font-size:0.75rem; color:var(--gray-400); margin:0.4rem 0 0;">
-                        <i class="fas fa-info-circle"></i>
-                        Setelah disimpan, customer dapat melihat nomor resi dan melacak paket di halaman pesanan mereka.
-                    </p>
-                </form>
                 @if($order->tracking_number)
                     @php
                         $resi = $order->tracking_number;
@@ -120,16 +102,79 @@
                             default                           => 'https://cekresi.com/?noresi=' . $resi,
                         };
                     @endphp
-                    <div style="margin-top:0.75rem; padding:0.6rem 0.85rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:0.5rem; flex-wrap:wrap;">
-                        <span style="font-size:0.85rem; font-weight:700; color:var(--primary); letter-spacing:0.05em;">
-                            <i class="fas fa-barcode"></i> {{ $resi }}
-                        </span>
-                        <a href="{{ $trackUrl }}" target="_blank" rel="noopener noreferrer"
-                            style="font-size:0.78rem; font-weight:600; color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:0.3rem;">
-                            <i class="fas fa-external-link-alt"></i> Lacak
-                        </a>
+                    {{-- Resi display --}}
+                    <div id="resiDisplay" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                        <div style="flex:1; padding:0.5rem 0.85rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:0.5rem; flex-wrap:wrap;">
+                            <span style="font-size:0.9rem; font-weight:700; color:var(--primary); letter-spacing:0.05em;">
+                                <i class="fas fa-barcode"></i> {{ $resi }}
+                            </span>
+                            <a href="{{ $trackUrl }}" target="_blank" rel="noopener noreferrer"
+                                style="font-size:0.78rem; font-weight:600; color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:0.3rem;">
+                                <i class="fas fa-external-link-alt"></i> Lacak
+                            </a>
+                        </div>
+                        <button type="button" onclick="toggleResiEdit()" class="btn btn-sm" style="background:#f3f4f6; color:var(--gray-700); border:1.5px solid var(--gray-200); white-space:nowrap;">
+                            <i class="fas fa-pencil-alt"></i> Edit
+                        </button>
+                        <form action="{{ route('admin.orders.updateTracking', $order) }}" method="POST" style="display:inline;"
+                            onsubmit="return confirm('Hapus nomor resi ini?')">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="tracking_number" value="">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash-alt"></i> Hapus
+                            </button>
+                        </form>
                     </div>
+                    {{-- Edit form (hidden by default) --}}
+                    <form id="resiEditForm" action="{{ route('admin.orders.updateTracking', $order) }}" method="POST" style="display:none; margin-bottom:0.5rem;">
+                        @csrf
+                        @method('PATCH')
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <input type="text" name="tracking_number"
+                                value="{{ old('tracking_number', $order->tracking_number) }}"
+                                placeholder="Masukkan nomor resi ekspedisi..."
+                                maxlength="100"
+                                style="flex:1; padding:0.5rem 0.75rem; border:1.5px solid var(--primary); border-radius:var(--radius-sm); font-size:0.9rem; font-weight:600; letter-spacing:0.04em;">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                            <button type="button" onclick="toggleResiEdit()" class="btn btn-sm" style="background:#f3f4f6; color:var(--gray-700); border:1.5px solid var(--gray-200);">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                @else
+                    {{-- No resi yet — show input form --}}
+                    <form action="{{ route('admin.orders.updateTracking', $order) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <input type="text" name="tracking_number"
+                                value="{{ old('tracking_number') }}"
+                                placeholder="Masukkan nomor resi ekspedisi..."
+                                maxlength="100"
+                                style="flex:1; padding:0.5rem 0.75rem; border:1.5px solid var(--gray-200); border-radius:var(--radius-sm); font-size:0.9rem; font-weight:600; letter-spacing:0.04em;">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                        </div>
+                        <p style="font-size:0.75rem; color:var(--gray-400); margin:0.4rem 0 0;">
+                            <i class="fas fa-info-circle"></i>
+                            Setelah disimpan, customer dapat melihat nomor resi dan melacak paket di halaman pesanan mereka.
+                        </p>
+                    </form>
                 @endif
+                <script>
+                    function toggleResiEdit() {
+                        var display = document.getElementById('resiDisplay');
+                        var form    = document.getElementById('resiEditForm');
+                        var hidden  = display.style.display === 'none';
+                        display.style.display = hidden ? 'flex' : 'none';
+                        form.style.display    = hidden ? 'none' : 'block';
+                        if (!hidden) form.querySelector('input[type=text]').focus();
+                    }
+                </script>
             </div>
         </div>
         @endif
@@ -261,12 +306,7 @@
                                 <option value="cancelled"          {{ $order->status === 'cancelled'         ? 'selected' : '' }}>Dibatalkan</option>
                             </select>
                         </div>
-                        @if($shippingType === 'outside')
-                            <p style="font-size:0.78rem; color:var(--gray-400); margin:0 0 0.75rem; line-height:1.5;">
-                                <i class="fas fa-info-circle"></i>
-                                Pengiriman luar kota — alur status sama hingga integrasi RajaOngkir aktif.
-                            </p>
-                        @endif
+
                         <button type="button" id="submitStatusBtn" class="btn btn-primary" style="width:100%;">
                             <i class="fas fa-save"></i> Perbarui Status
                         </button>

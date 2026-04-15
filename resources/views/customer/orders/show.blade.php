@@ -172,7 +172,7 @@
                             </div>
                             <div style="display:inline-flex; align-items:center; gap:0.3rem; margin-top:0.35rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:0.2rem 0.55rem; font-size:0.72rem; font-weight:700; color:#1d4ed8;">
                                 <i class="fas fa-star" style="font-size:0.65rem; color:#1d4ed8;"></i>
-                                Konfirmasi sekarang &amp; dapatkan <span style="margin-left:0.2rem;">+{{ number_format(floor($order->total / 200), 0, ',', '.') }} poin</span>
+                                Konfirmasi sekarang &amp; dapatkan <span style="margin-left:0.2rem;">+{{ number_format(floor(($order->subtotal - $order->discount_amount - $order->points_discount) / 200), 0, ',', '.') }} poin</span>
                             </div>
                         </div>
                     </div>
@@ -355,7 +355,7 @@
                                 <i class="fas fa-star" style="font-size:0.72rem;"></i> Poin didapat
                             </span>
                             <span style="font-size:0.88rem; font-weight:700; color:#1d4ed8; white-space:nowrap;">
-                                +{{ number_format((int) floor($order->total / 200), 0, ',', '.') }} poin
+                                +{{ number_format((int) floor(($order->subtotal - $order->discount_amount - $order->points_discount) / 200), 0, ',', '.') }} poin
                             </span>
                         </div>
                     @endif

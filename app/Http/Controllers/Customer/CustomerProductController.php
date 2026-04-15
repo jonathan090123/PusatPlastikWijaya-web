@@ -13,12 +13,15 @@ class CustomerProductController extends Controller
     {
         $query = Product::with('category')->where('is_active', true);
 
-        // Search — includes product_code as hidden keyword (not shown in UI)
+        // Search — includes product name, product_code, and category name
         if ($request->filled('search')) {
             $term = $request->search;
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', '%' . $term . '%')
-                  ->orWhere('product_code', 'like', '%' . $term . '%');
+                  ->orWhere('product_code', 'like', '%' . $term . '%')
+                  ->orWhereHas('category', function ($cq) use ($term) {
+                      $cq->where('name', 'like', '%' . $term . '%');
+                  });
             });
         }
 
@@ -68,7 +71,10 @@ class CustomerProductController extends Controller
             ->where('is_active', true)
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', '%' . $q . '%')
-                      ->orWhere('product_code', 'like', '%' . $q . '%');
+                      ->orWhere('product_code', 'like', '%' . $q . '%')
+                      ->orWhereHas('category', function ($cq) use ($q) {
+                          $cq->where('name', 'like', '%' . $q . '%');
+                      });
             })
             ->orderByRaw('CASE WHEN name LIKE ? THEN 0 ELSE 1 END', [$q . '%'])
             ->limit(8)

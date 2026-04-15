@@ -234,7 +234,9 @@ class CustomerOrderController extends Controller
             return;
         }
 
-        $points = (int) floor($order->total / 200);
+        // Rate: 5 poin per Rp 1.000 belanja (tidak termasuk ongkir)
+        $belanja = $order->subtotal - $order->discount_amount - $order->points_discount;
+        $points = (int) floor($belanja / 200);
         if ($points <= 0) {
             return;
         }
