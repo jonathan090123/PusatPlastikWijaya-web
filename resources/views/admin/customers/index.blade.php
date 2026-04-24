@@ -15,12 +15,18 @@
             <div class="form-group" style="flex:2; min-width:180px; margin:0;">
                 <input type="text" name="search" placeholder="Cari nama, email, HP, atau nama bisnis..." value="{{ request('search') }}">
             </div>
-            <select name="filter" style="flex:1; min-width:150px; height:38px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:0 0.75rem; font-size:0.85rem; background:#fff; color:var(--gray-700);">
+            <select name="filter" id="filter-select" onchange="toggleDateRange(this.value)" style="flex:1; min-width:150px; height:38px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:0 0.75rem; font-size:0.85rem; background:#fff; color:var(--gray-700);">
                 <option value="">Semua Pelanggan</option>
                 <option value="has_orders"  {{ request('filter')==='has_orders'  ? 'selected' : '' }}>Pernah Pesan</option>
                 <option value="no_orders"   {{ request('filter')==='no_orders'   ? 'selected' : '' }}>Belum Pernah Pesan</option>
                 <option value="has_points"  {{ request('filter')==='has_points'  ? 'selected' : '' }}>Punya Poin</option>
             </select>
+            {{-- Date range filter --}}
+            <div id="date-range-wrapper" style="display:flex; gap:0.4rem; align-items:center; flex-wrap:nowrap;">
+                <input type="date" name="date_from" value="{{ request('date_from') }}" style="height:38px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:0 0.5rem; font-size:0.83rem; color:var(--gray-700); background:#fff;">
+                <span style="font-size:0.8rem; color:var(--gray-400);">—</span>
+                <input type="date" name="date_to" value="{{ request('date_to') }}" style="height:38px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:0 0.5rem; font-size:0.83rem; color:var(--gray-700); background:#fff;">
+            </div>
             <select name="sort" style="flex:1; min-width:160px; height:38px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:0 0.75rem; font-size:0.85rem; background:#fff; color:var(--gray-700);">
                 <option value="latest"      {{ request('sort','latest')==='latest'      ? 'selected' : '' }}>Terbaru</option>
                 <option value="oldest"      {{ request('sort')==='oldest'      ? 'selected' : '' }}>Terlama</option>
@@ -29,7 +35,7 @@
                 <option value="points_desc" {{ request('sort')==='points_desc' ? 'selected' : '' }}>Poin Tertinggi</option>
             </select>
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Terapkan</button>
-            @if(request()->hasAny(['search','filter','sort']))
+            @if(request()->hasAny(['search','filter','sort','date_from','date_to']))
                 <a href="{{ route('admin.customers.index') }}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Reset</a>
             @endif
         </form>
@@ -138,5 +144,15 @@
 .status-inactive { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
 .status-inactive:hover { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
 </style>
+@endpush
+@push('scripts')
+<script>
+function toggleDateRange(value) {
+    // Saat pilih "Belum Pernah Pesan", date range tidak berlaku — clear otomatis
+    if (value === 'no_orders') {
+        document.querySelectorAll('#date-range-wrapper input[type=date]').forEach(function(i){ i.value = ''; });
+    }
+}
+</script>
 @endpush
 @endsection

@@ -24,13 +24,32 @@ class AdminCustomerController extends Controller
             });
         }
 
-        // Filter: has_orders
+        // Date range closure (dipakai bersama semua filter)
+        $hasDateFilter = $request->filled('date_from') || $request->filled('date_to');
+        $dateFilter = function ($q) use ($request) {
+            if ($request->filled('date_from')) {
+                $q->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $q->whereDate('created_at', '<=', $request->date_to);
+            }
+        };
+
+        // Filter utama
         if ($request->filter === 'has_orders') {
-            $query->has('orders');
+            // whereHas dengan closure kosong = sama dengan has('orders')
+            $query->whereHas('orders', $dateFilter);
         } elseif ($request->filter === 'no_orders') {
+            // "Belum pernah pesan" — date range tidak berlaku (tidak ada order untuk difilter)
             $query->doesntHave('orders');
         } elseif ($request->filter === 'has_points') {
             $query->where('points', '>', 0);
+            if ($hasDateFilter) {
+                $query->whereHas('orders', $dateFilter);
+            }
+        } elseif ($hasDateFilter) {
+            // Semua pelanggan, tapi hanya yang punya pesanan di rentang tanggal tsb
+            $query->whereHas('orders', $dateFilter);
         }
 
         // Sort
