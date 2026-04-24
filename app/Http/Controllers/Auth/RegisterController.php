@@ -72,7 +72,7 @@ class RegisterController extends Controller
         $isBusiness    = $request->boolean('is_business');
         $businessName  = $isBusiness ? $request->business_name : null;
 
-        // Simpan data pendaftaran sementara di cache — belum masuk DB
+        // Simpan data pendaftaran sementara di cache ->  belum masuk di  DB
         $pendingKey = 'pending_reg_' . md5($request->email);
         Cache::put($pendingKey, [
             'name'          => $request->name,
