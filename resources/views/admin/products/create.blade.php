@@ -70,7 +70,7 @@
 
                 <div class="form-group">
                     <label><i class="fas fa-money-bill"></i> Harga (Rp) <span style="color:var(--danger);">*</span></label>
-                    <input type="number" name="price" value="{{ old('price') }}" class="{{ $errors->has('price') ? 'is-invalid' : '' }}" placeholder="0" min="0" step="100" required>
+                    <input type="number" name="price" value="{{ old('price') }}" class="{{ $errors->has('price') ? 'is-invalid' : '' }}" placeholder="0" min="1" step="1" required>
                     @error('price')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
@@ -78,7 +78,7 @@
 
                 <div class="form-group">
                     <label><i class="fas fa-tag"></i> Harga Diskon (Rp)</label>
-                    <input type="number" name="discount_price" value="{{ old('discount_price') }}" placeholder="Kosong = tanpa diskon" min="0" step="100">
+                    <input type="number" name="discount_price" value="{{ old('discount_price') }}" placeholder="Kosong = tanpa diskon" min="1" step="1">
                     @error('discount_price')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
@@ -125,7 +125,7 @@
                                 @endforeach
                             </select>
                             <input type="number" name="conversion_units[{{ $i }}][conversion_value]" value="{{ $cu['conversion_value'] ?? '' }}" placeholder="1 satuan ini = ? satuan dasar" min="1">
-                            <input type="number" name="conversion_units[{{ $i }}][price]" value="{{ $cu['price'] ?? '' }}" placeholder="Harga satuan ini (Rp)" min="0" step="100">
+                            <input type="number" name="conversion_units[{{ $i }}][price]" value="{{ $cu['price'] ?? '' }}" placeholder="Harga satuan ini (Rp)" min="1" step="1">
                             <button type="button" onclick="this.closest('.cu-row').remove()" class="btn btn-icon btn-danger" title="Hapus"><i class="fas fa-times"></i></button>
                         </div>
                         @endforeach
@@ -194,7 +194,7 @@ document.getElementById('addConvUnit').addEventListener('click', function() {
             ${cuUnits.map(u => `<option value="${u}">${u}</option>`).join('')}
         </select>
         <input type="number" name="conversion_units[${cuIndex}][conversion_value]" placeholder="1 satuan ini = ? satuan dasar" min="1">
-        <input type="number" name="conversion_units[${cuIndex}][price]" placeholder="Harga satuan ini (Rp)" min="0" step="100">
+        <input type="number" name="conversion_units[${cuIndex}][price]" placeholder="Harga satuan ini (Rp)" min="1" step="1">
         <button type="button" onclick="this.closest('.cu-row').remove()" class="btn btn-icon btn-danger" title="Hapus"><i class="fas fa-times"></i></button>
     `;
     container.appendChild(row);

@@ -82,9 +82,6 @@
 
                     <p style="font-size:0.75rem; color:var(--gray-400); margin-top:0.85rem; text-align:center;">
                         <i class="fas fa-shield-alt"></i> Pembayaran diproses secara aman oleh Midtrans
-                        &nbsp;·&nbsp;
-                        <a href="https://simulator.sandbox.midtrans.com" target="_blank" rel="noopener noreferrer"
-                           style="color:var(--primary); text-decoration:underline;">Payment Simulator</a>
                     </p>
                 </div>
             </div>
@@ -223,7 +220,11 @@
 @endpush
 
 @push('scripts')
+@if(config('services.midtrans.is_production'))
+<script src="https://app.midtrans.com/snap/snap.js" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+@else
 <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+@endif
 <script>
 (function () {
     const cards    = document.querySelectorAll('.method-card');
