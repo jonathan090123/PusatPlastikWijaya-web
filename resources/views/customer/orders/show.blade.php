@@ -11,6 +11,14 @@
         </a>
     </div>
 
+    @php
+        $oosItems = $order->items->where('is_out_of_stock', true);
+        $oosSubtotal = $oosItems->sum('subtotal');
+        $activeSubtotal = $order->subtotal - $oosSubtotal;
+        $estimatedPoints = (int) floor(max(0, $activeSubtotal - $order->discount_amount - $order->points_discount) / 200);
+        $hasPaid = $order->payment && $order->payment->isPaid();
+    @endphp
+
     <div style="display:grid; grid-template-columns:1fr 350px; gap:1.5rem; align-items:start;">
         {{-- Left --}}
         <div>
@@ -172,7 +180,7 @@
                             </div>
                             <div style="display:inline-flex; align-items:center; gap:0.3rem; margin-top:0.35rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:0.2rem 0.55rem; font-size:0.72rem; font-weight:700; color:#1d4ed8;">
                                 <i class="fas fa-star" style="font-size:0.65rem; color:#1d4ed8;"></i>
-                                Konfirmasi sekarang &amp; dapatkan <span style="margin-left:0.2rem;">+{{ number_format(floor(($order->subtotal - $order->discount_amount - $order->points_discount) / 200), 0, ',', '.') }} poin</span>
+                                Konfirmasi sekarang &amp; dapatkan <span style="margin-left:0.2rem;">+{{ number_format($estimatedPoints, 0, ',', '.') }} poin</span>
                             </div>
                         </div>
                     </div>
@@ -278,8 +286,8 @@
                     {{-- Items --}}
                     <div style="display:flex; flex-direction:column; gap:0.6rem; margin-bottom:1rem;">
                         @foreach($order->items as $item)
-                            <div style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem; background:var(--gray-50); border-radius:var(--radius-sm);">
-                                <div style="width:64px; height:64px; border-radius:var(--radius-sm); overflow:hidden; flex-shrink:0; background:var(--white); border:1px solid var(--gray-200);">
+                            <div style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem; background:{{ $item->is_out_of_stock ? '#fff5f5' : 'var(--gray-50)' }}; border-radius:var(--radius-sm); border: {{ $item->is_out_of_stock ? '1px solid #fca5a5' : '1px solid transparent' }};">
+                                <div style="width:64px; height:64px; border-radius:var(--radius-sm); overflow:hidden; flex-shrink:0; background:var(--white); border:1px solid var(--gray-200); {{ $item->is_out_of_stock ? 'opacity:0.5;' : '' }}">
                                     @if($item->product && $item->product->image)
                                         <img src="{{ asset('storage/' . $item->product->image) }}" alt="{{ $item->product_name }}" style="width:100%; height:100%; object-fit:contain; padding:4px;">
                                     @else
@@ -288,15 +296,20 @@
                                 </div>
                                 <div style="flex:1; min-width:0;">
                                     @if($item->product)
-                                        <a href="{{ route('products.show', $item->product->slug) }}" style="font-weight:600; font-size:0.85rem; color:var(--gray-800); text-decoration:none; display:block; line-height:1.4; transition:color 0.15s;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
+                                        <a href="{{ route('products.show', $item->product->slug) }}" style="font-weight:600; font-size:0.85rem; color:var(--gray-800); text-decoration:{{ $item->is_out_of_stock ? 'line-through' : 'none' }}; display:block; line-height:1.4; transition:color 0.15s; {{ $item->is_out_of_stock ? 'color:var(--gray-400);' : '' }}" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='{{ $item->is_out_of_stock ? 'line-through' : 'none' }}';">
                                             {{ $item->product_name }}
                                         </a>
                                     @else
-                                        <div style="font-weight:600; font-size:0.85rem; color:var(--gray-800); line-height:1.4;">{{ $item->product_name }}</div>
+                                        <div style="font-weight:600; font-size:0.85rem; color:var(--gray-800); line-height:1.4; {{ $item->is_out_of_stock ? 'text-decoration:line-through; color:var(--gray-400);' : '' }}">{{ $item->product_name }}</div>
                                     @endif
                                     <div style="font-size:0.78rem; color:var(--gray-500);">{{ $item->quantity }} x Rp {{ number_format($item->product_price, 0, ',', '.') }}</div>
+                                    @if($item->is_out_of_stock)
+                                        <div style="font-size:0.75rem; color:#dc2626; font-weight:600; margin-top:4px;">
+                                            <i class="fas fa-times-circle"></i> Stok Kosong
+                                        </div>
+                                    @endif
                                 </div>
-                                <div style="font-weight:700; font-size:0.85rem; color:var(--gray-800); white-space:nowrap;">
+                                <div style="font-weight:700; font-size:0.85rem; color:{{ $item->is_out_of_stock ? 'var(--gray-400)' : 'var(--gray-800)' }}; white-space:nowrap; {{ $item->is_out_of_stock ? 'text-decoration:line-through;' : '' }}">
                                     Rp {{ number_format($item->subtotal, 0, ',', '.') }}
                                 </div>
                             </div>
@@ -331,6 +344,18 @@
                         </div>
                     </div>
 
+                    {{-- Out-of-Stock Refund Notice --}}
+                    @if($oosItems->count() > 0 && $hasPaid && !in_array($order->status, ['completed', 'cancelled']))
+                        <div style="margin-top:1rem; padding:0.85rem 1rem; background:#fffbeb; border:1.5px solid #fbbf24; border-radius:var(--radius-sm);">
+                            <div style="display:flex; align-items:center; gap:0.4rem; font-weight:700; font-size:0.85rem; color:#92400e; margin-bottom:0.4rem;">
+                                <i class="fas fa-info-circle"></i> Info Stok Kosong
+                            </div>
+                            <div style="font-size:0.8rem; color:#a16207; line-height:1.5;">
+                                Terdapat produk yang sedang habis yaitu <strong>{{ $oosItems->pluck('product_name')->implode(', ') }}</strong>. Silakan hubungi admin pada nomor dibawah jika belum menerima pengembalian.
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Earned points notice --}}
                     @php
                         $earnedHistory = $order->pointHistories->firstWhere('type', 'earned');
@@ -355,7 +380,7 @@
                                 <i class="fas fa-star" style="font-size:0.72rem;"></i> Poin didapat
                             </span>
                             <span style="font-size:0.88rem; font-weight:700; color:#1d4ed8; white-space:nowrap;">
-                                +{{ number_format((int) floor(($order->subtotal - $order->discount_amount - $order->points_discount) / 200), 0, ',', '.') }} poin
+                                +{{ number_format($estimatedPoints, 0, ',', '.') }} poin
                             </span>
                         </div>
                     @endif

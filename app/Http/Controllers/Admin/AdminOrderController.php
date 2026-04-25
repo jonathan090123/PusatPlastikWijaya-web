@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PointHistory;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class AdminOrderController extends Controller
@@ -86,9 +87,10 @@ class AdminOrderController extends Controller
             'status_read_at' => null,  // mark as unread for customer
         ]);
 
-        // Award loyalty points when order is marked completed for the first time
+        // Award loyalty points & deduct stock when order is marked completed for the first time
         if ($request->status === 'completed' && $previousStatus !== 'completed') {
             $this->awardPoints($order->fresh());
+            $this->deductStock($order->fresh());
         }
 
         return redirect()->route('admin.orders.index')->with('success', 'Status pesanan berhasil diperbarui menjadi "' . $order->fresh()->status_label . '".');
@@ -120,7 +122,12 @@ class AdminOrderController extends Controller
             'out_of_stock_at' => now(),
         ]);
 
-        // Jika poin sudah diberikan (order completed), kurangi poin proporsional
+        // ── Karena produk ditandai stok kosong, ubah stoknya menjadi 0 agar tidak bisa dibeli lagi ───────────
+        if ($item->product_id) {
+            Product::where('id', $item->product_id)->update(['stock' => 0]);
+        }
+
+        // ── Jika poin sudah diberikan (order completed), kurangi poin proporsional
         if ($order->status === 'completed') {
             $deduct = (int) floor((float) $item->subtotal / 200);
             if ($deduct > 0) {
@@ -137,9 +144,12 @@ class AdminOrderController extends Controller
                     ]);
                 }
             }
+
+            // Kembalikan stok juga jika order sudah selesai (stok sudah dikurangi sebelumnya)
+            // Ini sudah ditangani oleh increment di atas.
         }
 
-        return back()->with('success', 'Item "' . $item->product_name . '" ditandai stok kosong.');
+        return back()->with('success', 'Item "' . $item->product_name . '" ditandai stok kosong. Stok produk utama telah diubah menjadi 0.');
     }
 
     private function awardPoints(Order $order): void
@@ -171,5 +181,32 @@ class AdminOrderController extends Controller
             'amount'      => $points,
             'description' => 'Poin dari pesanan ' . $order->invoice_number,
         ]);
+    }
+
+    /**
+     * Kurangi stok produk untuk semua item yang terpenuhi (bukan stok kosong).
+     * Hanya dijalankan sekali saat order pertama kali selesai.
+     * Guard: dicek via kolom status (hanya dipanggil dari updateStatus saat previousStatus !== 'completed').
+     */
+    private function deductStock(Order $order): void
+    {
+        $order->loadMissing('items');
+
+        foreach ($order->items->where('is_out_of_stock', false) as $item) {
+            if (!$item->product_id) {
+                continue;
+            }
+
+            $product = Product::find($item->product_id);
+            if (!$product) {
+                continue;
+            }
+
+            // Jangan biarkan stok minus
+            $deduct = min((int) $item->quantity, max(0, (int) $product->stock));
+            if ($deduct > 0) {
+                $product->decrement('stock', $deduct);
+            }
+        }
     }
 }

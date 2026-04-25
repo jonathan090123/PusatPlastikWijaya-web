@@ -261,7 +261,7 @@
                                 <div style="font-weight:700; font-size:0.875rem; color:{{ $item->is_out_of_stock ? 'var(--gray-400)' : 'var(--gray-800)' }}; white-space:nowrap; {{ $item->is_out_of_stock ? 'text-decoration:line-through;' : '' }}">
                                     Rp {{ number_format($item->subtotal, 0, ',', '.') }}
                                 </div>
-                                @if(!$item->is_out_of_stock && !in_array($order->status, ['cancelled', 'expired']))
+                                @if(!$item->is_out_of_stock && !in_array($order->status, ['completed', 'cancelled', 'expired']))
                                     <button type="button"
                                         onclick="confirmOutOfStock({{ $item->id }}, '{{ addslashes($item->product_name) }}', '{{ route('admin.orders.items.outOfStock', [$order, $item]) }}')"
                                         style="font-size:0.7rem; padding:0.2rem 0.5rem; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap;">
@@ -300,6 +300,49 @@
                         <span>Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                     </div>
                 </div>
+
+                    {{-- ── Refund Manual Notice ─────────────────────────────────── --}}
+                @php
+                    $oosItems     = $order->items->where('is_out_of_stock', true);
+                    $oosSubtotal  = $oosItems->sum('subtotal');
+                    $hasPaid      = $order->payment && $order->payment->isPaid();
+                @endphp
+                @if($oosItems->count() > 0 && $hasPaid)
+                    <div style="margin-top:1rem; padding:0.85rem 1rem; background:#fffbeb; border:1.5px solid #fbbf24; border-radius:var(--radius-sm);">
+                        <div style="display:flex; align-items:center; gap:0.4rem; font-weight:700; font-size:0.82rem; color:#92400e; margin-bottom:0.6rem;">
+                            <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
+                            PERLU REFUND MANUAL
+                        </div>
+
+                        {{-- Rincian item yang perlu direfund --}}
+                        <div style="font-size:0.8rem; color:#78350f; margin-bottom:0.6rem;">
+                            @foreach($oosItems as $oos)
+                                <div style="display:flex; justify-content:space-between; padding:0.2rem 0; border-bottom:1px dashed #fde68a;">
+                                    <span style="flex:1; padding-right:0.5rem;">
+                                        <i class="fas fa-times-circle" style="color:#dc2626; font-size:0.7rem;"></i>
+                                        {{ $oos->product_name }}
+                                        <span style="color:#a16207;">({{ $oos->quantity }} × Rp {{ number_format($oos->product_price, 0, ',', '.') }})</span>
+                                    </span>
+                                    <span style="font-weight:600; white-space:nowrap;">Rp {{ number_format($oos->subtotal, 0, ',', '.') }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Total refund --}}
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:0.4rem;">
+                            <span style="font-size:0.82rem; font-weight:600; color:#92400e;">Total Refund ke Customer</span>
+                            <span style="font-size:1rem; font-weight:800; color:#dc2626;">
+                                Rp {{ number_format($oosSubtotal, 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <div style="margin-top:0.6rem; font-size:0.75rem; color:#a16207; line-height:1.5;">
+                            <i class="fas fa-info-circle"></i>
+                            Hubungi customer <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->recipient_phone) }}" target="_blank" rel="noopener noreferrer" style="color:#b45309; text-decoration:underline; font-weight:700;"><i class="fab fa-whatsapp"></i> {{ $order->recipient_phone }}</a> dan konfirmasi pengembalian dana. Metode pembayaran
+                            <strong>({{ strtoupper(str_replace('_', ' ', $order->payment->payment_type ?? '-')) }})</strong>.
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 
