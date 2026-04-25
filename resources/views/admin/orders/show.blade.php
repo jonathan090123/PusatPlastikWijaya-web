@@ -5,9 +5,14 @@
 @section('content')
 <div class="page-header">
     <h1><i class="fas fa-file-invoice"></i> Detail Pesanan</h1>
-    <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary btn-sm">
-        <i class="fas fa-arrow-left"></i> Kembali
-    </a>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <a href="{{ route('admin.orders.invoice', $order) }}" target="_blank" class="btn btn-primary btn-sm">
+            <i class="fas fa-print"></i> Print Invoice
+        </a>
+        <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
+    </div>
 </div>
 
 <div style="display:grid; grid-template-columns:1fr 350px; gap:1.5rem; align-items:start;">
@@ -232,8 +237,8 @@
                 {{-- Items --}}
                 <div style="display:flex; flex-direction:column; gap:0.6rem; margin-bottom:1rem;">
                     @foreach($order->items as $item)
-                        <div style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem 0.75rem; background:var(--gray-50); border-radius:var(--radius-sm);">
-                            <div style="width:44px; height:44px; border-radius:var(--radius-sm); overflow:hidden; flex-shrink:0; background:var(--white); border:1px solid var(--gray-200);">
+                        <div style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem 0.75rem; background:{{ $item->is_out_of_stock ? '#fff5f5' : 'var(--gray-50)' }}; border-radius:var(--radius-sm); border: {{ $item->is_out_of_stock ? '1px solid #fca5a5' : '1px solid transparent' }}; position:relative;">
+                            <div style="width:44px; height:44px; border-radius:var(--radius-sm); overflow:hidden; flex-shrink:0; background:var(--white); border:1px solid var(--gray-200); {{ $item->is_out_of_stock ? 'opacity:0.5;' : '' }}">
                                 @if($item->product && $item->product->image)
                                     <img src="{{ asset('storage/' . $item->product->image) }}" alt="{{ $item->product_name }}" style="width:100%; height:100%; object-fit:contain; padding:2px;">
                                 @else
@@ -241,11 +246,28 @@
                                 @endif
                             </div>
                             <div style="flex:1; min-width:0;">
-                                <div style="font-weight:600; font-size:0.875rem; color:var(--gray-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $item->product_name }}</div>
+                                <div style="font-weight:600; font-size:0.875rem; color:var(--gray-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; {{ $item->is_out_of_stock ? 'text-decoration:line-through; color:var(--gray-400);' : '' }}">{{ $item->product_name }}</div>
                                 <div style="font-size:0.8rem; color:var(--gray-500);">{{ $item->quantity }} x Rp {{ number_format($item->product_price, 0, ',', '.') }}</div>
+                                @if($item->is_out_of_stock)
+                                    <div style="font-size:0.75rem; color:#dc2626; font-weight:600; margin-top:2px;">
+                                        <i class="fas fa-times-circle"></i> Stok Kosong
+                                        @if($item->out_of_stock_at)
+                                            <span style="font-weight:400; color:var(--gray-400);">&mdash; {{ $item->out_of_stock_at->format('d M Y H:i') }}</span>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
-                            <div style="font-weight:700; font-size:0.875rem; color:var(--gray-800); white-space:nowrap;">
-                                Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem;">
+                                <div style="font-weight:700; font-size:0.875rem; color:{{ $item->is_out_of_stock ? 'var(--gray-400)' : 'var(--gray-800)' }}; white-space:nowrap; {{ $item->is_out_of_stock ? 'text-decoration:line-through;' : '' }}">
+                                    Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                                </div>
+                                @if(!$item->is_out_of_stock && !in_array($order->status, ['cancelled', 'expired']))
+                                    <button type="button"
+                                        onclick="confirmOutOfStock({{ $item->id }}, '{{ addslashes($item->product_name) }}', '{{ route('admin.orders.items.outOfStock', [$order, $item]) }}')"
+                                        style="font-size:0.7rem; padding:0.2rem 0.5rem; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap;">
+                                        <i class="fas fa-ban"></i> Stok Kosong
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -373,6 +395,30 @@
         @endif
     </div>
 </div>
+
+{{-- Out-of-Stock Item Modal --}}
+<div id="oosModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:var(--white); border-radius:var(--radius-md); padding:1.75rem; max-width:380px; width:90%; box-shadow:var(--shadow-xl);">
+        <div style="text-align:center; font-size:2rem; margin-bottom:0.75rem;">⚠️</div>
+        <h3 style="font-size:1.05rem; font-weight:700; color:var(--gray-900); text-align:center; margin-bottom:0.5rem;">Tandai Stok Kosong?</h3>
+        <p style="font-size:0.875rem; color:var(--gray-500); text-align:center; margin-bottom:1.25rem; line-height:1.6;">
+            Item <strong id="oosItemName"></strong> akan ditandai <strong>stok kosong</strong> dan dicoret di invoice.<br>
+            Jika pesanan sudah selesai, poin proporsional akan dikurangi.<br>
+            <em>Pengembalian uang dilakukan manual oleh admin.</em>
+        </p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <button id="oosCancel" class="btn btn-secondary" style="width:100%;">Batal</button>
+            <button id="oosConfirm" class="btn btn-danger" style="width:100%;">Ya, Tandai Kosong</button>
+        </div>
+    </div>
+</div>
+
+{{-- Hidden form for OOS submit --}}
+<form id="oosForm" method="POST" style="display:none;">
+    @csrf
+    @method('PATCH')
+</form>
+
 @endsection
 
 @push('styles')
@@ -443,5 +489,33 @@
         if (e.target === modal) modal.style.display = 'none';
     });
 }());
+
+// ---- Out-of-stock per item modal ----
+let oos_form_action = '';
+const oosModal   = document.getElementById('oosModal');
+const oosName    = document.getElementById('oosItemName');
+const oosConfirm = document.getElementById('oosConfirm');
+const oosCancel  = document.getElementById('oosCancel');
+
+function confirmOutOfStock(itemId, itemName, actionUrl) {
+    oos_form_action = actionUrl;
+    oosName.textContent = '"' + itemName + '"';
+    oosModal.style.display = 'flex';
+}
+
+oosConfirm.addEventListener('click', function () {
+    const form = document.getElementById('oosForm');
+    form.action = oos_form_action;
+    oosModal.style.display = 'none';
+    form.submit();
+});
+
+oosCancel.addEventListener('click', function () {
+    oosModal.style.display = 'none';
+});
+
+oosModal.addEventListener('click', function (e) {
+    if (e.target === oosModal) oosModal.style.display = 'none';
+});
 </script>
 @endpush

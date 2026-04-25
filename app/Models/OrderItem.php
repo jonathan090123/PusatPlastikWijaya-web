@@ -17,13 +17,17 @@ class OrderItem extends Model
         'unit',
         'quantity',
         'subtotal',
+        'is_out_of_stock',
+        'out_of_stock_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'product_price' => 'decimal:2',
-            'subtotal' => 'decimal:2',
+            'product_price'   => 'decimal:2',
+            'subtotal'        => 'decimal:2',
+            'is_out_of_stock' => 'boolean',
+            'out_of_stock_at' => 'datetime',
         ];
     }
 

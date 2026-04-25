@@ -25,6 +25,25 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // Akun Admin Sistem
+        $adminAccounts = [
+            ['email' => 'cv.pjl01@gmail.com', 'name' => 'Admin PJL 01', 'password' => 'cv.pjl01'],
+            ['email' => 'cv.pjl02@gmail.com', 'name' => 'Admin PJL 02', 'password' => 'cv.pjl02'],
+            ['email' => 'cv.pjl03@gmail.com', 'name' => 'Admin PJL 03', 'password' => 'cv.pjl03'],
+        ];
+        foreach ($adminAccounts as $admin) {
+            User::firstOrCreate(
+                ['email' => $admin['email']],
+                [
+                    'name'              => $admin['name'],
+                    'phone'             => null,
+                    'role'              => 'admin',
+                    'password'          => Hash::make($admin['password']),
+                    'email_verified_at' => now(),
+                ]
+            );
+        }
+
         // Akun Customer contoh
         User::firstOrCreate(
             ['email' => 'customer@test.com'],

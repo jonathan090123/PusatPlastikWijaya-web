@@ -138,8 +138,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Orders
     Route::get('/orders', [AdminOrderController::class , 'index'])->name('orders.index');
     Route::get('/orders/{order}', [AdminOrderController::class , 'show'])->name('orders.show');
+    Route::get('/orders/{order}/invoice', [AdminOrderController::class , 'invoice'])->name('orders.invoice');
     Route::patch('/orders/{order}/status', [AdminOrderController::class , 'updateStatus'])->name('orders.updateStatus');
     Route::patch('/orders/{order}/tracking', [AdminOrderController::class , 'updateTracking'])->name('orders.updateTracking');
+    Route::patch('/orders/{order}/items/{item}/out-of-stock', [AdminOrderController::class , 'markItemOutOfStock'])->name('orders.items.outOfStock');
 
     // Shipping Settings
     Route::get('/shipping', [AdminShippingController::class , 'index'])->name('shipping.index');

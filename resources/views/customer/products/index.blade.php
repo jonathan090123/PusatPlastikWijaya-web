@@ -6,6 +6,11 @@
 <div style="padding: 0.5rem;">
     {{-- Page Header --}}
     <div class="catalog-header">
+        <div class="catalog-header-back">
+            <a href="javascript:history.back()" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+        </div>
         <h1><i class="fas fa-box-open"></i> Katalog Produk</h1>
         <p>Temukan produk plastik berkualitas dengan harga terbaik</p>
     </div>
@@ -126,9 +131,40 @@
 
 @push('styles')
 <style>
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: transparent;
+    border: 1.5px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 0.35rem 0.85rem;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-back:hover {
+    background: var(--primary);
+    color: #fff;
+}
 .catalog-header {
+    position: relative;
     text-align: center;
     margin-bottom: 2rem;
+}
+.catalog-header-back {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+@media (max-width: 480px) {
+    .catalog-header-back {
+        position: static;
+        text-align: left;
+        margin-bottom: 0.75rem;
+    }
 }
 .catalog-header h1 {
     font-size: 1.75rem;

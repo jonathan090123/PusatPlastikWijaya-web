@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\PointHistory;
 use Illuminate\Http\Request;
 
@@ -66,6 +67,12 @@ class AdminOrderController extends Controller
         return view('admin.orders.show', compact('order'));
     }
 
+    public function invoice(Order $order)
+    {
+        $order->load(['user', 'items.product', 'payment', 'shippingCost']);
+        return view('admin.orders.invoice', compact('order'));
+    }
+
     public function updateStatus(Request $request, Order $order)
     {
         $request->validate([
@@ -103,6 +110,38 @@ class AdminOrderController extends Controller
             : 'Nomor resi berhasil dihapus.');
     }
 
+    public function markItemOutOfStock(Request $request, Order $order, OrderItem $item)
+    {
+        abort_if($item->order_id !== $order->id, 403);
+        abort_if($item->is_out_of_stock, 422, 'Item sudah ditandai stok kosong.');
+
+        $item->update([
+            'is_out_of_stock' => true,
+            'out_of_stock_at' => now(),
+        ]);
+
+        // Jika poin sudah diberikan (order completed), kurangi poin proporsional
+        if ($order->status === 'completed') {
+            $deduct = (int) floor((float) $item->subtotal / 200);
+            if ($deduct > 0) {
+                $currentPoints = $order->user->points ?? 0;
+                $deduct = min($deduct, $currentPoints); // jangan sampai minus
+                if ($deduct > 0) {
+                    $order->user->decrement('points', $deduct);
+                    PointHistory::create([
+                        'user_id'     => $order->user_id,
+                        'order_id'    => $order->id,
+                        'type'        => 'deducted',
+                        'amount'      => $deduct,
+                        'description' => 'Koreksi poin: ' . $item->product_name . ' (stok kosong) - ' . $order->invoice_number,
+                    ]);
+                }
+            }
+        }
+
+        return back()->with('success', 'Item "' . $item->product_name . '" ditandai stok kosong.');
+    }
+
     private function awardPoints(Order $order): void
     {
         // Guard: only award once per order
@@ -110,8 +149,14 @@ class AdminOrderController extends Controller
             return;
         }
 
-        // Rate: 5 poin per Rp 1.000 belanja (tidak termasuk ongkir)
-        $belanja = $order->subtotal - $order->discount_amount - $order->points_discount;
+        // Hitung subtotal hanya dari item yang TIDAK stok kosong
+        $order->loadMissing('items');
+        $activeSubtotal = $order->items->where('is_out_of_stock', false)->sum('subtotal');
+
+        // Proporsi diskon terhadap total subtotal order
+        $totalDiscount = $order->discount_amount + $order->points_discount;
+        $belanja = max(0, $activeSubtotal - $totalDiscount);
+
         $points = (int) floor($belanja / 200);
         if ($points <= 0) {
             return;

@@ -122,7 +122,7 @@
 /* Hero */
 .lp-hero {
     background: linear-gradient(135deg, var(--secondary) 0%, #1e3a5f 50%, var(--primary-dark) 100%);
-    padding: 4rem 0 3rem;
+    padding: 2rem 0 1.3rem;
     color: #fff;
     text-align: center;
 }
@@ -131,13 +131,13 @@
     font-size: 2.2rem;
     font-weight: 800;
     line-height: 1.3;
-    margin-bottom: 1rem;
+    margin-bottom: 0.6rem;
 }
 .lp-hero h1 span { color: var(--accent); }
 .lp-hero p {
     font-size: 1.05rem;
     color: rgba(255,255,255,0.8);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     line-height: 1.7;
 }
 .lp-hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
@@ -289,7 +289,7 @@
 
 @media (max-width: 768px) {
     .lp-hero h1 { font-size: 1.6rem; }
-    .lp-hero { padding: 2.5rem 0 2rem; }
+    .lp-hero { padding: 1.5rem 0 1.25rem; }
     .lp-products-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); }
 }
 </style>

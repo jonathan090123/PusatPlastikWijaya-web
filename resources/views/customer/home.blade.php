@@ -140,7 +140,7 @@
 <style>
 .hero-section {
     background: linear-gradient(135deg, var(--secondary) 0%, #1e3a5f 50%, var(--primary-dark) 100%);
-    padding: 4rem 0;
+    padding: 1.5rem 0;
     text-align: center;
     color: var(--white);
     margin: -1.5rem -1.5rem 0 -1.5rem;
@@ -148,14 +148,14 @@
 .hero-content h1 {
     font-size: 2.2rem;
     font-weight: 800;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     line-height: 1.3;
 }
 .hero-content h1 span { color: var(--accent); }
 .hero-content p {
     font-size: 1.05rem;
     color: var(--gray-300);
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     max-width: 550px;
     margin-left: auto;
     margin-right: auto;
@@ -311,13 +311,13 @@
     .hero-content h1 { font-size: 1.6rem; }
     .section-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
     .categories-grid { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
-    .hero-section { padding: 2.5rem 0; }
+    .hero-section { padding: 1.25rem 0; }
     .promo-heading-title { font-size: 1.3rem; }
 }
 @media (max-width: 480px) {
     .hero-content h1 { font-size: 1.3rem; }
     .hero-content p { font-size: 0.9rem; margin-bottom: 1.25rem; }
-    .hero-section { padding: 1.75rem 0; }
+    .hero-section { padding: 1rem 0; }
     .categories-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
     .category-card-body { padding: 0.4rem 0.5rem 0.5rem; }
     .category-card h3 { font-size: 0.78rem; }
