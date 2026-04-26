@@ -8,6 +8,9 @@ use App\Models\OrderItem;
 use App\Models\PointHistory;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class AdminOrderController extends Controller
 {
@@ -65,7 +68,105 @@ class AdminOrderController extends Controller
             $order->update(['admin_read_at' => now()]);
         }
 
-        return view('admin.orders.show', compact('order'));
+        // ── Presence Lock ─────────────────────────────────────────────────────
+        $lockKey  = 'order_viewing_' . $order->id;
+        $me       = Auth::user();
+        $lockData = Cache::get($lockKey);
+
+        // Siapa yang sedang memegang lock
+        $lockedBy = null;
+        if ($lockData && $lockData['admin_id'] !== $me->id) {
+            // Admin lain yang sedang buka — tampilkan banner
+            $lockedBy = $lockData;
+        }
+
+        // Hanya ambil/perbarui lock jika:
+        //   (a) lock belum ada (kosong), ATAU
+        //   (b) lock memang milik saya sendiri (refresh)
+        // Jangan pernah overwrite lock milik orang lain!
+        // TTL 120 detik: menahan background tab throttling
+        if (!$lockData || $lockData['admin_id'] === $me->id) {
+            Cache::put($lockKey, [
+                'admin_id'   => $me->id,
+                'admin_name' => $me->name,
+                'since'      => $lockData['since'] ?? now()->toTimeString(),
+            ], 120);
+        }
+
+        return view('admin.orders.show', compact('order', 'lockedBy'));
+    }
+
+    /**
+     * Heartbeat: perpanjang lock 15 detik lagi. Dipanggil browser tiap 8 detik.
+     */
+    public function lockHeartbeat(Order $order): \Illuminate\Http\JsonResponse
+    {
+        $lockKey  = 'order_viewing_' . $order->id;
+        $me       = Auth::user();
+        $lockData = Cache::get($lockKey);
+
+        // Hanya ambil/perbarui lock jika:
+        //   (a) lock belum ada (kosong), ATAU
+        //   (b) lock memang milik saya sendiri DAN statusnya masih 'active'
+        // Tidak boleh overwrite lock orang lain, dan tidak boleh renew grace period.
+        if (!$lockData || ($lockData['admin_id'] === $me->id && ($lockData['status'] ?? 'active') === 'active')) {
+            Cache::put($lockKey, [
+                'admin_id'   => $me->id,
+                'admin_name' => $me->name,
+                'since'      => $lockData['since'] ?? now()->toTimeString(),
+                'status'     => 'active',
+            ], 120);
+        }
+
+        // Kembalikan siapa yang sedang hold lock (untuk info di frontend)
+        $current = Cache::get($lockKey);
+        return response()->json([
+            'locked_by_me'   => $current && $current['admin_id'] === $me->id,
+            'locker_name'    => $current ? $current['admin_name'] : null,
+        ]);
+    }
+
+    /**
+     * Release lock saat admin meninggalkan halaman.
+     * Tidak langsung menghapus — set status 'releasing' dengan TTL 15 detik (grace period).
+     * Setelah 15 detik, cache expired sendiri dan Admin 2 otomatis bisa akses.
+     */
+    public function releaseLock(Request $request, Order $order): \Illuminate\Http\JsonResponse
+    {
+        $lockKey  = 'order_viewing_' . $order->id;
+        $me       = Auth::user();
+        $lockData = Cache::get($lockKey);
+
+        // Hanya release lock milik sendiri, dan hanya jika statusnya masih 'active'
+        if ($lockData && $lockData['admin_id'] === $me->id && ($lockData['status'] ?? 'active') === 'active') {
+            // Grace period 15 detik: lock berubah ke status 'releasing'
+            Cache::put($lockKey, [
+                'admin_id'   => $me->id,
+                'admin_name' => $me->name,
+                'since'      => $lockData['since'],
+                'status'     => 'releasing',
+            ], 15);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Check lock (read-only, GET) — dipakai Admin 2 untuk polling.
+     * Tidak pernah memodifikasi cache.
+     * Mengembalikan status 'releasing' jika Admin 1 baru saja keluar (grace period).
+     */
+    public function checkLock(Order $order): \Illuminate\Http\JsonResponse
+    {
+        $lockKey  = 'order_viewing_' . $order->id;
+        $lockData = Cache::get($lockKey);
+        $status   = $lockData['status'] ?? 'active';
+
+        return response()->json([
+            'is_locked'   => (bool) $lockData,
+            'locker_name' => $lockData ? $lockData['admin_name'] : null,
+            'releasing'   => $lockData && $status === 'releasing',
+        ]);
     }
 
     public function invoice(Order $order)
@@ -80,18 +181,25 @@ class AdminOrderController extends Controller
             'status' => 'required|in:pending,waiting_payment,paid,processing,ready_for_pickup,shipped,completed,cancelled',
         ]);
 
-        $previousStatus = $order->status;
+        $newStatus = $request->status;
 
-        $order->update([
-            'status'         => $request->status,
-            'status_read_at' => null,  // mark as unread for customer
-        ]);
+        DB::transaction(function () use ($order, $newStatus) {
+            // Lock baris order agar admin lain tidak bisa baca/ubah bersamaan
+            $locked = Order::lockForUpdate()->find($order->id);
 
-        // Award loyalty points & deduct stock when order is marked completed for the first time
-        if ($request->status === 'completed' && $previousStatus !== 'completed') {
-            $this->awardPoints($order->fresh());
-            $this->deductStock($order->fresh());
-        }
+            $previousStatus = $locked->status;
+
+            $locked->update([
+                'status'         => $newStatus,
+                'status_read_at' => null, // mark as unread for customer
+            ]);
+
+            // Award loyalty points & deduct stock hanya sekali saat pertama kali completed
+            if ($newStatus === 'completed' && $previousStatus !== 'completed') {
+                $this->awardPoints($locked->fresh());
+                $this->deductStock($locked->fresh());
+            }
+        });
 
         return redirect()->route('admin.orders.index')->with('success', 'Status pesanan berhasil diperbarui menjadi "' . $order->fresh()->status_label . '".');
     }
@@ -115,47 +223,57 @@ class AdminOrderController extends Controller
     public function markItemOutOfStock(Request $request, Order $order, OrderItem $item)
     {
         abort_if($item->order_id !== $order->id, 403);
-        abort_if($item->is_out_of_stock, 422, 'Item sudah ditandai stok kosong.');
 
-        $item->update([
-            'is_out_of_stock' => true,
-            'out_of_stock_at' => now(),
-        ]);
+        DB::transaction(function () use ($order, $item) {
+            // Lock baris item agar admin lain tidak bisa tandai bersamaan
+            $lockedItem = OrderItem::lockForUpdate()->find($item->id);
 
-        // ── Karena produk ditandai stok kosong, ubah stoknya menjadi 0 agar tidak bisa dibeli lagi ───────────
-        if ($item->product_id) {
-            Product::where('id', $item->product_id)->update(['stock' => 0]);
-        }
+            // Re-check di dalam lock — cegah double-processing
+            abort_if($lockedItem->is_out_of_stock, 422, 'Item sudah ditandai stok kosong.');
 
-        // ── Jika poin sudah diberikan (order completed), kurangi poin proporsional
-        if ($order->status === 'completed') {
-            $deduct = (int) floor((float) $item->subtotal / 200);
-            if ($deduct > 0) {
-                $currentPoints = $order->user->points ?? 0;
-                $deduct = min($deduct, $currentPoints); // jangan sampai minus
-                if ($deduct > 0) {
-                    $order->user->decrement('points', $deduct);
-                    PointHistory::create([
-                        'user_id'     => $order->user_id,
-                        'order_id'    => $order->id,
-                        'type'        => 'deducted',
-                        'amount'      => $deduct,
-                        'description' => 'Koreksi poin: ' . $item->product_name . ' (stok kosong) - ' . $order->invoice_number,
-                    ]);
-                }
+            $lockedItem->update([
+                'is_out_of_stock' => true,
+                'out_of_stock_at' => now(),
+            ]);
+
+            // ── Set stok produk menjadi 0 agar tidak bisa dibeli lagi ──
+            if ($lockedItem->product_id) {
+                Product::lockForUpdate()->where('id', $lockedItem->product_id)->update(['stock' => 0]);
             }
 
-            // Kembalikan stok juga jika order sudah selesai (stok sudah dikurangi sebelumnya)
-            // Ini sudah ditangani oleh increment di atas.
-        }
+            // ── Jika poin sudah diberikan (order completed), kurangi poin proporsional ──
+            $lockedOrder = Order::with('user')->lockForUpdate()->find($order->id);
+            if ($lockedOrder->status === 'completed') {
+                $deduct = (int) floor((float) $lockedItem->subtotal / 200);
+                if ($deduct > 0) {
+                    $currentPoints = $lockedOrder->user->points ?? 0;
+                    $deduct = min($deduct, $currentPoints); // jangan sampai minus
+                    if ($deduct > 0) {
+                        $lockedOrder->user->decrement('points', $deduct);
+                        PointHistory::create([
+                            'user_id'     => $lockedOrder->user_id,
+                            'order_id'    => $lockedOrder->id,
+                            'type'        => 'deducted',
+                            'amount'      => $deduct,
+                            'description' => 'Koreksi poin: ' . $lockedItem->product_name . ' (stok kosong) - ' . $lockedOrder->invoice_number,
+                        ]);
+                    }
+                }
+            }
+        });
 
         return back()->with('success', 'Item "' . $item->product_name . '" ditandai stok kosong. Stok produk utama telah diubah menjadi 0.');
     }
 
     private function awardPoints(Order $order): void
     {
-        // Guard: only award once per order
-        if (PointHistory::where('order_id', $order->id)->where('type', 'earned')->exists()) {
+        // Guard dengan lock: cegah double-award jika dua request masuk bersamaan
+        $alreadyAwarded = PointHistory::lockForUpdate()
+            ->where('order_id', $order->id)
+            ->where('type', 'earned')
+            ->exists();
+
+        if ($alreadyAwarded) {
             return;
         }
 
@@ -187,6 +305,7 @@ class AdminOrderController extends Controller
      * Kurangi stok produk untuk semua item yang terpenuhi (bukan stok kosong).
      * Hanya dijalankan sekali saat order pertama kali selesai.
      * Guard: dicek via kolom status (hanya dipanggil dari updateStatus saat previousStatus !== 'completed').
+     * Menggunakan lockForUpdate agar stok tidak salah jika dua order selesai bersamaan.
      */
     private function deductStock(Order $order): void
     {
@@ -197,7 +316,8 @@ class AdminOrderController extends Controller
                 continue;
             }
 
-            $product = Product::find($item->product_id);
+            // Lock baris produk agar baca-tulis stok aman dari race condition
+            $product = Product::lockForUpdate()->find($item->product_id);
             if (!$product) {
                 continue;
             }

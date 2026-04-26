@@ -3,6 +3,34 @@
 @section('title', 'Detail Pesanan #' . $order->invoice_number . ' - Admin')
 
 @section('content')
+
+{{-- ── Presence Lock Banner ─────────────────────────────────────────────── --}}
+@if($lockedBy)
+<div id="lockBanner" style="
+    display:flex; align-items:center; gap:0.75rem;
+    background:#fef3c7; border:1.5px solid #f59e0b;
+    border-radius:var(--radius); padding:0.85rem 1.1rem;
+    margin-bottom:1.25rem; font-size:0.875rem; color:#92400e;
+    animation: lockBannerIn 0.3s ease;
+">
+    <span style="font-size:1.4rem; flex-shrink:0;">🔒</span>
+    <div style="flex:1;">
+        <strong>Pesanan ini sedang dibuka oleh {{ $lockedBy['admin_name'] }}</strong>
+        sejak {{ $lockedBy['since'] }}.
+        <span style="display:block; margin-top:0.2rem; font-size:0.8rem; color:#a16207;">
+            Semua aksi dinonaktifkan sementara untuk mencegah konflik data.
+            Halaman ini akan otomatis terbuka kembali saat admin tersebut keluar.
+        </span>
+    </div>
+    <span id="lockCountdown" style="
+        flex-shrink:0; background:#f59e0b; color:#fff;
+        font-weight:700; font-size:0.75rem; padding:0.25rem 0.65rem;
+        border-radius:9999px; letter-spacing:0.1em; text-align:center;
+        transition: background 0.3s;
+    ">●○○</span>
+</div>
+@endif
+
 <div class="page-header">
     <h1><i class="fas fa-file-invoice"></i> Detail Pesanan</h1>
     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
@@ -261,7 +289,7 @@
                                 <div style="font-weight:700; font-size:0.875rem; color:{{ $item->is_out_of_stock ? 'var(--gray-400)' : 'var(--gray-800)' }}; white-space:nowrap; {{ $item->is_out_of_stock ? 'text-decoration:line-through;' : '' }}">
                                     Rp {{ number_format($item->subtotal, 0, ',', '.') }}
                                 </div>
-                                @if(!$item->is_out_of_stock && !in_array($order->status, ['completed', 'cancelled', 'expired']))
+                                @if(!$item->is_out_of_stock && !in_array($order->status, ['completed', 'cancelled', 'expired']) && !$lockedBy)
                                     <button type="button"
                                         onclick="confirmOutOfStock({{ $item->id }}, '{{ addslashes($item->product_name) }}', '{{ route('admin.orders.items.outOfStock', [$order, $item]) }}')"
                                         style="font-size:0.7rem; padding:0.2rem 0.5rem; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap;">
@@ -353,6 +381,12 @@
                     <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.75rem;">
                         <i class="fas fa-edit" style="color:var(--primary);"></i> Update Status
                     </h3>
+                    @if($lockedBy)
+                        <div style="padding:0.85rem; background:#fef3c7; border:1px solid #fcd34d; border-radius:var(--radius-sm); text-align:center; font-size:0.85rem; color:#92400e;">
+                            <i class="fas fa-lock"></i>
+                            Diblokir — <strong>{{ $lockedBy['admin_name'] }}</strong> sedang mengelola pesanan ini.
+                        </div>
+                    @else
                     @php
                         $shippingType = $order->shippingCost->type ?? 'local';
                     @endphp
@@ -389,6 +423,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif {{-- end @if($lockedBy) --}}
                 </div>
             </div>
         @else
@@ -469,6 +504,10 @@
 @keyframes modalIn {
     from { opacity:0; transform:scale(0.93); }
     to   { opacity:1; transform:scale(1); }
+}
+@keyframes lockBannerIn {
+    from { opacity:0; transform:translateY(-8px); }
+    to   { opacity:1; transform:translateY(0); }
 }
 @media (max-width: 768px) {
     .admin-content > div > div[style*="grid-template-columns"] {
@@ -560,5 +599,100 @@ oosCancel.addEventListener('click', function () {
 oosModal.addEventListener('click', function (e) {
     if (e.target === oosModal) oosModal.style.display = 'none';
 });
+
+// ── Presence Lock: Heartbeat & Release ──────────────────────────────────────
+(function () {
+    const IS_LOCKER     = {{ $lockedBy ? 'false' : 'true' }};
+    const HEARTBEAT_URL = '{{ route('admin.orders.heartbeat', $order) }}';
+    const RELEASE_URL   = '{{ route('admin.orders.releaseLock', $order) }}';
+    const CHECK_URL     = '{{ route('admin.orders.checkLock', $order) }}';
+    const CSRF          = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const lockBanner    = document.getElementById('lockBanner');
+    const countdownEl   = document.getElementById('lockCountdown');
+
+    // POST — untuk heartbeat (renew lock)
+    function postJSON(url) {
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF, 'Content-Type': 'application/json' },
+            keepalive: true,
+        });
+    }
+
+    // GET — untuk polling (hanya baca, tidak renew)
+    function getJSON(url) {
+        return fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+    }
+
+    if (IS_LOCKER) {
+        // ── Pemegang lock ────────────────────────────────────────────────────
+        // Perpanjang tiap 30 detik (TTL cache = 120 detik)
+        setInterval(() => postJSON(HEARTBEAT_URL), 30000);
+
+        // Lepas lock saat halaman ditutup — sendBeacon lebih andal dari fetch di beforeunload
+        window.addEventListener('beforeunload', () => {
+            navigator.sendBeacon(RELEASE_URL + '?_token=' + encodeURIComponent(CSRF));
+        });
+
+        // Jika tab backgrounded lalu dibuka lagi, langsung renew
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') postJSON(HEARTBEAT_URL);
+        });
+
+    } else if (lockBanner && countdownEl) {
+        // ── Admin yang "terkunci" — poll tiap 5 detik via GET (read-only) ────
+        let dot = 0;
+        const dots = ['●○○', '○●○', '○○●'];
+        let reloading = false;
+
+        const poll = () => {
+            if (reloading) return;
+
+            getJSON(CHECK_URL)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.is_locked) {
+                        // Lock sudah habis (grace period selesai) → Admin lain bisa akses
+                        reloading = true;
+                        countdownEl.textContent = '✓';
+                        countdownEl.style.background = '#22c55e';
+                        setTimeout(() => window.location.reload(), 300);
+
+                    } else if (data.releasing) {
+                        // Grace period: Admin 1 baru keluar, tunggu ~15 detik
+                        countdownEl.textContent = '⏳';
+                        countdownEl.style.background = '#f97316';
+                        countdownEl.title = 'Sedang melepas kunci, harap tunggu...';
+
+                        // Update teks banner agar lebih informatif
+                        const bannerStrong = lockBanner.querySelector('strong');
+                        if (bannerStrong) {
+                            bannerStrong.closest('div')?.querySelector('span')?.remove();
+                            bannerStrong.textContent = data.locker_name + ' baru saja keluar';
+                            const hint = document.createElement('span');
+                            hint.style.cssText = 'display:block; margin-top:0.2rem; font-size:0.8rem; color:#a16207;';
+                            hint.textContent = 'Menunggu grace period selesai, halaman akan terbuka otomatis...';
+                            if (!lockBanner.querySelector('.grace-hint')) {
+                                hint.classList.add('grace-hint');
+                                bannerStrong.parentElement.appendChild(hint);
+                            }
+                        }
+                    } else {
+                        // Lock masih aktif — animasi titik biasa
+                        countdownEl.textContent = dots[dot % 3];
+                        countdownEl.style.background = '#f59e0b';
+                        countdownEl.title = '';
+                        dot++;
+                    }
+                })
+                .catch(() => { /* network error — coba lagi */ });
+        };
+
+        // Poll pertama setelah 5 detik, lalu tiap 5 detik
+        setTimeout(() => { poll(); setInterval(poll, 5000); }, 5000);
+    }
+}());
+
+
 </script>
 @endpush

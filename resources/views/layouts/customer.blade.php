@@ -216,107 +216,8 @@
     </script>
     @stack('scripts')
 
-    {{-- Search Autocomplete --}}
-    <style>
-    .topbar-search { position: relative; }
-    .search-suggest-dropdown {
-        position: absolute;
-        top: calc(100% + 6px);
-        left: 0;
-        right: 0;
-        background: #fff;
-        border-radius: 10px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.14);
-        border: 1px solid #e2e8f0;
-        z-index: 99999;
-        overflow: hidden;
-        max-height: 420px;
-        overflow-y: auto;
-    }
-    .ssd-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.65rem 1rem;
-        cursor: pointer;
-        transition: background 0.12s;
-        text-decoration: none;
-        color: inherit;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    .ssd-item:last-child { border-bottom: none; }
-    .ssd-item:hover, .ssd-item.active { background: #eff6ff; }
-    .ssd-img {
-        width: 42px; height: 42px;
-        border-radius: 6px;
-        object-fit: cover;
-        background: #f1f5f9;
-        flex-shrink: 0;
-    }
-    .ssd-img-placeholder {
-        width: 42px; height: 42px;
-        border-radius: 6px;
-        background: #e2e8f0;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-        color: #94a3b8;
-        font-size: 1rem;
-    }
-    .ssd-info { flex: 1; min-width: 0; }
-    .ssd-name {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #1e293b;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .ssd-meta {
-        font-size: 0.75rem;
-        color: #64748b;
-        margin-top: 0.1rem;
-    }
-    .ssd-price-wrap {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 0.05rem;
-        flex-shrink: 0;
-    }
-    .ssd-price {
-        font-size: 0.82rem;
-        font-weight: 700;
-        color: #2563eb;
-        white-space: nowrap;
-    }
-    .ssd-price.promo { color: #ef4444; }
-    .ssd-price-original {
-        font-size: 0.72rem;
-        color: #94a3b8;
-        text-decoration: line-through;
-        white-space: nowrap;
-        font-weight: 400;
-    }
-    .ssd-footer {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.6rem 1rem;
-        font-size: 0.8rem;
-        color: #2563eb;
-        font-weight: 600;
-        background: #f8fafc;
-        cursor: pointer;
-        border-top: 1px solid #e2e8f0;
-    }
-    .ssd-footer:hover { background: #eff6ff; }
-    .ssd-empty {
-        padding: 1rem;
-        text-align: center;
-        font-size: 0.83rem;
-        color: #94a3b8;
-    }
-    </style>
+    {{-- Search Autocomplete CSS → app.css (shared with guest mode) --}}
+
     <script>
     (function () {
         const input    = document.getElementById('topSearchInput');
@@ -509,11 +410,12 @@
             </a>
             {{-- Search bar (hidden on auth pages) --}}
             @unless(request()->routeIs('login') || request()->routeIs('register') || request()->routeIs('verify-email') || request()->routeIs('password.*'))
-            <form action="{{ route('products.index') }}" method="GET" class="guest-navbar-search" autocomplete="off">
+            <form action="{{ route('products.index') }}" method="GET" class="guest-navbar-search" autocomplete="off" id="guestSearchForm">
                 <div class="guest-search-wrap">
                     <i class="fas fa-search"></i>
-                    <input type="text" name="search" placeholder="Cari produk..." value="{{ request('search') }}">
+                    <input type="text" name="search" id="guestSearchInput" placeholder="Cari produk..." value="{{ request('search') }}" autocomplete="off">
                 </div>
+                <div id="guestSearchDropdown" class="search-suggest-dropdown" style="display:none;"></div>
             </form>
             @endunless
             <div class="navbar-actions">
@@ -565,6 +467,108 @@
                 setTimeout(() => alert.remove(), 300);
             }, 4000);
         });
+    </script>
+
+    {{-- Guest Search Autocomplete (same system as logged-in customer) --}}
+    <script>
+    (function () {
+        const input    = document.getElementById('guestSearchInput');
+        const dropdown = document.getElementById('guestSearchDropdown');
+        const form     = document.getElementById('guestSearchForm');
+        if (!input || !dropdown) return;
+
+        const SUGGEST_URL = '{{ route("products.suggest") }}';
+        const SEARCH_URL  = '{{ route("products.index") }}';
+        let timer = null;
+        let activeIdx = -1;
+
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+        function highlight(text, query) {
+            if (!query) return escHtml(text);
+            const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return escHtml(text).replace(new RegExp('(' + escaped + ')', 'gi'),
+                '<mark style="background:#dbeafe;color:#1d4ed8;border-radius:2px;padding:0 1px;">$1</mark>');
+        }
+
+        function renderDropdown(items, query) {
+            if (!items.length) {
+                dropdown.innerHTML = '<div class="ssd-empty"><i class="fas fa-search" style="margin-right:0.4rem;"></i>Produk tidak ditemukan</div>';
+                dropdown.style.display = 'block';
+                return;
+            }
+            let html = '';
+            items.forEach(function (p) {
+                const imgHtml = p.image
+                    ? '<img class="ssd-img" src="' + p.image + '" alt="" loading="lazy">'
+                    : '<div class="ssd-img-placeholder"><i class="fas fa-box"></i></div>';
+                html += '<a class="ssd-item" href="' + SEARCH_URL + '?search=' + encodeURIComponent(p.name) + '">'
+                    + imgHtml
+                    + '<div class="ssd-info">'
+                    +   '<div class="ssd-name">' + highlight(p.name, query) + '</div>'
+                    +   '<div class="ssd-meta">' + escHtml(p.category) + '</div>'
+                    + '</div>'
+                    + '<div class="ssd-price-wrap">'
+                    +   (p.is_promo && p.price_original ? '<span class="ssd-price-original">' + escHtml(p.price_original) + '</span>' : '')
+                    +   '<span class="ssd-price' + (p.is_promo ? ' promo' : '') + '">' + escHtml(p.price) + '</span>'
+                    + '</div>'
+                    + '</a>';
+            });
+            html += '<div class="ssd-footer" id="gSsdSeeAll"><i class="fas fa-search"></i> Lihat semua hasil untuk "<strong>' + escHtml(query) + '</strong>"</div>';
+            dropdown.innerHTML = html;
+            dropdown.style.display = 'block';
+            activeIdx = -1;
+
+            dropdown.querySelectorAll('.ssd-item').forEach(function (el) {
+                el.addEventListener('mousedown', function (e) { e.preventDefault(); window.location.href = el.href; });
+            });
+            const seeAll = document.getElementById('gSsdSeeAll');
+            if (seeAll) seeAll.addEventListener('mousedown', function (e) { e.preventDefault(); form.submit(); });
+        }
+
+        function closeDropdown() { dropdown.style.display = 'none'; activeIdx = -1; }
+
+        function fetchSuggestions(q) {
+            fetch(SUGGEST_URL + '?q=' + encodeURIComponent(q), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (input.value.trim().length >= 2) renderDropdown(data, input.value.trim());
+            })
+            .catch(function () {});
+        }
+
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            const q = input.value.trim();
+            if (q.length < 2) { closeDropdown(); return; }
+            timer = setTimeout(function () { fetchSuggestions(q); }, 280);
+        });
+
+        input.addEventListener('keydown', function (e) {
+            const items = dropdown.querySelectorAll('.ssd-item, #gSsdSeeAll');
+            if (!items.length) return;
+            if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, items.length - 1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, -1); }
+            else if (e.key === 'Enter' && activeIdx >= 0) {
+                e.preventDefault();
+                const el = items[activeIdx];
+                if (el.id === 'gSsdSeeAll') { form.submit(); } else { window.location.href = el.href; }
+                return;
+            } else if (e.key === 'Escape') { closeDropdown(); return; } else { return; }
+            items.forEach(function (el, i) { el.classList.toggle('active', i === activeIdx); });
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.guest-navbar-search')) closeDropdown();
+        });
+
+        input.addEventListener('focus', function () {
+            if (input.value.trim().length >= 2 && dropdown.innerHTML) dropdown.style.display = 'block';
+        });
+    })();
     </script>
     @stack('scripts')
 </body>

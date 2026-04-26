@@ -13,9 +13,14 @@
             <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg lp-btn-main">
                 <i class="fas fa-box-open"></i> Lihat Semua Produk
             </a>
+            @guest
+            <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Masuk
+            </a>
             <a href="{{ route('register') }}" class="btn btn-outline-light btn-lg">
                 <i class="fas fa-user-plus"></i> Daftar Gratis
             </a>
+            @endguest
         </div>
     </div>
 </section>

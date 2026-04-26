@@ -4,7 +4,10 @@
 
 @section('content')
 <div class="auth-container">
-    <div class="auth-card">
+    <div class="auth-card" style="position: relative;">
+        <a href="{{ route('home') }}" class="back-link-guest">
+            <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+        </a>
         <div class="auth-header">
             <h1><i class="fas fa-user-plus"></i></h1>
             <h2>Buat Akun Baru</h2>
@@ -199,6 +202,23 @@
     cursor: pointer;
     margin: 0;
     vertical-align: middle;
+}
+.back-link-guest {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--gray-500);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s;
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+}
+.back-link-guest:hover {
+    color: var(--primary);
 }
 </style>
 

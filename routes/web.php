@@ -142,6 +142,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('/orders/{order}/status', [AdminOrderController::class , 'updateStatus'])->name('orders.updateStatus');
     Route::patch('/orders/{order}/tracking', [AdminOrderController::class , 'updateTracking'])->name('orders.updateTracking');
     Route::patch('/orders/{order}/items/{item}/out-of-stock', [AdminOrderController::class , 'markItemOutOfStock'])->name('orders.items.outOfStock');
+    // Presence lock
+    Route::post('/orders/{order}/heartbeat', [AdminOrderController::class, 'lockHeartbeat'])->name('orders.heartbeat');
+    Route::post('/orders/{order}/release-lock', [AdminOrderController::class, 'releaseLock'])->name('orders.releaseLock');
+    Route::get('/orders/{order}/check-lock', [AdminOrderController::class, 'checkLock'])->name('orders.checkLock');
 
     // Shipping Settings
     Route::get('/shipping', [AdminShippingController::class , 'index'])->name('shipping.index');

@@ -230,6 +230,7 @@ img {
 .guest-navbar-search {
     flex: 1;
     max-width: 400px;
+    position: relative;
 }
 .guest-search-wrap {
     display: flex;
@@ -454,6 +455,12 @@ img {
     font-size: 0.9rem;
 }
 .password-toggle:hover { color: var(--gray-600); }
+
+/* Sembunyikan ikon mata bawaan browser (Edge/IE) agar tidak dobel */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
 
 .checkbox-label {
     display: flex;
@@ -1128,4 +1135,107 @@ table tbody tr:hover { background: var(--gray-50); }
         max-width: calc(100vw - 1rem);
         font-size: 0.82rem;
     }
+}
+
+/* ============================================
+   SEARCH AUTOCOMPLETE DROPDOWN
+   (shared by guest navbar and logged-in topbar)
+   ============================================ */
+.topbar-search { position: relative; }
+.search-suggest-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.14);
+    border: 1px solid #e2e8f0;
+    z-index: 99999;
+    overflow: hidden;
+    max-height: 420px;
+    overflow-y: auto;
+}
+.ssd-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    transition: background 0.12s;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid #f1f5f9;
+}
+.ssd-item:last-child { border-bottom: none; }
+.ssd-item:hover, .ssd-item.active { background: #eff6ff; }
+.ssd-img {
+    width: 42px; height: 42px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #f1f5f9;
+    flex-shrink: 0;
+}
+.ssd-img-placeholder {
+    width: 42px; height: 42px;
+    border-radius: 6px;
+    background: #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: #94a3b8;
+    font-size: 1rem;
+}
+.ssd-info { flex: 1; min-width: 0; }
+.ssd-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ssd-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.1rem;
+}
+.ssd-price-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.05rem;
+    flex-shrink: 0;
+}
+.ssd-price {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #2563eb;
+    white-space: nowrap;
+}
+.ssd-price.promo { color: #ef4444; }
+.ssd-price-original {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-decoration: line-through;
+    white-space: nowrap;
+    font-weight: 400;
+}
+.ssd-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    color: #2563eb;
+    font-weight: 600;
+    background: #f8fafc;
+    cursor: pointer;
+    border-top: 1px solid #e2e8f0;
+}
+.ssd-footer:hover { background: #eff6ff; }
+.ssd-empty {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.83rem;
+    color: #94a3b8;
 }
