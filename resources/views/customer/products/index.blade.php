@@ -18,9 +18,6 @@
     {{-- Mobile filter toggle --}}
     <button class="filter-toggle-btn" id="filterToggleBtn" aria-expanded="false">
         <i class="fas fa-filter"></i> Filter & Urutkan
-        @if(request('category') || request('sort') && request('sort') !== 'terbaru')
-            <span class="filter-active-dot"></span>
-        @endif
         <i class="fas fa-chevron-down filter-toggle-icon" id="filterToggleIcon"></i>
     </button>
 
@@ -452,7 +449,7 @@
             btn.setAttribute('aria-expanded', 'true');
         } else {
             // Keep closed unless filter is active
-            var hasActive = btn.querySelector('.filter-active-dot');
+            var hasActive = {{ (request('category') || (request('sort') && request('sort') !== 'terbaru')) ? 'true' : 'false' }};
             if (hasActive) {
                 sidebar.classList.add('open');
                 btn.setAttribute('aria-expanded', 'true');
