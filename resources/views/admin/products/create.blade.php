@@ -77,8 +77,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label><i class="fas fa-tag"></i> Harga Diskon (Rp)</label>
-                    <input type="number" name="discount_price" value="{{ old('discount_price') }}" placeholder="Kosong = tanpa diskon" min="1" step="1">
+                    <label><i class="fas fa-tag"></i> Nominal Diskon (Rp)</label>
+                    <input type="number" name="discount_price" value="{{ old('discount_price') }}" placeholder="Potongan (cth: 1000)" min="1" step="1">
                     @error('discount_price')
                         <span class="error-message">{{ $message }}</span>
                     @enderror

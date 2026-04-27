@@ -53,7 +53,7 @@ class AdminProductController extends Controller
             'description'                       => 'nullable|string',
             'unit'                              => 'required|string|max:20',
             'price'                             => 'required|numeric|min:0',
-            'discount_price'                    => 'nullable|numeric|min:0',
+            'discount_price'                    => 'nullable|numeric|min:0|lt:price',
             'weight'                            => 'nullable|numeric|min:0',
             'stock'                             => 'required|integer|min:0',
             'stock_alert'                       => 'required|integer|min:0',
@@ -67,7 +67,7 @@ class AdminProductController extends Controller
 
         $validated['slug'] = Str::slug($validated['name']);
         $validated['is_active'] = $request->has('is_active');
-        $validated['discount_price'] = $request->filled('discount_price') ? $request->discount_price : null;
+        $validated['discount_price'] = $request->filled('discount_price') ? ($request->price - $request->discount_price) : null;
         $validated['weight'] = $validated['weight'] ?? 0;
 
         // Ensure unique slug
@@ -116,7 +116,7 @@ class AdminProductController extends Controller
             'description'                       => 'nullable|string',
             'unit'                              => 'required|string|max:20',
             'price'                             => 'required|numeric|min:0',
-            'discount_price'                    => 'nullable|numeric|min:0',
+            'discount_price'                    => 'nullable|numeric|min:0|lt:price',
             'weight'                            => 'nullable|numeric|min:0',
             'stock'                             => 'required|integer|min:0',
             'stock_alert'                       => 'required|integer|min:0',
@@ -130,7 +130,7 @@ class AdminProductController extends Controller
 
         $validated['slug'] = Str::slug($validated['name']);
         $validated['is_active'] = $request->has('is_active');
-        $validated['discount_price'] = $request->filled('discount_price') ? $request->discount_price : null;
+        $validated['discount_price'] = $request->filled('discount_price') ? ($request->price - $request->discount_price) : null;
         $validated['weight'] = $validated['weight'] ?? 0;
 
         // Ensure unique slug (exclude current product)

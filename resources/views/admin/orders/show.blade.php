@@ -640,7 +640,7 @@ oosModal.addEventListener('click', function (e) {
         });
 
     } else if (lockBanner && countdownEl) {
-        // ── Admin yang "terkunci" — poll tiap 5 detik via GET (read-only) ────
+        // ── Admin yang "terkunci" — poll tiap 5 detik via GET (read-only) 
         let dot = 0;
         const dots = ['●○○', '○●○', '○○●'];
         let reloading = false;

@@ -17,7 +17,13 @@
         {{-- Sidebar --}}
         <aside class="admin-sidebar" id="adminSidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-store"></i> <span>Admin Panel</span></h2>
+                <h2 style="display: flex; align-items: center; gap: 0.75rem; margin: 0; padding: 0.25rem 0;">
+                    <img src="{{ asset('storage/logo-navbar.png') }}" alt="Logo" style="max-height: 42px; width: auto; background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(37, 99, 235, 0.3); padding: 4px 6px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="display: flex; flex-direction: column; justify-content: center;">
+                        <span style="font-size: 0.95rem; font-weight: 900; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">Pusat Plastik</span>
+                        <span style="font-size: 0.95rem; font-weight: 900; color: #fcd34d; text-transform: uppercase; letter-spacing: 1px; line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">Wijaya <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; letter-spacing: 0;">ADMIN</span></span>
+                    </div>
+                </h2>
                 <p class="sidebar-greeting">
                     <span>
                         <span id="admin-greeting">Selamat...</span>, {{ Auth::user()->name }} 👋

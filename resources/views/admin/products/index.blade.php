@@ -59,7 +59,7 @@
             </thead>
             <tbody>
                 @forelse($products as $index => $product)
-                    <tr>
+                    <tr class="product-row" data-url="{{ route('admin.products.edit', $product) }}">
                         <td>{{ $products->firstItem() + $index }}</td>
                         <td>
                             @if($product->image)
@@ -108,9 +108,6 @@
                         </td>
                         <td>
                             <div style="display: flex; gap: 0.4rem;">
-                                <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-icon btn-warning" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
                                 <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="delete-form">
                                     @csrf
                                     @method('DELETE')
@@ -144,8 +141,26 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+    .product-row { transition: background-color 0.15s ease; }
+    .product-row:hover {
+        background-color: var(--gray-50);
+        cursor: pointer;
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
+document.querySelectorAll('.product-row').forEach(row => {
+    row.addEventListener('click', function(e) {
+        // Prevent navigation if clicking on buttons, forms, or anything with onclick
+        if (e.target.closest('button, a, form, .toggle-active, .delete-btn, [onclick]')) return;
+        window.location = this.dataset.url;
+    });
+});
+
 function openImgPreview(img) {
     if (img.classList.contains('img-zoomed')) return;
     img.classList.add('img-zoomed');
