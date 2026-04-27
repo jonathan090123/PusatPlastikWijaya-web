@@ -6,7 +6,7 @@
     {{-- Hero Section --}}
     <section class="lp-hero">
         <div class="container lp-hero-inner">
-            <h1>Selamat Datang di <span>Pusat Plastik Wijaya</span></h1>
+            <h1>Selamat Datang di <span>asdd Plastik Wijaya</span></h1>
             <p>Menyediakan berbagai produk plastik berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan
                 terpercaya.</p>
 
