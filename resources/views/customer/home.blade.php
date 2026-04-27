@@ -179,13 +179,7 @@
 
         /* Promo section */
         .promo-section {
-            background: linear-gradient(130deg, #fff7ed 0%, #fef2f2 60%, #fdf4ff 100%);
             padding: 2rem 0;
-            margin: 0 -1.5rem;
-            padding-left: 1.5rem;
-            padding-right: 1.5rem;
-            border-top: 3px solid #fb923c;
-            border-bottom: 3px solid #fb923c;
         }
 
         .promo-heading {

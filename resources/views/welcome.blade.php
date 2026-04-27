@@ -47,7 +47,7 @@
 
     {{-- Promo Products --}}
     @if($promoProducts->count() > 0)
-        <section class="lp-products-section" style="background:#fff8f0;">
+        <section class="lp-products-section">
             <div class="container">
                 <div class="lp-products-header">
                     <h2 class="lp-section-title" style="margin-bottom:0;"><i class="fas fa-fire" style="color:#f97316;"></i>
