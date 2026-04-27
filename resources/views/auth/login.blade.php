@@ -134,6 +134,9 @@
                         right: 0;
                         top: -2.5rem;
                     }
+                    .auth-card {
+                        margin-top: 1rem;
+                    }
                 }
 
                 @media (max-width: 480px) {

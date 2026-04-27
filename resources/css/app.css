@@ -1092,6 +1092,20 @@ table tbody tr:hover { background: var(--gray-50); }
 }
 
 @media (max-width: 768px) {
+    /* Navbar Guest responsive: search bar pindah bawah */
+    .navbar-content {
+        flex-wrap: wrap;
+        height: auto;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        gap: 0.75rem;
+    }
+    .guest-navbar-search {
+        order: 3;
+        max-width: 100%;
+        flex: 0 0 100%;
+    }
+
     /* Product grid: 3 kolom di tablet */
     .products-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -1125,8 +1139,8 @@ table tbody tr:hover { background: var(--gray-50); }
     .product-card-name { font-size: 0.75rem; }
     .product-card-price { font-size: 0.78rem; }
 
-    /* Navbar brand hide text, keep logo */
-    .navbar-brand-text { display: none; }
+    /* Navbar brand hide text, keep logo - DIHAPUS KARENA USER MAU TEXT TETAP ADA */
+    /* .navbar-brand-text { display: none; } */
 
     /* Alert full width */
     .alert {
