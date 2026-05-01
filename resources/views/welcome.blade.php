@@ -5,10 +5,14 @@
 @section('content')
     {{-- Hero Section --}}
     <section class="lp-hero">
-        <div class="container lp-hero-inner">
+        <div class="container">
+            <div class="lp-hero-inner">
             <h1>Selamat Datang di <span>Pusat Plastik Wijaya</span></h1>
             <p>Menyediakan plastik, kantong, toples, gelas, sedotan, dan bahan kue berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan terpercaya.</p>
-
+            <p style="font-size:0.92rem; color:#fde68a; font-weight:600; margin-top:-0.25rem; margin-bottom:1.25rem;">
+                    <i class="fas fa-star" style="color:#fbbf24;"></i>
+                    Dapatkan poin dari setiap pembelian dan tukar menjadi diskon!
+                </p>
             <div class="lp-hero-actions">
                 <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg lp-btn-main">
                     <i class="fas fa-box-open"></i> Lihat Semua Produk
