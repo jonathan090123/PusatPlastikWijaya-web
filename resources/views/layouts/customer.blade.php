@@ -448,7 +448,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <h3><i class="fas fa-store"></i> Pusat Plastik Wijaya</h3>
-                    <p>Menyediakan berbagai macam produk plastik berkualitas dengan harga terjangkau.</p>
+                    <p>Ruko Niaga, Jl. Sedap Malam No. 8-10, Kelurahan Kepanjenkidul, Kec. Kepanjenkidul, Kota Blitar.</p>
                 </div>
                 <div class="footer-col">
                     <h4>Kontak</h4>

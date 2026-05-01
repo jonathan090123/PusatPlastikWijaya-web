@@ -7,8 +7,7 @@
     <section class="lp-hero">
         <div class="container lp-hero-inner">
             <h1>Selamat Datang di <span>Pusat Plastik Wijaya</span></h1>
-            <p>Menyediakan berbagai produk plastik berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan
-                terpercaya.</p>
+            <p>Menyediakan plastik, kantong, toples, gelas, sedotan, dan bahan kue berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan terpercaya.</p>
 
             <div class="lp-hero-actions">
                 <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg lp-btn-main">

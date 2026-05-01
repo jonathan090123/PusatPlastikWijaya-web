@@ -8,8 +8,11 @@
         <div class="container">
             <div class="hero-content">
                 <h1>Selamat Datang di <span>Pusat Plastik Wijaya</span></h1>
-                <p>Temukan berbagai produk plastik berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan
-                    terpercaya.</p>
+                <p>Menyediakan produk plastik berkualitas dengan harga terjangkau. Belanja mudah, cepat, dan terpercaya.</p>
+                <p style="font-size:0.92rem; color:#fde68a; font-weight:600; margin-top:-0.25rem; margin-bottom:1.25rem;">
+                    <i class="fas fa-star" style="color:#fbbf24;"></i>
+                    Dapatkan poin dari setiap pembelian dan tukar menjadi diskon!
+                </p>
                 <a href="{{ route('products.index') }}" class="btn btn-primary btn-lg">
                     <i class="fas fa-shopping-bag"></i> Belanja Sekarang
                 </a>

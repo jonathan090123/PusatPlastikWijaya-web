@@ -19,10 +19,10 @@ class CustomerOrderController extends Controller
             ->whereIn('status', ['pending', 'waiting_payment'])
             ->where(function ($q) {
                 $q->where('payment_deadline', '<=', now())
-                  ->orWhere(function ($q2) {
-                      $q2->whereNull('payment_deadline')
-                         ->where('created_at', '<=', now()->subHours(2));
-                  });
+                    ->orWhere(function ($q2) {
+                        $q2->whereNull('payment_deadline')
+                            ->where('created_at', '<=', now()->subHours(2));
+                    });
             })
             ->get();
 
@@ -100,7 +100,7 @@ class CustomerOrderController extends Controller
         $this->restoreOrderStock($order);
         $this->refundPointsIfNeeded($order);
         $order->update([
-            'status'         => 'cancelled',
+            'status' => 'cancelled',
             'status_read_at' => null,
         ]);
 
@@ -123,7 +123,7 @@ class CustomerOrderController extends Controller
             $this->restoreOrderStock($order);
             $this->refundPointsIfNeeded($order);
             $order->update([
-                'status'         => 'expired',
+                'status' => 'expired',
                 'status_read_at' => null,
             ]);
         }
@@ -141,7 +141,7 @@ class CustomerOrderController extends Controller
         }
 
         $order->load('items.product.productUnits');
-        $cart  = Cart::firstOrCreate(['user_id' => Auth::id()]);
+        $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
         $added = 0;
         $insufficient = [];
 
@@ -156,7 +156,8 @@ class CustomerOrderController extends Controller
             $conversionValue = 1;
             if ($unit !== $product->unit) {
                 $pu = $product->productUnits->firstWhere('unit', $unit);
-                if ($pu) $conversionValue = $pu->conversion_value;
+                if ($pu)
+                    $conversionValue = $pu->conversion_value;
             }
 
             $requiredStock = $item->quantity * $conversionValue;
@@ -164,10 +165,10 @@ class CustomerOrderController extends Controller
             if ($product->stock < $requiredStock) {
                 $available = $conversionValue > 0 ? (int) floor($product->stock / $conversionValue) : 0;
                 $insufficient[] = [
-                    'name'      => $product->name,
+                    'name' => $product->name,
                     'requested' => $item->quantity,
                     'available' => $available,
-                    'unit'      => $unit,
+                    'unit' => $unit,
                 ];
                 continue;
             }
@@ -181,10 +182,10 @@ class CustomerOrderController extends Controller
                 $existing->increment('quantity', $item->quantity);
             } else {
                 CartItem::create([
-                    'cart_id'    => $cart->id,
+                    'cart_id' => $cart->id,
                     'product_id' => $product->id,
-                    'quantity'   => $item->quantity,
-                    'unit'       => $unit,
+                    'quantity' => $item->quantity,
+                    'unit' => $unit,
                 ]);
             }
             $added++;
@@ -192,18 +193,18 @@ class CustomerOrderController extends Controller
 
         if ($added === 0 && empty($insufficient)) {
             return response()->json([
-                'success'      => false,
-                'message'      => 'Produk dari pesanan ini sudah tidak tersedia.',
+                'success' => false,
+                'message' => 'Produk dari pesanan ini sudah tidak tersedia.',
                 'insufficient' => [],
-                'redirect'     => null,
+                'redirect' => null,
             ]);
         }
 
         return response()->json([
-            'success'      => true,
-            'added'        => $added,
+            'success' => true,
+            'added' => $added,
             'insufficient' => $insufficient,
-            'redirect'     => empty($insufficient) ? route('cart.index') : null,
+            'redirect' => empty($insufficient) ? route('cart.index') : null,
         ]);
     }
 
@@ -218,7 +219,7 @@ class CustomerOrderController extends Controller
         }
 
         $order->update([
-            'status'         => 'completed',
+            'status' => 'completed',
             'status_read_at' => null,
         ]);
 
@@ -244,32 +245,34 @@ class CustomerOrderController extends Controller
         $order->user->increment('points', $points);
 
         PointHistory::create([
-            'user_id'     => $order->user_id,
-            'order_id'    => $order->id,
-            'type'        => 'earned',
-            'amount'      => $points,
+            'user_id' => $order->user_id,
+            'order_id' => $order->id,
+            'type' => 'earned',
+            'amount' => $points,
             'description' => 'Poin dari pesanan ' . $order->invoice_number,
         ]);
     }
 
     private function refundPointsIfNeeded(Order $order): void
     {
-        if (($order->points_used ?? 0) <= 0) return;
+        if (($order->points_used ?? 0) <= 0)
+            return;
 
         // Guard: don't double-refund
         $alreadyRefunded = PointHistory::where('order_id', $order->id)
             ->where('type', 'refunded')
             ->exists();
-        if ($alreadyRefunded) return;
+        if ($alreadyRefunded)
+            return;
 
         $order->loadMissing('user');
         $order->user->increment('points', $order->points_used);
 
         PointHistory::create([
-            'user_id'     => $order->user_id,
-            'order_id'    => $order->id,
-            'type'        => 'refunded',
-            'amount'      => $order->points_used,
+            'user_id' => $order->user_id,
+            'order_id' => $order->id,
+            'type' => 'refunded',
+            'amount' => $order->points_used,
             'description' => 'Poin dikembalikan (pesanan ' . $order->invoice_number . ' dibatalkan/kadaluarsa)',
         ]);
     }
@@ -278,11 +281,13 @@ class CustomerOrderController extends Controller
     {
         $order->load('items.product.productUnits');
         foreach ($order->items as $item) {
-            if (!$item->product) continue;
+            if (!$item->product)
+                continue;
             $conv = 1;
             if ($item->unit && $item->unit !== $item->product->unit) {
                 $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
-                if ($pu) $conv = (int) $pu->conversion_value;
+                if ($pu)
+                    $conv = (int) $pu->conversion_value;
             }
             $item->product->increment('stock', $item->quantity * $conv);
         }
