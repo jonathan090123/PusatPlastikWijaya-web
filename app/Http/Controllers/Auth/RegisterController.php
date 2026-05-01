@@ -22,9 +22,16 @@ class RegisterController extends Controller
         $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => ['required', 'string', 'email', 'max:255', function ($attribute, $value, $fail) {
-                $existing = \App\Models\User::where('email', $value)->whereNotNull('email_verified_at')->first();
-                if ($existing) {
+                // Tolak jika email sudah ada di DB (terverifikasi maupun belum)
+                $existsInDb = \App\Models\User::where('email', $value)->exists();
+                if ($existsInDb) {
                     $fail('Email sudah terdaftar.');
+                    return;
+                }
+                // Tolak jika email sedang dalam proses registrasi (OTP belum dikonfirmasi)
+                $pendingKey = 'pending_reg_' . md5($value);
+                if (Cache::has($pendingKey)) {
+                    $fail('Email ini sedang dalam proses pendaftaran. Silakan cek email Anda atau tunggu beberapa menit.');
                 }
             }],
             'phone'         => 'required|string|max:20',

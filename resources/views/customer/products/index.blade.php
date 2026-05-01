@@ -48,6 +48,23 @@
                         @endforeach
                     </div>
 
+                    {{-- Discount Filter --}}
+                    <div class="filter-group">
+                        <h4>Penawaran</h4>
+                        @php
+                            $isDiskon = request('diskon') === '1';
+                            $diskonParams = $isDiskon
+                                ? array_merge(request()->except('diskon'), [])
+                                : array_merge(request()->only('search', 'sort', 'category'), ['diskon' => '1']);
+                        @endphp
+                        <a href="{{ route('products.index', $diskonParams) }}"
+                           class="filter-item filter-item-promo {{ $isDiskon ? 'active-promo' : '' }}">
+                            <i class="fas fa-tag"></i>
+                            Produk Diskon
+                            <span class="promo-badge">%</span>
+                        </a>
+                    </div>
+
                     {{-- Sort --}}
                     <div class="filter-group">
                         <h4>Urutkan</h4>
@@ -73,7 +90,14 @@
                         <a href="{{ route('products.index', request()->except('search')) }}"><i class="fas fa-times"></i></a>
                     </span>
                 @endif
+                @if(request('diskon') === '1')
+                    <span class="active-filter active-filter-diskon">
+                        <i class="fas fa-tag"></i> Produk Diskon
+                        <a href="{{ route('products.index', request()->except('diskon')) }}"><i class="fas fa-times"></i></a>
+                    </span>
+                @endif
             </div>
+
 
             <div class="products-grid">
                 @forelse($products as $product)
@@ -234,6 +258,40 @@
 .filter-item.active .filter-count {
     background: rgba(255,255,255,0.25);
 }
+/* Promo / Diskon filter item */
+.filter-item-promo {
+    border: 1.5px dashed #ef4444;
+    color: #ef4444;
+    font-weight: 600;
+    background: #fff5f5;
+    justify-content: space-between;
+}
+.filter-item-promo:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+.filter-item-promo.active-promo {
+    background: #ef4444;
+    color: #fff;
+    border-style: solid;
+    border-color: #ef4444;
+}
+.promo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.filter-item-promo.active-promo .promo-badge {
+    background: rgba(255,255,255,0.3);
+}
 .filter-group select {
     width: 100%;
     padding: 0.5rem 0.75rem;
@@ -263,6 +321,12 @@
     gap: 0.4rem;
 }
 .active-filter a { color: var(--primary); }
+.active-filter-diskon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+.active-filter-diskon a { color: #dc2626; }
+
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -449,7 +513,7 @@
             btn.setAttribute('aria-expanded', 'true');
         } else {
             // Keep closed unless filter is active
-            var hasActive = {{ (request('category') || (request('sort') && request('sort') !== 'terbaru')) ? 'true' : 'false' }};
+            var hasActive = {{ (request('category') || (request('sort') && request('sort') !== 'terbaru') || request('diskon') === '1') ? 'true' : 'false' }};
             if (hasActive) {
                 sidebar.classList.add('open');
                 btn.setAttribute('aria-expanded', 'true');
