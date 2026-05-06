@@ -350,6 +350,9 @@
                                         Tersedia: <strong>{{ number_format($user->points, 0, ',', '.') }} poin</strong>
                                         (senilai Rp {{ number_format($user->points, 0, ',', '.') }})
                                     </div>
+                                    <div style="font-size:0.73rem; color:#92400e; margin-top:0.15rem;">
+                                        <i class="fas fa-info-circle"></i> Maks. 50% dari subtotal
+                                    </div>
                                 </div>
                                 <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; user-select:none;">
                                     <div class="points-toggle-wrap">
@@ -1006,11 +1009,9 @@ document.getElementById('checkoutForm').addEventListener('submit', function() {
 function syncPointsInput() {
     var toggle = document.getElementById('usePointsToggle');
     if (!toggle || !toggle.checked) return;
-    // Re-cap the input value based on current subtotal + shipping
+    // Cap: maks 50% dari subtotal saja (ongkir tidak dihitung)
     var input      = document.getElementById('pointsAmountInput');
-    var shippingEl = document.querySelector('input[name="shipping_type"]:checked');
-    var shippingCost = shippingEl ? parseFloat(shippingEl.closest('.shipping-option').dataset.cost) : 0;
-    var maxAllowed = Math.min(userPoints, Math.floor(subtotal + shippingCost));
+    var maxAllowed = Math.min(userPoints, Math.floor(subtotal * 0.50));
     if (parseInt(input.value, 10) > maxAllowed) input.value = maxAllowed;
     applyPoints();
 }
@@ -1032,9 +1033,8 @@ function applyPoints() {
     }
 
     var input    = document.getElementById('pointsAmountInput');
-    var shippingEl = document.querySelector('input[name="shipping_type"]:checked');
-    var shippingCost = shippingEl ? parseFloat(shippingEl.closest('.shipping-option').dataset.cost) : 0;
-    var maxAllowed = Math.min(userPoints, Math.floor(subtotal + shippingCost));
+    // Cap: maks 50% dari subtotal saja, ongkir selalu dibayar penuh
+    var maxAllowed = Math.min(userPoints, Math.floor(subtotal * 0.50));
     var pts      = Math.min(parseInt(input.value, 10) || 0, maxAllowed);
     if (pts < 0) pts = 0;
 
@@ -1060,9 +1060,8 @@ function applyPoints() {
     if (!toggle) return;
 
     function getMaxPoints() {
-        var shippingEl = document.querySelector('input[name="shipping_type"]:checked');
-        var shippingCost = shippingEl ? parseFloat(shippingEl.closest('.shipping-option').dataset.cost) : 0;
-        return Math.min(userPoints, Math.floor(subtotal + shippingCost));
+        // Maks 50% dari subtotal, ongkir tidak termasuk
+        return Math.min(userPoints, Math.floor(subtotal * 0.50));
     }
 
     toggle.addEventListener('change', function() {
