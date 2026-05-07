@@ -39,7 +39,7 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Produk tidak tersedia'], 400);
         }
 
-        // Resolve unit and its conversion factor (how many base units per 1 selected unit)
+        // Resolve satuan & faktor konversi
         $selectedUnit = $request->unit ?: $product->unit;
         $conversion   = 1;
         if ($selectedUnit !== $product->unit) {
@@ -50,7 +50,7 @@ class CartController extends Controller
             $conversion = (int) $pu->conversion_value;
         }
 
-        // Stock check in base units
+        // Cek stok (satuan dasar)
         $requiredStock = $request->quantity * $conversion;
         if ($product->stock < $requiredStock) {
             return response()->json(['success' => false, 'message' => 'Stok tidak mencukupi'], 400);
@@ -58,7 +58,7 @@ class CartController extends Controller
 
         $cart = $this->getOrCreateCart();
 
-        // Cart items are keyed by product+unit combination
+        // Key item: produk + satuan
         $cartItem = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $product->id)
             ->where('unit', $selectedUnit)
@@ -101,7 +101,7 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        // Stock check with conversion factor
+        // Cek stok (dengan konversi)
         $cartItem->load('product.productUnits');
         $unitName   = $cartItem->unit ?: $cartItem->product->unit;
         $conversion = 1;

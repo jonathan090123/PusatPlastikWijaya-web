@@ -274,7 +274,13 @@
                                 @endif
                             </div>
                             <div style="flex:1; min-width:0;">
-                                <div style="font-weight:600; font-size:0.875rem; color:var(--gray-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; {{ $item->is_out_of_stock ? 'text-decoration:line-through; color:var(--gray-400);' : '' }}">{{ $item->product_name }}</div>
+                                <div style="font-weight:600; font-size:0.875rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; {{ $item->is_out_of_stock ? 'text-decoration:line-through; color:var(--gray-400);' : 'color:var(--gray-800);' }}">
+                                    @if($item->product)
+                                        <a href="{{ route('admin.products.edit', $item->product) }}" target="_blank" style="color:inherit; text-decoration:none;" title="Lihat produk">{{ $item->product_name }} <i class="fas fa-external-link-alt" style="font-size:0.65rem; opacity:0.5;"></i></a>
+                                    @else
+                                        {{ $item->product_name }}
+                                    @endif
+                                </div>
                                 <div style="font-size:0.8rem; color:var(--gray-500);">{{ $item->quantity }} x Rp {{ number_format($item->product_price, 0, ',', '.') }}</div>
                                 @if($item->is_out_of_stock)
                                     <div style="font-size:0.75rem; color:#dc2626; font-weight:600; margin-top:2px;">

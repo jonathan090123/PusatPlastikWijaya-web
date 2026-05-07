@@ -25,17 +25,17 @@ class CheckoutController extends Controller
 
         $cart->load('items.product.category', 'items.product.productUnits');
 
-        // Load all active shipping methods from DB
+        // Load metode pengiriman aktif
         $shippingMethods = ShippingCost::whereIn('type', ['pickup', 'local', 'outside'])
             ->get()
             ->keyBy('type');
         $user = Auth::user();
 
-        // Check if RajaOngkir is configured
+        // Cek RajaOngkir
         $rajaOngkir = app(RajaOngkirService::class);
         $rajaOngkirAvailable = $rajaOngkir->isConfigured();
 
-        // Calculate total weight (grams) for ongkir — default 500g per item if no weight set
+        // Hitung total berat
         $totalWeight = 0;
         foreach ($cart->items as $item) {
             $conv = 1;
@@ -60,7 +60,7 @@ class CheckoutController extends Controller
             'shipping_type' => 'required|in:pickup,local,outside',
             'notes' => 'nullable|string|max:500',
             'use_points' => 'nullable|integer|min:0',
-            // RajaOngkir fields (required when shipping_type = outside)
+            // Field RajaOngkir (wajib jika outside)
             'ongkir_cost'           => 'required_if:shipping_type,outside|nullable|numeric|min:0',
             'ongkir_courier'        => 'required_if:shipping_type,outside|nullable|string|max:100',
             'ongkir_service'        => 'required_if:shipping_type,outside|nullable|string|max:100',
@@ -104,7 +104,7 @@ class CheckoutController extends Controller
         $shippingType = $request->shipping_type;
 
         if ($shippingType === 'outside') {
-            // RajaOngkir — dynamic cost from the selected courier
+            // Ongkir via RajaOngkir
             $method = ShippingCost::where('type', 'outside')->first();
             if (!$method || !$method->is_active) {
                 return back()->with('error', 'Pengiriman luar kota belum tersedia.');
@@ -116,7 +116,7 @@ class CheckoutController extends Controller
             $shippingName = "Ekspedisi {$courierInfo}" . ($etd ? " (Est. {$etd} hari)" : '');
             $shippingCostId = $method->id;
 
-            // Server-side re-verify cost via RajaOngkir API to prevent manipulation
+            // Verifikasi ongkir server-side
             if ($request->ongkir_destination) {
                 $rajaOngkir = app(RajaOngkirService::class);
 
@@ -163,18 +163,18 @@ class CheckoutController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $requestedPoints = (int) ($request->use_points ?? 0);
-        // Max poin yang boleh digunakan: 50% dari subtotal saja (ongkir selalu dibayar penuh)
+        // Maks 50% subtotal, ongkir dibayar penuh
         $pointsToUse = min($requestedPoints, $user->points);
 
         try {
             $order = DB::transaction(function () use ($cart, $shippingFee, $shippingName, $shippingCostId, $request, $pointsToUse, $user) {
-                // Calculate subtotal (unit-aware pricing)
+                // Hitung subtotal
                 $subtotal = 0;
                 foreach ($cart->items as $item) {
                     $subtotal += $item->product->getPriceForUnit($item->unit) * $item->quantity;
                 }
 
-                // Cap poin: maksimal 50% dari subtotal saja, ongkir selalu dibayar penuh
+                // Cap poin maks 50% subtotal
                 $maxPointsAllowed = (int) floor($subtotal * 0.50);
                 $pointsDiscount = min($pointsToUse, $maxPointsAllowed);
                 $pointsUsed = (int) $pointsDiscount; // 1 poin = Rp 1
@@ -200,7 +200,7 @@ class CheckoutController extends Controller
                     'notes' => $request->notes,
                 ]);
 
-                // Create order items & immediately reserve (deduct) stock
+                // Buat order items & kurangi stok
                 foreach ($cart->items as $item) {
                     $price = $item->product->getPriceForUnit($item->unit);
 
@@ -214,7 +214,7 @@ class CheckoutController extends Controller
                         'subtotal'      => $price * $item->quantity,
                     ]);
 
-                    // Deduct stock immediately (restored on expire / cancel)
+                    // Kurangi stok (dikembalikan jika expire/cancel)
                     $conv = 1;
                     if ($item->unit && $item->unit !== $item->product->unit) {
                         $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
@@ -226,7 +226,7 @@ class CheckoutController extends Controller
                 // Clear cart
                 $cart->items()->delete();
 
-                // Deduct used points and record history
+                // Kurangi poin & catat history
                 if ($pointsUsed > 0) {
                     $user->decrement('points', $pointsUsed);
                     PointHistory::create([

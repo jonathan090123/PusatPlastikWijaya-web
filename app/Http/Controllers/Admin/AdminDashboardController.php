@@ -34,7 +34,7 @@ class AdminDashboardController extends Controller
             ->take(10)
             ->get();
 
-        // Capture unread IDs BEFORE marking as read — badge shows only on first load
+        // Ambil ID unread sebelum read
         $newOrderIds = Order::whereNull('admin_read_at')
             ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
             ->pluck('id')

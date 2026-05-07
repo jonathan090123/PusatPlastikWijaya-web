@@ -18,14 +18,14 @@ class AdminReportsController extends Controller
         $startDate = $this->getStartDate($period, $request);
         $endDate   = $this->getEndDate($period, $request);
 
-        // Only completed orders count as revenue
+        // Hanya order completed
         $completedQuery = Order::where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
-        // All non-cancelled orders for order stats
+        // Semua order non-cancelled
         $allOrdersQuery = Order::whereBetween('created_at', [$startDate, $endDate]);
 
-        // ── Summary Stats ──
+        // Summary stats
         $totalRevenue      = (clone $completedQuery)->sum('total');
         $totalOrders       = (clone $allOrdersQuery)->count();
         $completedOrders   = (clone $completedQuery)->count();
@@ -35,7 +35,7 @@ class AdminReportsController extends Controller
         })->sum('quantity');
         $avgOrderValue     = $completedOrders > 0 ? $totalRevenue / $completedOrders : 0;
 
-        // ── Revenue Chart (daily for current period) ──
+        // Revenue chart
         $revenueChart = Order::where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as revenue'), DB::raw('COUNT(*) as orders'))
@@ -43,7 +43,7 @@ class AdminReportsController extends Controller
             ->orderBy('date')
             ->get();
 
-        // ── Best Selling Products (top 10) ──
+        // Produk terlaris (top 10)
         $bestSellingProducts = OrderItem::whereHas('order', function ($q) use ($startDate, $endDate) {
                 $q->where('status', 'completed')->whereBetween('created_at', [$startDate, $endDate]);
             })
@@ -53,14 +53,14 @@ class AdminReportsController extends Controller
             ->limit(10)
             ->get();
 
-        // ── Order Status Distribution ──
+        // Distribusi status order
         $statusDistribution = Order::whereBetween('created_at', [$startDate, $endDate])
             ->select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
             ->get()
             ->pluck('count', 'status');
 
-        // ── Recent Completed Orders ──
+        // Order selesai terbaru
         $recentCompleted = Order::with('user')
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
@@ -68,7 +68,7 @@ class AdminReportsController extends Controller
             ->take(10)
             ->get();
 
-        // ── Top Customers ──
+        // Top pelanggan
         $topCustomers = Order::where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select('user_id', DB::raw('COUNT(*) as total_orders'), DB::raw('SUM(total) as total_spent'))

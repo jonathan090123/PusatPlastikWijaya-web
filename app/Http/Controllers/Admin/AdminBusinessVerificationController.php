@@ -34,7 +34,7 @@ class AdminBusinessVerificationController extends Controller
         $query->latest();
         $customers = $query->paginate(15)->withQueryString();
 
-        // Daftar nama bisnis yang sudah approved — untuk deteksi duplikat
+        // Bisnis approved (cek duplikat)
         $approvedBusinessNames = User::where('role', 'customer')
             ->where('customer_type', 'business')
             ->where('business_verified', 'approved')

@@ -133,7 +133,7 @@ class AdminProductController extends Controller
         $validated['discount_price'] = $request->filled('discount_price') ? ($request->price - $request->discount_price) : null;
         $validated['weight'] = $validated['weight'] ?? 0;
 
-        // Ensure unique slug (exclude current product)
+        // Pastikan slug unik
         $originalSlug = $validated['slug'];
         $counter = 1;
         while (Product::where('slug', $validated['slug'])->where('id', '!=', $product->id)->exists()) {

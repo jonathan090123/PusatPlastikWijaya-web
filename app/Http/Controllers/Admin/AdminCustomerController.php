@@ -24,7 +24,7 @@ class AdminCustomerController extends Controller
             });
         }
 
-        // Date range closure (dipakai bersama semua filter)
+        // Closure filter tanggal
         $hasDateFilter = $request->filled('date_from') || $request->filled('date_to');
         $dateFilter = function ($q) use ($request) {
             if ($request->filled('date_from')) {
@@ -37,10 +37,9 @@ class AdminCustomerController extends Controller
 
         // Filter utama
         if ($request->filter === 'has_orders') {
-            // whereHas dengan closure kosong = sama dengan has('orders')
             $query->whereHas('orders', $dateFilter);
         } elseif ($request->filter === 'no_orders') {
-            // "Belum pernah pesan" — date range tidak berlaku (tidak ada order untuk difilter)
+            // Belum pernah pesan
             $query->doesntHave('orders');
         } elseif ($request->filter === 'has_points') {
             $query->where('points', '>', 0);
@@ -48,7 +47,7 @@ class AdminCustomerController extends Controller
                 $query->whereHas('orders', $dateFilter);
             }
         } elseif ($hasDateFilter) {
-            // Semua pelanggan, tapi hanya yang punya pesanan di rentang tanggal tsb
+            // Filter tanggal order
             $query->whereHas('orders', $dateFilter);
         }
 

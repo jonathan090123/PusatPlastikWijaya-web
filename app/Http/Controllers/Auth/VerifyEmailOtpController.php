@@ -50,11 +50,11 @@ class VerifyEmailOtpController extends Controller
             return back()->withErrors(['otp' => 'Kode OTP salah.']);
         }
 
-        // OTP benar — ambil data pendaftaran dari cache, baru buat akun
+        // OTP valid — buat akun
         $pending = Cache::get($pendingKey);
 
         if (!$pending) {
-            // Data pendaftaran expired (>15 menit), minta daftar ulang
+            // Data expired, minta daftar ulang
             Cache::forget($otpKey);
             $request->session()->forget('otp_email');
             return redirect()->route('register')
@@ -80,7 +80,7 @@ class VerifyEmailOtpController extends Controller
         Cache::forget($otpKey);
         Cache::forget($pendingKey);
 
-        // Hapus kunci nama bisnis yang sedang pending — data sudah masuk DB
+        // Hapus pending bisnis dari cache
         if ($user->customer_type === 'business' && filled($user->business_name)) {
             Cache::forget('pending_biz_' . md5(strtolower(trim($user->business_name))));
         }

@@ -13,23 +13,23 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Ensure WIB (Asia/Jakarta, UTC+7) is used for all date/time display
+        // Set timezone WIB
         date_default_timezone_set('Asia/Jakarta');
-        // Share pending orders count to all admin views (badge on sidebar)
+        // Share data ke admin views
         View::composer('layouts.admin', function ($view) {
             if (Auth::check() && Auth::user()->isAdmin()) {
-                // New/unread orders — for topbar alert
+                // Order baru (topbar)
                 $view->with('adminNewOrdersCount',
                     Order::whereNull('admin_read_at')
                          ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
                          ->count()
                 );
-                // Active orders that still need attention — for sidebar badge (stays until resolved)
+                // Order aktif (sidebar badge)
                 $view->with('adminActiveOrdersCount',
                     Order::whereIn('status', ['waiting_payment', 'paid', 'processing', 'ready_for_pickup', 'shipped'])
                          ->count()
                 );
-                // Pending business verification count — for sidebar badge
+                // Verifikasi bisnis pending
                 $view->with('pendingBusinessCount',
                     \App\Models\User::where('role', 'customer')
                         ->where('customer_type', 'business')
@@ -43,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        // Share unread status-change count to all customer views
+        // Share data ke customer views
         View::composer('layouts.customer', function ($view) {
             if (Auth::check() && !Auth::user()->isAdmin()) {
                 $unreadOrders = Order::where('user_id', Auth::id())

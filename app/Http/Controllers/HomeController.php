@@ -10,7 +10,7 @@ class HomeController extends Controller
 {
     public function index()
     {
-        // Guest → landing page with featured products
+        // Guest → landing page
         if (!Auth::check()) {
             $categories = Category::where('is_active', true)
                 ->withCount(['products' => fn($q) => $q->where('is_active', true)])
@@ -33,7 +33,7 @@ class HomeController extends Controller
             return view('welcome', compact('categories', 'featuredProducts', 'promoProducts'));
         }
 
-        // Customer → home with products & categories
+        // Customer → halaman home
         $categories = Category::where('is_active', true)
             ->withCount(['products' => function ($q) {
             $q->where('is_active', true);

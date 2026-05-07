@@ -64,7 +64,7 @@ class AdminShippingController extends Controller
             return response()->json(['success' => false], 404);
         }
 
-        // Luar kota hanya bisa diaktifkan jika RajaOngkir sudah dikonfigurasi
+        // Luar kota butuh RajaOngkir
         if ($request->type === 'outside' && !$method->is_active) {
             $rajaOngkir = app(RajaOngkirService::class);
             if (!$rajaOngkir->isConfigured()) {

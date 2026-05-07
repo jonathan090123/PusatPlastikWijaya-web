@@ -41,7 +41,7 @@ class ProfileController extends Controller
 
         $validated = $request->validate($rules);
 
-        // Default to personal if not submitted, clear business fields if personal
+        // Default personal, hapus field bisnis jika perlu
         if (!$user->isAdmin()) {
             $validated['customer_type'] = $request->boolean('is_business') ? 'business' : 'personal';
             if ($validated['customer_type'] === 'personal') {

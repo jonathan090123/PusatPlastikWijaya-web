@@ -22,13 +22,13 @@ class RegisterController extends Controller
         $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => ['required', 'string', 'email', 'max:255', function ($attribute, $value, $fail) {
-                // Tolak jika email sudah ada di DB (terverifikasi maupun belum)
+                // Tolak jika email sudah ada di DB
                 $existsInDb = \App\Models\User::where('email', $value)->exists();
                 if ($existsInDb) {
                     $fail('Email sudah terdaftar.');
                     return;
                 }
-                // Tolak jika email sedang dalam proses registrasi (OTP belum dikonfirmasi)
+                // Tolak jika email sedang pending OTP
                 $pendingKey = 'pending_reg_' . md5($value);
                 if (Cache::has($pendingKey)) {
                     $fail('Email ini sedang dalam proses pendaftaran. Silakan cek email Anda atau tunggu beberapa menit.');
@@ -44,18 +44,18 @@ class RegisterController extends Controller
                     if (!$request->boolean('is_business') || blank($value)) {
                         return;
                     }
-                    // Normalisasi: lowercase, trim, spasi ganda → 1, strip non-alfanumerik kecuali spasi
+                    // Normalisasi nama bisnis
                     $normalize = fn($s) => preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9\s]/u', '', strtolower(trim($s))));
                     $normalizedName  = $normalize($value);
 
-                    // Cek di database — bandingkan versi ternormalisasi
+                    // Cek nama bisnis di DB
                     $existsInDb = \App\Models\User::where('customer_type', 'business')
                         ->whereIn('business_verified', ['pending', 'approved'])
                         ->whereNotNull('business_name')
                         ->get(['business_name'])
                         ->contains(fn($u) => $normalize($u->business_name) === $normalizedName);
 
-                    // Cek di cache (akun yang sedang proses OTP, belum masuk DB)
+                    // Cek nama bisnis di cache
                     $existsInCache = Cache::has('pending_biz_' . md5($normalizedName));
 
                     if ($existsInDb || $existsInCache) {
@@ -79,7 +79,7 @@ class RegisterController extends Controller
         $isBusiness    = $request->boolean('is_business');
         $businessName  = $isBusiness ? $request->business_name : null;
 
-        // Simpan data pendaftaran sementara di cache ->  belum masuk di  DB
+        // Simpan data pendaftaran sementara di cache
         $pendingKey = 'pending_reg_' . md5($request->email);
         Cache::put($pendingKey, [
             'name'          => $request->name,
@@ -92,7 +92,7 @@ class RegisterController extends Controller
             'password'      => Hash::make($request->password),
         ], now()->addMinutes(15));
 
-        // Tandai nama bisnis sebagai "sedang dalam proses registrasi" selama 15 menit
+        // Tandai nama bisnis pending di cache
         if ($isBusiness && filled($businessName)) {
             $normalizedForCache = preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9\s]/u', '', strtolower(trim($businessName))));
             Cache::put('pending_biz_' . md5($normalizedForCache), true, now()->addMinutes(15));

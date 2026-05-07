@@ -14,7 +14,7 @@ class CustomerOrderController extends Controller
 {
     public function index()
     {
-        // Auto-expire any unpaid orders whose deadline has passed & restore their stock
+        // Auto-expire order yang melewati deadline
         $expiring = Order::where('user_id', Auth::id())
             ->whereIn('status', ['pending', 'waiting_payment'])
             ->where(function ($q) {
@@ -37,7 +37,7 @@ class CustomerOrderController extends Controller
             ->latest()
             ->paginate(10);
 
-        // Capture unread IDs BEFORE marking as read — label shows only on first visit
+        // Ambil ID unread sebelum ditandai dibaca
         $unreadOrderIds = Order::where('user_id', Auth::id())
             ->whereNull('status_read_at')
             ->pluck('id')
@@ -108,9 +108,7 @@ class CustomerOrderController extends Controller
             ->with('success', 'Pesanan ' . $order->invoice_number . ' telah dibatalkan.');
     }
 
-    /**
-     * AJAX: mark order as expired when client-side countdown reaches zero.
-     */
+    /** AJAX: tandai order expired saat countdown habis. */
     public function expire(Order $order)
     {
         if ($order->user_id !== Auth::id()) {
@@ -131,9 +129,7 @@ class CustomerOrderController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    /**
-     * Add all items from an order back into the cart (Beli Lagi).
-     */
+    /** Tambah semua item order ke keranjang (Beli Lagi). */
     public function reorder(Order $order)
     {
         if ($order->user_id !== Auth::id()) {
@@ -235,7 +231,7 @@ class CustomerOrderController extends Controller
             return;
         }
 
-        // Rate: 5 poin per Rp 1.000 belanja (tidak termasuk ongkir)
+        // 1 poin per Rp 200 belanja
         $belanja = $order->subtotal - $order->discount_amount - $order->points_discount;
         $points = (int) floor($belanja / 200);
         if ($points <= 0) {

@@ -46,7 +46,7 @@ class AdminCategoryController extends Controller
 
         $category = Category::create($validated);
 
-        // Return JSON for AJAX requests (inline creation from product form)
+        // JSON untuk AJAX
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
