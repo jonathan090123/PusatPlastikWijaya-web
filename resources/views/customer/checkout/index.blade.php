@@ -350,9 +350,6 @@
                                         Tersedia: <strong>{{ number_format($user->points, 0, ',', '.') }} poin</strong>
                                         (senilai Rp {{ number_format($user->points, 0, ',', '.') }})
                                     </div>
-                                    <div style="font-size:0.73rem; color:#92400e; margin-top:0.15rem;">
-                                        <i class="fas fa-info-circle"></i> Maks. 50% dari subtotal
-                                    </div>
                                 </div>
                                 <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; user-select:none;">
                                     <div class="points-toggle-wrap">
@@ -1009,9 +1006,9 @@ document.getElementById('checkoutForm').addEventListener('submit', function() {
 function syncPointsInput() {
     var toggle = document.getElementById('usePointsToggle');
     if (!toggle || !toggle.checked) return;
-    // Cap: maks 50% dari subtotal saja (ongkir tidak dihitung)
+    // Poin bisa dipakai hingga 100% subtotal (ongkir tidak dihitung)
     var input      = document.getElementById('pointsAmountInput');
-    var maxAllowed = Math.min(userPoints, Math.floor(subtotal * 0.50));
+    var maxAllowed = Math.min(userPoints, subtotal);
     if (parseInt(input.value, 10) > maxAllowed) input.value = maxAllowed;
     applyPoints();
 }
@@ -1033,8 +1030,8 @@ function applyPoints() {
     }
 
     var input    = document.getElementById('pointsAmountInput');
-    // Cap: maks 50% dari subtotal saja, ongkir selalu dibayar penuh
-    var maxAllowed = Math.min(userPoints, Math.floor(subtotal * 0.50));
+    // Poin bisa dipakai hingga 100% subtotal, ongkir selalu dibayar penuh
+    var maxAllowed = Math.min(userPoints, subtotal);
     var pts      = Math.min(parseInt(input.value, 10) || 0, maxAllowed);
     if (pts < 0) pts = 0;
 
@@ -1060,8 +1057,8 @@ function applyPoints() {
     if (!toggle) return;
 
     function getMaxPoints() {
-        // Maks 50% dari subtotal, ongkir tidak termasuk
-        return Math.min(userPoints, Math.floor(subtotal * 0.50));
+        // Poin bisa dipakai hingga 100% subtotal, ongkir tidak termasuk
+        return Math.min(userPoints, subtotal);
     }
 
     toggle.addEventListener('change', function() {

@@ -163,7 +163,7 @@ class CheckoutController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $requestedPoints = (int) ($request->use_points ?? 0);
-        // Maks 50% subtotal, ongkir dibayar penuh
+        // Poin bisa dipakai hingga 100% subtotal, ongkir dibayar penuh
         $pointsToUse = min($requestedPoints, $user->points);
 
         try {
@@ -174,9 +174,8 @@ class CheckoutController extends Controller
                     $subtotal += $item->product->getPriceForUnit($item->unit) * $item->quantity;
                 }
 
-                // Cap poin maks 50% subtotal
-                $maxPointsAllowed = (int) floor($subtotal * 0.50);
-                $pointsDiscount = min($pointsToUse, $maxPointsAllowed);
+                // pemakain poin
+                $pointsDiscount = min($pointsToUse, (int) $subtotal);
                 $pointsUsed = (int) $pointsDiscount; // 1 poin = Rp 1
 
                 $total = $subtotal - $pointsDiscount + $shippingFee;
