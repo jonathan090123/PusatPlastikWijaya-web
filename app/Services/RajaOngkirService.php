@@ -54,7 +54,7 @@ class RajaOngkirService
      * @param  array      $couriers       Courier codes, e.g. ['jne','tiki','pos','sicepat','jnt']
      * @return array  Flat list sorted by cost: [{name, code, service, description, cost, etd}, ...]
      */
-    public function getShippingOptions(string|int $destinationId, int $weight, array $couriers = ['jne', 'sicepat', 'jnt', 'tiki', 'pos']): array
+    public function getShippingOptions(string|int $destinationId, int $weight, array $couriers = ['jne', 'sicepat', 'jnt']): array
     {
         if ($weight < 100) {
             $weight = 500;

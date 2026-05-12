@@ -1,0 +1,152 @@
+[
+  {
+    "name": "Bahan Kue",
+    "slug": "bahan-kue",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Cup Sambal",
+    "slug": "cup-sambal",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Foam",
+    "slug": "foam",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Gelas",
+    "slug": "gelas",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Gerabah",
+    "slug": "gerabah",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Kardus",
+    "slug": "kardus",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Karet",
+    "slug": "karet",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Kertas",
+    "slug": "kertas",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Kertas Bungkus",
+    "slug": "kertas-bungkus",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Kresek",
+    "slug": "kresek",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Mika",
+    "slug": "mika",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Minuman",
+    "slug": "minuman",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Paper",
+    "slug": "paper",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Paper Bowl",
+    "slug": "paper-bowl",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Paper Cup",
+    "slug": "paper-cup",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Plastik",
+    "slug": "plastik",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Rantang",
+    "slug": "rantang",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Sedotan",
+    "slug": "sedotan",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Sendok",
+    "slug": "sendok",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Tas",
+    "slug": "tas",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Thinwall",
+    "slug": "thinwall",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Tisu",
+    "slug": "tisu",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Toples",
+    "slug": "toples",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Umum",
+    "slug": "umum",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "name": "Wraping",
+    "slug": "wraping",
+    "description": null,
+    "is_active": true
+  }
+]
