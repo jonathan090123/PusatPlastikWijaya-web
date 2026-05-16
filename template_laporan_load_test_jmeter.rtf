@@ -1,0 +1,63 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}{\f1 Courier New;}}
+\fs22
+\b Template Laporan Load Test JMeter\b0\par
+\par
+\b Identitas Pengujian\b0\par
+- Aplikasi: Pusat Plastik Wijaya\par
+- Tools: Apache JMeter\par
+- Parameter yang diukur: Response Time, Error Rate, Throughput\par
+- Skenario beban: 10, 50, 100 virtual users\par
+\par
+\b Endpoint Yang Diuji\b0\par
+1. / - Homepage\par
+2. /products - Katalog produk\par
+3. /login - Login pengguna\par
+4. /checkout - Proses checkout\par
+5. /admin/reports - Laporan admin\par
+\par
+\b Tabel Hasil Pengujian\b0\par
+\f1
+| Endpoint | Virtual Users | Samples | Average (ms) | Min (ms) | Max (ms) | Std. Dev. | Error Rate | Throughput | Kesimpulan |\par
+| / | 10 | 80 | 52 | 39 | 136 | 19.66 | 0.00% | 10.6/sec | Sangat baik dan stabil |\par
+| / | 50 |  |  |  |  |  |  |  |  |\par
+| / | 100 |  |  |  |  |  |  |  |  |\par
+| /products | 10 |  |  |  |  |  |  |  |  |\par
+| /products | 50 |  |  |  |  |  |  |  |  |\par
+| /products | 100 |  |  |  |  |  |  |  |  |\par
+| /login | 10 |  |  |  |  |  |  |  |  |\par
+| /login | 50 |  |  |  |  |  |  |  |  |\par
+| /login | 100 |  |  |  |  |  |  |  |  |\par
+| /checkout | 10 |  |  |  |  |  |  |  |  |\par
+| /checkout | 50 |  |  |  |  |  |  |  |  |\par
+| /checkout | 100 |  |  |  |  |  |  |  |  |\par
+| /admin/reports | 10 |  |  |  |  |  |  |  |  |\par
+| /admin/reports | 50 |  |  |  |  |  |  |  |  |\par
+| /admin/reports | 100 |  |  |  |  |  |  |  |  |\par
+\f0
+\par
+\b Data Yang Perlu Ditulis Di Laporan\b0\par
+1. Endpoint yang diuji\par
+2. Jumlah virtual users\par
+3. Jumlah samples\par
+4. Average response time\par
+5. Min response time\par
+6. Max response time\par
+7. Std. Dev.\par
+8. Error rate\par
+9. Throughput\par
+10. Kesimpulan singkat\par
+\par
+\b Contoh Analisis Hasil Homepage 10 User\b0\par
+Pada pengujian endpoint / dengan 10 virtual users, diperoleh 80 samples dengan rata-rata response time sebesar 52 ms. Nilai response time minimum tercatat 39 ms dan maksimum 136 ms, dengan standar deviasi 19.66. Error rate sebesar 0.00% menunjukkan bahwa tidak terdapat request yang gagal selama pengujian. Nilai throughput sebesar 10.6 request per second menunjukkan bahwa sistem masih mampu menangani beban rendah dengan sangat baik. Berdasarkan hasil tersebut, homepage dapat dikategorikan stabil dan memiliki performa yang sangat baik pada skenario 10 user.\par
+\par
+\b Format Narasi Metodologi\b0\par
+Pengujian performa dilakukan menggunakan Apache JMeter dengan tiga skenario beban, yaitu 10, 50, dan 100 virtual users. Parameter yang diukur meliputi response time, error rate, dan throughput. Pengujian diterapkan pada beberapa endpoint utama aplikasi, yaitu homepage, katalog produk, login, checkout, dan laporan admin. Hasil dari Summary Report dicatat untuk dianalisis tingkat kestabilan aplikasi pada masing-masing skenario.\par
+\par
+\b Format Kesimpulan Per Hasil\b0\par
+- Sangat baik dan stabil: error 0% dan average sangat rendah\par
+- Baik dan stabil: error 0% dan average masih wajar\par
+- Mulai melambat: error 0% tetapi average naik cukup besar\par
+- Kurang stabil: error mulai muncul atau variasi response time besar\par
+- Tidak stabil: error tinggi atau response time sangat besar\par
+}

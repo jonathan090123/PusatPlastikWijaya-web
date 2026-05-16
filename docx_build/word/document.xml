@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 wp14">
+  <w:body>
+    <w:p>
+      <w:pPr><w:jc w:val="center"/></w:pPr>
+      <w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>Laporan Pengujian Performa Website</w:t></w:r>
+    </w:p>
+    <w:p>
+      <w:pPr><w:jc w:val="center"/></w:pPr>
+      <w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t>Pusat Plastik Wijaya Menggunakan Apache JMeter</w:t></w:r>
+    </w:p>
+    <w:p><w:r><w:t></w:t></w:r></w:p>
+
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>1. Identitas Pengujian</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Aplikasi yang diuji adalah website Pusat Plastik Wijaya. Pengujian dilakukan menggunakan Apache JMeter dengan parameter utama response time, error rate, dan throughput. Skenario beban yang digunakan adalah 10, 50, dan 100 virtual users.</w:t></w:r></w:p>
+
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>2. Tujuan Pengujian</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Pengujian dilakukan untuk mengetahui tingkat kestabilan aplikasi ketika menerima beban pengguna secara bersamaan, serta untuk melihat perubahan performa saat jumlah virtual users ditingkatkan.</w:t></w:r></w:p>
+
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>3. Endpoint Utama yang Diuji</w:t></w:r></w:p>
+    <w:tbl>
+      <w:tblPr><w:tblBorders><w:top w:val="single" w:sz="8"/><w:left w:val="single" w:sz="8"/><w:bottom w:val="single" w:sz="8"/><w:right w:val="single" w:sz="8"/><w:insideH w:val="single" w:sz="8"/><w:insideV w:val="single" w:sz="8"/></w:tblBorders></w:tblPr>
+      <w:tr>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>No</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Endpoint</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Fungsi Utama</w:t></w:r></w:p></w:tc>
+      </w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>1</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>/</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Homepage</w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>2</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>/products</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Katalog produk</w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>3</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>/login</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Login pengguna</w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>4</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>/checkout</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Transaksi checkout</w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>5</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>/admin/reports</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Laporan admin</w:t></w:r></w:p></w:tc></w:tr>
+    </w:tbl>
+
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>4. Metodologi Pengujian</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Pengujian dilakukan dengan Apache JMeter menggunakan tiga skenario beban, yaitu 10, 50, dan 100 virtual users. Setiap skenario dijalankan dengan parameter Thread Group yang sama, kemudian hasil dari Summary Report dicatat. Parameter yang dianalisis meliputi average response time, nilai minimum, nilai maksimum, standar deviasi, error rate, dan throughput.</w:t></w:r></w:p>
+
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>5. Tabel Hasil Pengujian</w:t></w:r></w:p>
+    <w:tbl>
+      <w:tblPr><w:tblBorders><w:top w:val="single" w:sz="8"/><w:left w:val="single" w:sz="8"/><w:bottom w:val="single" w:sz="8"/><w:right w:val="single" w:sz="8"/><w:insideH w:val="single" w:sz="8"/><w:insideV w:val="single" w:sz="8"/></w:tblBorders></w:tblPr>
+      <w:tr>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Endpoint</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Users</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Samples</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Average (ms)</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Min</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Max</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Std. Dev.</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Error Rate</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Throughput</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Kesimpulan</w:t></w:r></w:p></w:tc>
+      </w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>/</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>10</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>80</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>52</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>39</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>136</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>19.66</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>0.00%</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>10.6/sec</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Sangat baik dan stabil</w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>/</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>50</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>/</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>100</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>/products</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>10/50/100</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Isi setelah pengujian</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>/login</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>10/50/100</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Isi setelah pengujian</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>/checkout</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>10/50/100</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Isi setelah pengujian</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>/admin/reports</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>10/50/100</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Isi setelah pengujian</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t></w:t></w:r></w:p></w:tc></w:tr>
+    </w:tbl>
+
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>6. Pembahasan Hasil Pengujian Pertama</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Pada pengujian endpoint / dengan 10 virtual users, diperoleh 80 samples dengan average response time sebesar 52 ms. Nilai response time minimum sebesar 39 ms dan maksimum sebesar 136 ms menunjukkan bahwa homepage mampu merespons request dengan cepat. Nilai standar deviasi 19.66 menunjukkan variasi response time yang rendah. Error rate sebesar 0.00% menandakan tidak ada request yang gagal. Throughput sebesar 10.6 request per second menunjukkan bahwa sistem masih sangat stabil pada skenario beban rendah.</w:t></w:r></w:p>
+
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>7. Kesimpulan Sementara</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Berdasarkan hasil pengujian awal pada homepage, website Pusat Plastik Wijaya menunjukkan performa yang sangat baik pada skenario 10 virtual users. Pengujian lanjutan pada 50 dan 100 virtual users diperlukan untuk melihat apakah kestabilan sistem tetap terjaga ketika beban pengguna meningkat.</w:t></w:r></w:p>
+
+    <w:sectPr>
+      <w:pgSz w:w="11906" w:h="16838"/>
+      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/>
+    </w:sectPr>
+  </w:body>
+</w:document>

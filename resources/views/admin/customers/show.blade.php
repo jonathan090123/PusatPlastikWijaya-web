@@ -16,6 +16,14 @@
                 {{ $customer->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}
             </button>
         </form>
+        <form method="POST" action="{{ route('admin.customers.destroy', $customer) }}" class="delete-customer-form">
+            @csrf
+            @method('DELETE')
+            <button type="button" class="btn btn-sm btn-danger delete-customer-btn"
+                data-name="{{ $customer->name }}">
+                <i class="fas fa-trash"></i> Hapus Akun
+            </button>
+        </form>
         <a href="{{ route('admin.customers.index') }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-arrow-left"></i> Kembali
         </a>
@@ -161,3 +169,17 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.querySelector('.delete-customer-btn').addEventListener('click', function() {
+    var name = this.dataset.name || 'pelanggan ini';
+    var form = document.querySelector('.delete-customer-form');
+    wwConfirm(
+        'Hapus Akun Pelanggan?',
+        'Akun "' + name + '" akan dihapus secara permanen beserta seluruh data terkait.',
+        function() { form.submit(); }
+    );
+});
+</script>
+@endpush

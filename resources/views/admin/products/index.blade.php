@@ -41,10 +41,31 @@
 </div>
 
 <div class="card">
+    {{-- Bulk Action Bar --}}
+    <div id="bulkBar" style="display:none; background:#1e40af; color:#fff; padding:0.65rem 1.25rem; border-radius:var(--radius-md) var(--radius-md) 0 0; display:none; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <span id="bulkCount" style="font-weight:700; font-size:0.9rem;">0 produk dipilih</span>
+        <div style="display:flex; gap:0.5rem; margin-left:auto;">
+            <button onclick="bulkToggle('active')" class="btn btn-sm" style="background:#22c55e; color:#fff; border:none;">
+                <i class="fas fa-check"></i> Aktifkan
+            </button>
+            <button onclick="bulkToggle('inactive')" class="btn btn-sm" style="background:#f59e0b; color:#fff; border:none;">
+                <i class="fas fa-times"></i> Nonaktifkan
+            </button>
+            <button onclick="bulkDelete()" class="btn btn-sm" style="background:#ef4444; color:#fff; border:none;">
+                <i class="fas fa-trash"></i> Hapus
+            </button>
+            <button onclick="clearSelection()" class="btn btn-sm" style="background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.4);">
+                <i class="fas fa-times"></i> Batal
+            </button>
+        </div>
+    </div>
     <div class="table-responsive">
         <table>
             <thead>
                 <tr>
+                    <th style="width:2.5rem; text-align:center;">
+                        <input type="checkbox" id="selectAll" title="Pilih semua" style="cursor:pointer; width:1rem; height:1rem;">
+                    </th>
                     <th>No</th>
                     <th>Gambar</th>
                     <th>Nama Produk</th>
@@ -59,7 +80,10 @@
             </thead>
             <tbody>
                 @forelse($products as $index => $product)
-                    <tr class="product-row" data-url="{{ route('admin.products.edit', $product) }}">
+                    <tr class="product-row" data-url="{{ route('admin.products.edit', $product) }}" data-id="{{ $product->id }}">
+                        <td style="text-align:center;" onclick="event.stopPropagation()">
+                            <input type="checkbox" class="row-check" value="{{ $product->id }}" style="cursor:pointer; width:1rem; height:1rem;">
+                        </td>
                         <td>{{ $products->firstItem() + $index }}</td>
                         <td>
                             @if($product->image)
@@ -199,6 +223,76 @@ document.querySelectorAll('.toggle-active').forEach(btn => {
         });
     });
 });
+
+// Bulk Select
+const bulkBar    = document.getElementById('bulkBar');
+const bulkCount  = document.getElementById('bulkCount');
+const selectAll  = document.getElementById('selectAll');
+
+function getChecked() {
+    return [...document.querySelectorAll('.row-check:checked')].map(c => c.value);
+}
+function updateBulkBar() {
+    const ids = getChecked();
+    if (ids.length > 0) {
+        bulkBar.style.display = 'flex';
+        bulkCount.textContent = ids.length + ' produk dipilih';
+    } else {
+        bulkBar.style.display = 'none';
+    }
+    selectAll.indeterminate = ids.length > 0 && ids.length < document.querySelectorAll('.row-check').length;
+    selectAll.checked = ids.length > 0 && ids.length === document.querySelectorAll('.row-check').length;
+}
+function clearSelection() {
+    document.querySelectorAll('.row-check').forEach(c => c.checked = false);
+    selectAll.checked = false;
+    updateBulkBar();
+}
+
+selectAll.addEventListener('change', function() {
+    document.querySelectorAll('.row-check').forEach(c => c.checked = this.checked);
+    updateBulkBar();
+});
+document.querySelectorAll('.row-check').forEach(c => c.addEventListener('change', updateBulkBar));
+
+function bulkDelete() {
+    const ids = getChecked();
+    if (!ids.length) return;
+    wwConfirm(
+        'Hapus ' + ids.length + ' Produk?',
+        'Produk yang dipilih akan dihapus secara permanen dan tidak dapat dikembalikan.',
+        function() {
+            fetch('{{ route('admin.products.bulkDelete') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ ids })
+            })
+            .then(r => r.json())
+            .then(d => { if (d.success) window.location.reload(); });
+        }
+    );
+}
+
+function bulkToggle(status) {
+    const ids = getChecked();
+    if (!ids.length) return;
+    const label = status === 'active' ? 'mengaktifkan' : 'menonaktifkan';
+    fetch('{{ route('admin.products.bulkToggle') }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ ids, status })
+    })
+    .then(r => r.json())
+    .then(d => { if (d.success) window.location.reload(); });
+}
 
 // Delete confirm
 document.addEventListener('click', function(e) {

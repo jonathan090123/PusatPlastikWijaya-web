@@ -189,4 +189,35 @@ class AdminProductController extends Controller
             'message' => $product->is_active ? 'Produk diaktifkan' : 'Produk dinonaktifkan',
         ]);
     }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada produk dipilih.'], 422);
+        }
+
+        $products = Product::whereIn('id', $ids)->get();
+        foreach ($products as $product) {
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $product->delete();
+        }
+
+        return response()->json(['success' => true, 'message' => count($ids) . ' produk berhasil dihapus.']);
+    }
+
+    public function bulkToggle(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        $status = $request->input('status'); // 'active' or 'inactive'
+        if (empty($ids)) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada produk dipilih.'], 422);
+        }
+
+        Product::whereIn('id', $ids)->update(['is_active' => $status === 'active']);
+
+        return response()->json(['success' => true, 'message' => count($ids) . ' produk diperbarui.']);
+    }
 }

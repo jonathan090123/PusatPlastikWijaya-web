@@ -87,4 +87,12 @@ class AdminCustomerController extends Controller
         $status = $customer->is_active ? 'diaktifkan' : 'dinonaktifkan';
         return redirect()->back()->with('success', "Akun {$customer->name} berhasil {$status}.");
     }
+
+    public function destroy(User $customer)
+    {
+        $customer->delete();
+
+        return redirect()->route('admin.customers.index')
+            ->with('success', "Akun {$customer->name} berhasil dihapus.");
+    }
 }

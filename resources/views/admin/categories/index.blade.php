@@ -10,18 +10,36 @@
     </a>
 </div>
 
-{{-- Search --}}
+{{-- Search & Filter --}}
 <div class="card" style="margin-bottom: 1.5rem;">
     <div class="card-body" style="padding: 0.75rem 1.25rem;">
-        <form action="{{ route('admin.categories.index') }}" method="GET" style="display:flex; gap:0.75rem; align-items:center;">
-            <div class="form-group" style="flex:1; margin:0;">
-                <input type="text" name="search" placeholder="Cari kategori..." value="{{ request('search') }}" style="width:100%;">
+        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+            <div class="form-group" style="flex:1; min-width:200px; margin:0; position:relative;">
+                <i class="fas fa-search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--gray-400); pointer-events:none;"></i>
+                <input type="text" id="categorySearch" placeholder="Cari kategori..."
+                    value="{{ request('search') }}"
+                    style="width:100%; padding-left:2rem;" autocomplete="off">
             </div>
-            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Cari</button>
-            @if(request('search'))
-                <a href="{{ route('admin.categories.index') }}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Reset</a>
+            <div style="display:flex; gap:0.4rem;">
+                <a href="{{ request()->fullUrlWithQuery(['status' => '', 'page' => null]) }}"
+                   class="btn btn-sm {{ !request('status') ? 'btn-primary' : 'btn-secondary' }}">
+                    Semua
+                </a>
+                <a href="{{ request()->fullUrlWithQuery(['status' => 'active', 'page' => null]) }}"
+                   class="btn btn-sm {{ request('status') === 'active' ? 'btn-success' : 'btn-secondary' }}">
+                    <i class="fas fa-check"></i> Aktif
+                </a>
+                <a href="{{ request()->fullUrlWithQuery(['status' => 'inactive', 'page' => null]) }}"
+                   class="btn btn-sm {{ request('status') === 'inactive' ? 'btn-warning' : 'btn-secondary' }}">
+                    <i class="fas fa-times"></i> Nonaktif
+                </a>
+            </div>
+            @if(request('search') || request('status'))
+                <a href="{{ route('admin.categories.index') }}" class="btn btn-secondary btn-sm" id="searchReset">
+                    <i class="fas fa-times"></i> Reset
+                </a>
             @endif
-        </form>
+        </div>
     </div>
 </div>
 
@@ -59,7 +77,7 @@
                         <td>
                             <span class="badge-status badge-processing">{{ $category->products_count }} produk</span>
                         </td>
-                        <td>
+                        <td onclick="event.stopPropagation()">
                             <button class="btn btn-sm {{ $category->is_active ? 'btn-success' : 'btn-secondary' }} toggle-active"
                                     data-id="{{ $category->id }}"
                                     data-url="{{ route('admin.categories.toggleActive', $category) }}">
@@ -144,7 +162,11 @@ document.querySelectorAll('.toggle-active').forEach(btn => {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                button.className = 'btn btn-sm btn-secondary toggle-active';
+                if (data.is_active) {
+                    button.className = 'btn btn-sm btn-success toggle-active';
+                    button.innerHTML = '<i class="fas fa-check"></i> Aktif';
+                } else {
+                    button.className = 'btn btn-sm btn-secondary toggle-active';
                     button.innerHTML = '<i class="fas fa-times"></i> Nonaktif';
                 }
             }
@@ -152,17 +174,44 @@ document.querySelectorAll('.toggle-active').forEach(btn => {
     });
 });
 
-// Delete confirm
-document.addEventListener('click', function(e) {
-    var btn = e.target.closest('.delete-btn');
-    if (!btn) return;
-    var form = btn.closest('.delete-form');
-    var name = btn.dataset.name || 'item ini';
-    wwConfirm(
-        'Hapus Kategori?',
-        'Kategori "' + name + '" akan dihapus secara permanen.',
-        function() { form.submit(); }
-    );
+// Delete confirm — attach directly ke tiap tombol (bukan event delegation ke document)
+// supaya tidak terblokir oleh event.stopPropagation() di wrapper div
+document.querySelectorAll('.delete-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var form = btn.closest('.delete-form');
+        var name = btn.dataset.name || 'item ini';
+        wwConfirm(
+            'Hapus Kategori?',
+            'Kategori "' + name + '" akan dihapus permanen beserta semua produk di dalamnya.',
+            function() { form.submit(); }
+        );
+    });
 });
+
+// Live search dengan debounce 400ms
+(function() {
+    var searchInput = document.getElementById('categorySearch');
+    if (!searchInput) return;
+    var timer;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        var val = this.value;
+        timer = setTimeout(function() {
+            var url = new URL(window.location.href);
+            if (val.trim()) {
+                url.searchParams.set('search', val.trim());
+            } else {
+                url.searchParams.delete('search');
+            }
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        }, 400);
+    });
+    // Fokus ke akhir input supaya cursor berada di ujung teks saat kembali dari redirect
+    var len = searchInput.value.length;
+    searchInput.setSelectionRange(len, len);
+    searchInput.focus();
+})();
 </script>
 @endpush

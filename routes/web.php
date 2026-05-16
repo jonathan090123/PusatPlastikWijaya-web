@@ -124,11 +124,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Products
     Route::resource('products', AdminProductController::class);
     Route::patch('/products/{product}/toggle-active', [AdminProductController::class , 'toggleActive'])->name('products.toggleActive');
+    Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDelete'])->name('products.bulkDelete');
+    Route::post('/products/bulk-toggle', [AdminProductController::class, 'bulkToggle'])->name('products.bulkToggle');
 
     // Customers
     Route::get('/customers', [AdminCustomerController::class , 'index'])->name('customers.index');
     Route::get('/customers/{customer}', [AdminCustomerController::class , 'show'])->name('customers.show');
     Route::patch('/customers/{customer}/toggle-active', [AdminCustomerController::class, 'toggleActive'])->name('customers.toggleActive');
+    Route::delete('/customers/{customer}', [AdminCustomerController::class, 'destroy'])->name('customers.destroy');
 
     // Business Verification
     Route::get('/business-verification', [AdminBusinessVerificationController::class, 'index'])->name('business-verification.index');

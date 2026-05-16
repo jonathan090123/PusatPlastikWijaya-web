@@ -18,6 +18,10 @@ class AdminCategoryController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
         $categories = $query->latest()->paginate(10)->withQueryString();
 
         return view('admin.categories.index', compact('categories'));
@@ -90,10 +94,6 @@ class AdminCategoryController extends Controller
 
     public function destroy(Category $category)
     {
-        if ($category->products()->count() > 0) {
-            return back()->with('error', 'Kategori tidak bisa dihapus karena masih memiliki produk!');
-        }
-
         if ($category->image) {
             Storage::disk('public')->delete($category->image);
         }
