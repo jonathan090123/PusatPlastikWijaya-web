@@ -32,7 +32,10 @@ class AdminProductController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
-        $products = $query->latest()->paginate(10)->withQueryString();
+        $sort = $request->input('sort', 'newest');
+        $query->orderBy('created_at', $sort === 'oldest' ? 'asc' : 'desc');
+
+        $products = $query->paginate(10)->withQueryString();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
 
         return view('admin.products.index', compact('products', 'categories'));

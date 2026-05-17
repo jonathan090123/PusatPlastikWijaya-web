@@ -86,6 +86,14 @@ class Order extends Model
 
     public function getStatusLabelAttribute(): string
     {
+        if (
+            in_array($this->status, ['pending', 'waiting_payment']) &&
+            $this->payment_deadline &&
+            now()->gt($this->payment_deadline)
+        ) {
+            return 'Waktu Habis';
+        }
+
         return match ($this->status) {
                 'pending'           => 'Menunggu',
                 'waiting_payment'   => 'Menunggu Pembayaran',

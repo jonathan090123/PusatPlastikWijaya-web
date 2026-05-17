@@ -15,7 +15,7 @@
     <div class="card-body" style="padding: 0.75rem 1.25rem;">
         <form action="{{ route('admin.products.index') }}" method="GET" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
             <div class="form-group" style="flex:1; min-width:200px; margin:0;">
-                <input type="text" name="search" placeholder="Cari produk..." value="{{ request('search') }}">
+                <input type="text" id="productSearch" name="search" placeholder="Cari produk..." value="{{ request('search') }}" autocomplete="off">
             </div>
             <div class="form-group" style="min-width:160px; margin:0;">
                 <select name="category">
@@ -32,8 +32,14 @@
                     <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
                 </select>
             </div>
+            <div class="form-group" style="min-width:140px; margin:0;">
+                <select name="sort">
+                    <option value="newest" {{ request('sort', 'newest') === 'newest' ? 'selected' : '' }}>Terbaru</option>
+                    <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Terlama</option>
+                </select>
+            </div>
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Filter</button>
-            @if(request()->hasAny(['search', 'category', 'status']))
+            @if(request()->hasAny(['search', 'category', 'status', 'sort']))
                 <a href="{{ route('admin.products.index') }}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Reset</a>
             @endif
         </form>
@@ -306,5 +312,29 @@ document.addEventListener('click', function(e) {
         function() { form.submit(); }
     );
 });
+
+// Live search dengan debounce 400ms
+(function() {
+    var searchInput = document.getElementById('productSearch');
+    if (!searchInput) return;
+    var timer;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        var val = this.value;
+        timer = setTimeout(function() {
+            var url = new URL(window.location.href);
+            if (val.trim()) {
+                url.searchParams.set('search', val.trim());
+            } else {
+                url.searchParams.delete('search');
+            }
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        }, 400);
+    });
+    var len = searchInput.value.length;
+    searchInput.setSelectionRange(len, len);
+    searchInput.focus();
+})();
 </script>
 @endpush
