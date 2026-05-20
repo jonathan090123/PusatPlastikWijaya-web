@@ -82,8 +82,8 @@
         /* Receipt wrapper — width controlled by JS */
         .receipt {
             width: 58mm;
-            font-size: 10px;
-            line-height: 1.45;
+            font-size: 12px;
+            line-height: 1.5;
             color: #000;
             background: #fff;
             padding: 4px 2px;
@@ -97,13 +97,13 @@
         .divider-dash  { border-top: 1px dashed #000; margin: 4px 0; }
 
         .store-name {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
             text-align: center;
             letter-spacing: 0.5px;
         }
         .store-sub {
-            font-size: 9px;
+            font-size: 11px;
             text-align: center;
             margin-bottom: 2px;
         }
@@ -114,26 +114,29 @@
             justify-content: space-between;
             align-items: flex-start;
         }
-        .row .label { flex: 1; }
-        .row .value { text-align: right; flex-shrink: 0; max-width: 55%; }
+        .row .label { flex: 1; word-break: break-word; }
+        .row .value { text-align: right; flex-shrink: 0; max-width: 60%; word-break: break-all; }
 
-        .item-name  { font-weight: bold; }
+        .item-name  { font-weight: bold; word-break: break-word; }
         .item-detail {
             display: flex;
             justify-content: space-between;
-            font-size: 9.5px;
+            font-size: 11px;
+        }
+        .item-unit {
+            font-weight: bold;
         }
 
         .total-row {
             display: flex;
             justify-content: space-between;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 13px;
         }
 
         .thank-you {
             text-align: center;
-            font-size: 9px;
+            font-size: 10px;
             margin-top: 3px;
         }
 
@@ -141,6 +144,13 @@
         @media print {
             body { padding: 0; background: #fff; }
             .print-actions { display: none; }
+            * {
+                -webkit-font-smoothing: none !important;
+                font-smooth: never !important;
+                text-rendering: optimizeSpeed !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 
@@ -227,7 +237,7 @@
                     <div style="margin-top:3px; opacity:0.55;">
                         <div class="item-name" style="text-decoration:line-through;">[STOK KOSONG] {{ $item->product_name }}</div>
                         <div class="item-detail" style="text-decoration:line-through;">
-                            <span>{{ $item->quantity }}@if($item->unit) <span style="background:#e8eaed; color:#444; font-size:0.78em; font-weight:700; padding:0 4px; border-radius:3px; margin:0 2px;">{{ $item->unit }}</span>@endif x Rp {{ number_format($item->product_price, 0, ',', '.') }}</span>
+                            <span>{{ $item->quantity }}@if($item->unit) <span class="item-unit">({{ $item->unit }})</span>@endif x Rp {{ number_format($item->product_price, 0, ',', '.') }}</span>
                             <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
                         </div>
                     </div>
@@ -235,7 +245,7 @@
                     <div style="margin-top:3px;">
                         <div class="item-name">{{ $item->product_name }}</div>
                         <div class="item-detail">
-                            <span>{{ $item->quantity }}@if($item->unit) <span style="background:#e8eaed; color:#444; font-size:0.78em; font-weight:700; padding:0 4px; border-radius:3px; margin:0 2px;">{{ $item->unit }}</span>@endif x Rp {{ number_format($item->product_price, 0, ',', '.') }}</span>
+                            <span>{{ $item->quantity }}@if($item->unit) <span class="item-unit">({{ $item->unit }})</span>@endif x Rp {{ number_format($item->product_price, 0, ',', '.') }}</span>
                             <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
                         </div>
                     </div>

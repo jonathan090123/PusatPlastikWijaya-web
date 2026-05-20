@@ -272,9 +272,6 @@
                                 <a href="{{ route('products.show', $item->product->slug) }}"
                                    target="_blank" rel="noopener"
                                    class="summary-item-name">{{ $item->product->name }}
-                                    @if($item->unit && $item->unit !== $item->product->unit)
-                                        <span style="font-size:0.7rem;font-weight:600;color:var(--primary);background:var(--primary-light);padding:0.1rem 0.35rem;border-radius:4px;margin-left:0.25rem;">{{ strtoupper($item->unit) }}</span>
-                                    @endif
                                 </a>
                                 <div class="summary-item-controls">
                                     <button type="button" class="qty-btn qty-minus" data-id="{{ $item->id }}"
@@ -283,6 +280,9 @@
                                         value="{{ $item->quantity }}" min="1" max="{{ $itemMaxQty }}">
                                     <button type="button" class="qty-btn qty-plus" data-id="{{ $item->id }}" data-max="{{ $itemMaxQty }}"
                                         {{ $item->quantity >= $itemMaxQty ? 'disabled' : '' }}>+</button>
+                                    @if($item->unit)
+                                        <span style="background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700; padding:1px 7px; border-radius:4px; margin-left:2px; letter-spacing:0.02em;">{{ $item->unit }}</span>
+                                    @endif
                                 </div>
                             </div>
                             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem;">
