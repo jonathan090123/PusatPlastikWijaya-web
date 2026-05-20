@@ -49,9 +49,66 @@ class PaymentController extends Controller
                 ->with('info', 'Waktu pembayaran telah habis. Aktifkan kembali pesanan untuk melanjutkan.');
         }
 
-        $order->load(['items.product', 'shippingCost']);
+        $order->load(['items.product', 'shippingCost', 'payment']);
+
+        // Auto-detect: jika customer refresh browser setelah bayar (tidak klik tombol di popup),
+        // cek langsung ke Midtrans API agar order langsung diproses tanpa perlu tunggu webhook.
+        if ($order->payment && !$order->payment->isPaid()) {
+            $midtransOrderId = data_get($order->payment->payment_detail, 'midtrans_order_id');
+            if ($midtransOrderId) {
+                try {
+                    $tx = Transaction::status($midtransOrderId);
+                    $ts = $tx->transaction_status ?? null;
+                    $fs = $tx->fraud_status ?? null;
+                    $isPaid = $ts === 'settlement' || ($ts === 'capture' && $fs === 'accept');
+                    if ($isPaid) {
+                        $this->markAsPaid($order, $order->payment);
+                        return redirect()->route('orders.show', $order)
+                            ->with('payment_success', true);
+                    }
+                } catch (\Exception $e) {
+                    Log::info('Auto status check on payment page load: ' . $e->getMessage());
+                }
+            }
+        }
 
         return view('customer.payment.index', compact('order'));
+    }
+
+    /**
+     * AJAX: cek apakah pembayaran sudah selesai (dipanggil saat popup Snap ditutup).
+     */
+    public function statusCheck(Order $order)
+    {
+        if (!Auth::check() || $order->user_id !== Auth::id()) {
+            return response()->json(['paid' => false]);
+        }
+
+        $order->load('payment');
+
+        if ($order->payment && $order->payment->isPaid()) {
+            return response()->json(['paid' => true, 'redirect' => route('orders.show', $order)]);
+        }
+
+        $midtransOrderId = data_get($order->payment, 'payment_detail.midtrans_order_id');
+        if (!$midtransOrderId) {
+            return response()->json(['paid' => false]);
+        }
+
+        try {
+            $tx = Transaction::status($midtransOrderId);
+            $ts = $tx->transaction_status ?? null;
+            $fs = $tx->fraud_status ?? null;
+            $isPaid = $ts === 'settlement' || ($ts === 'capture' && $fs === 'accept');
+            if ($isPaid) {
+                $this->markAsPaid($order, $order->payment);
+                return response()->json(['paid' => true, 'redirect' => route('orders.show', $order)]);
+            }
+        } catch (\Exception $e) {
+            Log::info('Status check AJAX: ' . $e->getMessage());
+        }
+
+        return response()->json(['paid' => false]);
     }
 
     /**

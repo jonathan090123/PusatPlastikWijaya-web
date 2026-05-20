@@ -281,7 +281,11 @@
                                         {{ $item->product_name }}
                                     @endif
                                 </div>
-                                <div style="font-size:0.8rem; color:var(--gray-500);">{{ $item->quantity }} x Rp {{ number_format($item->product_price, 0, ',', '.') }}</div>
+                                <div style="font-size:0.8rem; color:var(--gray-500);">
+                                    {{ $item->quantity }}
+                                    @if($item->unit)<span style="background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; font-size:0.72rem; font-weight:700; padding:1px 7px; border-radius:4px; margin:0 3px; letter-spacing:0.02em;">{{ $item->unit }}</span>@endif
+                                    x Rp {{ number_format($item->product_price, 0, ',', '.') }}
+                                </div>
                                 @if($item->is_out_of_stock)
                                     <div style="font-size:0.75rem; color:#dc2626; font-weight:600; margin-top:2px;">
                                         <i class="fas fa-times-circle"></i> Stok Kosong

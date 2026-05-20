@@ -227,7 +227,7 @@
                     <div style="margin-top:3px; opacity:0.55;">
                         <div class="item-name" style="text-decoration:line-through;">[STOK KOSONG] {{ $item->product_name }}</div>
                         <div class="item-detail" style="text-decoration:line-through;">
-                            <span>{{ $item->quantity }} x Rp {{ number_format($item->product_price, 0, ',', '.') }}</span>
+                            <span>{{ $item->quantity }}@if($item->unit) <span style="background:#e8eaed; color:#444; font-size:0.78em; font-weight:700; padding:0 4px; border-radius:3px; margin:0 2px;">{{ $item->unit }}</span>@endif x Rp {{ number_format($item->product_price, 0, ',', '.') }}</span>
                             <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
                         </div>
                     </div>
@@ -235,7 +235,7 @@
                     <div style="margin-top:3px;">
                         <div class="item-name">{{ $item->product_name }}</div>
                         <div class="item-detail">
-                            <span>{{ $item->quantity }} x Rp {{ number_format($item->product_price, 0, ',', '.') }}</span>
+                            <span>{{ $item->quantity }}@if($item->unit) <span style="background:#e8eaed; color:#444; font-size:0.78em; font-weight:700; padding:0 4px; border-radius:3px; margin:0 2px;">{{ $item->unit }}</span>@endif x Rp {{ number_format($item->product_price, 0, ',', '.') }}</span>
                             <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
                         </div>
                     </div>

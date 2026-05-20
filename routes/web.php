@@ -97,6 +97,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/payment/{order}', [PaymentController::class , 'show'])->name('payment.show');
     Route::post('/payment/{order}/token', [PaymentController::class , 'getToken'])->name('payment.token');
     Route::get('/payment/{order}/finish', [PaymentController::class , 'finish'])->name('payment.finish');
+    Route::get('/payment/{order}/status-check', [PaymentController::class , 'statusCheck'])->name('payment.statusCheck');
 
     // Points
     Route::get('/points', [CustomerPointController::class , 'index'])->name('points.index');

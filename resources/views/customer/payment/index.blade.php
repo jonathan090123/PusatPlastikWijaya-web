@@ -231,6 +231,7 @@
     const payBtn   = document.getElementById('pay-button');
     const tokenUrl = '{{ route("payment.token", $order) }}';
     const finishUrl= '{{ route("payment.finish", $order) }}';
+    const statusCheckUrl = '{{ route("payment.statusCheck", $order) }}';
     const csrfToken= '{{ csrf_token() }}';
 
     let selectedMethod = null;
@@ -286,7 +287,22 @@
                     showToast('error', 'Pembayaran Gagal', 'Pembayaran tidak berhasil. Halaman akan dimuat ulang agar Anda bisa mencoba lagi.');
                     setTimeout(function () { window.location.reload(); }, 3000);
                 },
-                onClose:   function () { resetButton(); }
+                onClose:   function () {
+                    // Cek ke server apakah pembayaran sudah berhasil
+                    // (menangani kasus customer menutup popup setelah bayar)
+                    fetch(statusCheckUrl, {
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                    })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.paid && data.redirect) {
+                            window.location.href = data.redirect;
+                        } else {
+                            resetButton();
+                        }
+                    })
+                    .catch(function () { resetButton(); });
+                }
             });
         })
         .catch(function (err) {

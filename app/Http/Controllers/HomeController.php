@@ -33,6 +33,11 @@ class HomeController extends Controller
             return view('welcome', compact('categories', 'featuredProducts', 'promoProducts'));
         }
 
+        // Admin → redirect ke dashboard
+        if (Auth::user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         // Customer → halaman home
         $categories = Category::where('is_active', true)
             ->withCount(['products' => function ($q) {
