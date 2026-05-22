@@ -128,7 +128,7 @@
                         $shName = strtolower($order->shipping_name ?? '');
                         $trackUrl = match(true) {
                             str_contains($shName, 'jne')      => 'https://www.jne.co.id/id/tracking/trace?awb=' . $resi,
-                            str_contains($shName, 'j&t') || str_contains($shName, 'jnt') => 'https://jet.co.id/id/track?awbNo=' . $resi,
+                            str_contains($shName, 'j&t') || str_contains($shName, 'jnt') => 'https://cekresi.com/?noresi=' . $resi,
                             str_contains($shName, 'tiki')     => 'https://tiki.id/tracking?searchVal=' . $resi,
                             str_contains($shName, 'sicepat')  => 'https://sicepat.com/checkAwb?awb=' . $resi,
                             str_contains($shName, 'pos')      => 'https://posindonesia.co.id/id/tracking?awb=' . $resi,
