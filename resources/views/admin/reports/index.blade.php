@@ -101,98 +101,48 @@
     </div>
 </div>
 
-{{-- ═══════════ Two Column: Best Sellers + Status Dist ═══════════ --}}
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
-
-    {{-- Best Selling Products --}}
-    <div class="card">
-        <div class="card-header">
-            <span><i class="fas fa-trophy" style="color:var(--warning);"></i> Produk Terlaris</span>
-        </div>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width:40px;">#</th>
-                        <th>Produk</th>
-                        <th style="text-align:right;">Qty</th>
-                        <th style="text-align:right;">Pendapatan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($bestSellingProducts as $i => $item)
-                        <tr>
-                            <td>
-                                @if($i < 3)
-                                    <span class="rank-badge rank-{{ $i + 1 }}">{{ $i + 1 }}</span>
-                                @else
-                                    <span style="color:var(--gray-400); font-weight:600;">{{ $i + 1 }}</span>
-                                @endif
-                            </td>
-                            <td><strong style="color:var(--gray-800);">{{ $item->product_name }}</strong></td>
-                            <td style="text-align:right; font-weight:600;">{{ number_format($item->total_qty) }}</td>
-                            <td style="text-align:right; font-weight:600; color:var(--success);">Rp {{ number_format($item->total_revenue, 0, ',', '.') }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4">
-                                <div class="empty-state" style="padding:1.5rem;">
-                                    <i class="fas fa-box-open"></i>
-                                    <h3>Belum ada data</h3>
-                                    <p>Tidak ada produk terjual di periode ini</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+{{-- ═══════════ Best Selling Products (Full Width) ═══════════ --}}
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+        <span><i class="fas fa-trophy" style="color:var(--warning);"></i> Produk Terlaris</span>
     </div>
-
-    {{-- Order Status + Payment Method --}}
-    <div style="display:flex; flex-direction:column; gap:1.5rem;">
-        {{-- Status Distribution --}}
-        <div class="card">
-            <div class="card-header">
-                <span><i class="fas fa-clipboard-list" style="color:var(--info);"></i> Distribusi Status Pesanan</span>
-            </div>
-            <div class="card-body" style="padding:1rem 1.25rem;">
-                @php
-                    $statusLabels = [
-                        'pending'           => ['Menunggu',              'badge-pending'],
-                        'waiting_payment'   => ['Menunggu Pembayaran',   'badge-waiting_payment'],
-                        'paid'              => ['Sudah Dibayar',         'badge-paid'],
-                        'processing'        => ['Diproses',              'badge-processing'],
-                        'ready_for_pickup'  => ['Siap Diambil',         'badge-ready_for_pickup'],
-                        'shipped'           => ['Dikirim',               'badge-shipped'],
-                        'completed'         => ['Selesai',               'badge-completed'],
-                        'cancelled'         => ['Dibatalkan',            'badge-cancelled'],
-                    ];
-                    $totalStatusCount = $statusDistribution->sum();
-                @endphp
-                @if($totalStatusCount > 0)
-                    <div style="display:flex; flex-direction:column; gap:0.6rem;">
-                        @foreach($statusLabels as $key => [$label, $badgeClass])
-                            @php $count = $statusDistribution->get($key, 0); @endphp
-                            @if($count > 0)
-                                <div class="status-dist-row">
-                                    <span class="badge-status {{ $badgeClass }}">{{ $label }}</span>
-                                    <div class="status-dist-bar-wrap">
-                                        <div class="status-dist-bar" style="width: {{ $totalStatusCount > 0 ? round($count / $totalStatusCount * 100) : 0 }}%;"></div>
-                                    </div>
-                                    <span class="status-dist-count">{{ $count }}</span>
-                                </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Produk</th>
+                    <th style="text-align:right;">Qty</th>
+                    <th style="text-align:right;">Pendapatan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($bestSellingProducts as $i => $item)
+                    <tr>
+                        <td>
+                            @if($i < 3)
+                                <span class="rank-badge rank-{{ $i + 1 }}">{{ $i + 1 }}</span>
+                            @else
+                                <span style="color:var(--gray-400); font-weight:600;">{{ $i + 1 }}</span>
                             @endif
-                        @endforeach
-                    </div>
-                @else
-                    <div class="empty-state" style="padding:1rem;">
-                        <p style="color:var(--gray-400);">Tidak ada pesanan di periode ini</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
+                        </td>
+                        <td><strong style="color:var(--gray-800);">{{ $item->product_name }}</strong></td>
+                        <td style="text-align:right; font-weight:600;">{{ number_format($item->total_qty) }}</td>
+                        <td style="text-align:right; font-weight:600; color:var(--success);">Rp {{ number_format($item->total_revenue, 0, ',', '.') }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state" style="padding:1.5rem;">
+                                <i class="fas fa-box-open"></i>
+                                <h3>Belum ada data</h3>
+                                <p>Tidak ada produk terjual di periode ini</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -333,38 +283,6 @@
 .rank-2 { background: #e2e8f0; color: #475569; }
 .rank-3 { background: #fed7aa; color: #9a3412; }
 
-/* Status distribution */
-.status-dist-row {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-}
-.status-dist-row .badge-status {
-    min-width: 130px;
-    text-align: center;
-    font-size: 0.75rem;
-}
-.status-dist-bar-wrap {
-    flex: 1;
-    height: 8px;
-    background: var(--gray-100);
-    border-radius: 99px;
-    overflow: hidden;
-}
-.status-dist-bar {
-    height: 100%;
-    background: var(--primary);
-    border-radius: 99px;
-    min-width: 4px;
-    transition: width 0.6s ease;
-}
-.status-dist-count {
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--gray-700);
-    min-width: 28px;
-    text-align: right;
-}
 
 /* Chart container */
 .chart-container {
