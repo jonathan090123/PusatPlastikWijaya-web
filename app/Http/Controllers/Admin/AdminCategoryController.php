@@ -104,6 +104,16 @@ class AdminCategoryController extends Controller
             ->with('success', 'Kategori berhasil dihapus!');
     }
 
+    public function deleteImage(Category $category)
+    {
+        if ($category->image) {
+            Storage::disk('public')->delete($category->image);
+            $category->update(['image' => null]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Gambar kategori berhasil dihapus.']);
+    }
+
     public function toggleActive(Category $category)
     {
         $category->update(['is_active' => !$category->is_active]);

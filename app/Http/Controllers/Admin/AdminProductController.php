@@ -198,6 +198,16 @@ class AdminProductController extends Controller
             ->with('success', 'Produk berhasil dihapus!');
     }
 
+    public function deleteImage(Product $product)
+    {
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+            $product->update(['image' => null]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Gambar produk berhasil dihapus.']);
+    }
+
     public function toggleActive(Product $product)
     {
         $product->update(['is_active' => !$product->is_active]);
