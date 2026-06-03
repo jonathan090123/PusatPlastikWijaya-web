@@ -121,12 +121,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Categories
     Route::resource('categories', AdminCategoryController::class);
     Route::patch('/categories/{category}/toggle-active', [AdminCategoryController::class , 'toggleActive'])->name('categories.toggleActive');
+    Route::delete('/categories/{category}/image', [AdminCategoryController::class, 'deleteImage'])->name('categories.deleteImage');
 
     // Products
     Route::resource('products', AdminProductController::class);
     Route::patch('/products/{product}/toggle-active', [AdminProductController::class , 'toggleActive'])->name('products.toggleActive');
     Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDelete'])->name('products.bulkDelete');
     Route::post('/products/bulk-toggle', [AdminProductController::class, 'bulkToggle'])->name('products.bulkToggle');
+    Route::delete('/products/{product}/image', [AdminProductController::class, 'deleteImage'])->name('products.deleteImage');
 
     // Customers
     Route::get('/customers', [AdminCustomerController::class , 'index'])->name('customers.index');

@@ -53,12 +53,6 @@ class AdminReportsController extends Controller
             ->limit(10)
             ->get();
 
-        // Distribusi status order
-        $statusDistribution = Order::whereBetween('created_at', [$startDate, $endDate])
-            ->select('status', DB::raw('COUNT(*) as count'))
-            ->groupBy('status')
-            ->get()
-            ->pluck('count', 'status');
 
         // Order selesai terbaru
         $recentCompleted = Order::with('user')
@@ -77,6 +71,13 @@ class AdminReportsController extends Controller
             ->limit(5)
             ->with('user')
             ->get();
+
+        // Distribusi status order (tetap dikirim untuk kompatibilitas cache blade di hosting)
+        $statusDistribution = Order::whereBetween('created_at', [$startDate, $endDate])
+            ->select('status', DB::raw('COUNT(*) as count'))
+            ->groupBy('status')
+            ->get()
+            ->pluck('count', 'status');
 
         return view('admin.reports.index', compact(
             'period', 'startDate', 'endDate',

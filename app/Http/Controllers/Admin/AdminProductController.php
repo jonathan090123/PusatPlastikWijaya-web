@@ -17,11 +17,27 @@ class AdminProductController extends Controller
         $query = Product::with('category');
 
         if ($request->filled('search')) {
-            $term = $request->search;
-            $query->where(function ($q) use ($term) {
-                $q->where('name', 'like', '%' . $term . '%')
-                  ->orWhere('product_code', 'like', '%' . $term . '%');
-            });
+            $term = trim($request->search);
+            // Split search term into individual keywords (split on whitespace)
+            $keywords = preg_split('/\s+/', $term, -1, PREG_SPLIT_NO_EMPTY);
+
+            if (count($keywords) > 1) {
+                // Multi-keyword: each keyword must appear in name OR product_code
+                $query->where(function ($q) use ($keywords) {
+                    foreach ($keywords as $keyword) {
+                        $q->where(function ($inner) use ($keyword) {
+                            $inner->where('name', 'like', '%' . $keyword . '%')
+                                  ->orWhere('product_code', 'like', '%' . $keyword . '%');
+                        });
+                    }
+                });
+            } else {
+                // Single keyword: normal LIKE search
+                $query->where(function ($q) use ($term) {
+                    $q->where('name', 'like', '%' . $term . '%')
+                      ->orWhere('product_code', 'like', '%' . $term . '%');
+                });
+            }
         }
 
         if ($request->filled('category')) {
@@ -180,6 +196,16 @@ class AdminProductController extends Controller
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Produk berhasil dihapus!');
+    }
+
+    public function deleteImage(Product $product)
+    {
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+            $product->update(['image' => null]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Gambar produk berhasil dihapus.']);
     }
 
     public function toggleActive(Product $product)
