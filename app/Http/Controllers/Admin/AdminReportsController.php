@@ -7,10 +7,9 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
-use App\Exports\SalesReportExport;
+use App\Exports\XlsxWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
 
 class AdminReportsController extends Controller
 {
@@ -124,7 +123,118 @@ class AdminReportsController extends Controller
         $startDate = $this->getStartDate($period, $request);
         $endDate   = $this->getEndDate($period, $request);
 
+        // ── Sheet 1: Ringkasan ────────────────────────────────────────────
+        $completedQuery = Order::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate]);
+        $allOrdersQuery = Order::whereBetween('created_at', [$startDate, $endDate]);
+
+        $totalRevenue    = (clone $completedQuery)->sum('total');
+        $totalOrders     = (clone $allOrdersQuery)->count();
+        $completedOrders = (clone $completedQuery)->count();
+        $cancelledOrders = (clone $allOrdersQuery)->where('status', 'cancelled')->count();
+        $totalItemsSold  = OrderItem::whereHas('order', fn ($q) =>
+            $q->where('status', 'completed')->whereBetween('created_at', [$startDate, $endDate])
+        )->sum('quantity');
+        $avgOrderValue   = $completedOrders > 0 ? $totalRevenue / $completedOrders : 0;
+
         $periodLabel = match ($period) {
+            'today'  => 'Hari Ini',
+            'week'   => 'Minggu Ini',
+            'month'  => 'Bulan Ini',
+            'year'   => 'Tahun Ini',
+            'custom' => $startDate->format('d M Y') . ' — ' . $endDate->format('d M Y'),
+            default  => 'Bulan Ini',
+        };
+
+        $summaryRows = [
+            ['Metrik',                      'Nilai'],
+            ['Periode',                     $periodLabel],
+            ['Tanggal Mulai',               $startDate->format('d M Y')],
+            ['Tanggal Selesai',             $endDate->format('d M Y')],
+            ['', ''],
+            ['Total Pendapatan (Rp)',        'Rp ' . number_format($totalRevenue, 0, ',', '.')],
+            ['Total Pesanan',               $totalOrders],
+            ['Pesanan Selesai',             $completedOrders],
+            ['Pesanan Dibatalkan',          $cancelledOrders],
+            ['Item Terjual',               $totalItemsSold],
+            ['Rata-rata per Pesanan (Rp)', 'Rp ' . number_format($avgOrderValue, 0, ',', '.')],
+        ];
+
+        // ── Sheet 2: Produk Terlaris ──────────────────────────────────────
+        $bestSelling = OrderItem::whereHas('order', fn ($q) =>
+                $q->where('status', 'completed')->whereBetween('created_at', [$startDate, $endDate])
+            )
+            ->select('product_name',
+                DB::raw('SUM(quantity) as total_qty'),
+                DB::raw('SUM(subtotal) as total_revenue')
+            )
+            ->groupBy('product_name')
+            ->orderByDesc('total_qty')
+            ->get();
+
+        $bestSellingRows = [['#', 'Nama Produk', 'Qty Terjual', 'Pendapatan (Rp)']];
+        foreach ($bestSelling as $i => $item) {
+            $bestSellingRows[] = [
+                $i + 1,
+                $item->product_name,
+                (int) $item->total_qty,
+                'Rp ' . number_format($item->total_revenue, 0, ',', '.'),
+            ];
+        }
+
+        // ── Sheet 3: Pelanggan Teratas ────────────────────────────────────
+        $topCustomers = Order::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select('user_id',
+                DB::raw('COUNT(*) as total_orders'),
+                DB::raw('SUM(total) as total_spent')
+            )
+            ->groupBy('user_id')
+            ->orderByDesc('total_spent')
+            ->with('user')
+            ->get();
+
+        $customersRows = [['#', 'Nama Pelanggan', 'Email', 'Jumlah Pesanan', 'Total Belanja (Rp)']];
+        foreach ($topCustomers as $i => $row) {
+            $customersRows[] = [
+                $i + 1,
+                $row->user->name  ?? '-',
+                $row->user->email ?? '-',
+                $row->total_orders,
+                'Rp ' . number_format($row->total_spent, 0, ',', '.'),
+            ];
+        }
+
+        // ── Sheet 4: Daftar Pesanan ───────────────────────────────────────
+        $orders = Order::with('user', 'payment')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $ordersRows = [['No. Invoice', 'Pelanggan', 'Email', 'Status', 'Total (Rp)', 'Tanggal', 'Metode Bayar']];
+        foreach ($orders as $order) {
+            $statusLabel = match ($order->status) {
+                'pending'    => 'Menunggu Pembayaran',
+                'processing' => 'Diproses',
+                'shipped'    => 'Dikirim',
+                'completed'  => 'Selesai',
+                'cancelled'  => 'Dibatalkan',
+                'expired'    => 'Kadaluarsa',
+                default      => ucfirst($order->status),
+            };
+            $ordersRows[] = [
+                $order->invoice_number,
+                $order->user->name  ?? '-',
+                $order->user->email ?? '-',
+                $statusLabel,
+                'Rp ' . number_format($order->total, 0, ',', '.'),
+                \Carbon\Carbon::parse($order->created_at)->format('d M Y H:i'),
+                $order->payment->payment_type ?? '-',
+            ];
+        }
+
+        // ── Filename ──────────────────────────────────────────────────────
+        $fileLabel = match ($period) {
             'today'  => 'Hari-Ini',
             'week'   => 'Minggu-Ini',
             'month'  => 'Bulan-Ini',
@@ -132,13 +242,13 @@ class AdminReportsController extends Controller
             'custom' => $startDate->format('d-M-Y') . '_sd_' . $endDate->format('d-M-Y'),
             default  => 'Bulan-Ini',
         };
+        $filename = 'Laporan-Penjualan_' . $fileLabel . '_' . now()->format('YmdHis') . '.xlsx';
 
-        $filename = 'Laporan-Penjualan_' . $periodLabel . '_' . now()->format('YmdHis') . '.xlsx';
-
-        return Excel::download(
-            new SalesReportExport($period, $startDate, $endDate),
-            $filename,
-            \Maatwebsite\Excel\Excel::XLSX
-        );
+        return (new XlsxWriter())
+            ->addSheet('Ringkasan',         $summaryRows,     [32, 30],             '1e40af')
+            ->addSheet('Produk Terlaris',   $bestSellingRows, [6, 40, 16, 22],     '065f46')
+            ->addSheet('Pelanggan Teratas', $customersRows,   [6, 28, 34, 18, 22], '7c3aed')
+            ->addSheet('Daftar Pesanan',    $ordersRows,      [22, 26, 32, 22, 18, 20, 18], '1e3a8a')
+            ->download($filename);
     }
 }

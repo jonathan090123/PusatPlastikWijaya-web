@@ -343,8 +343,10 @@ function selectPeriod(period) {
 
 document.addEventListener('DOMContentLoaded', function () {
     buildExportUrl();
-    document.querySelector('[name="start_date"]')?.addEventListener('change', buildExportUrl);
-    document.querySelector('[name="end_date"]')?.addEventListener('change', buildExportUrl);
+    var sd = document.querySelector('[name="start_date"]');
+    var ed = document.querySelector('[name="end_date"]');
+    if (sd) sd.addEventListener('change', buildExportUrl);
+    if (ed) ed.addEventListener('change', buildExportUrl);
 });
 
 // Revenue Chart
