@@ -159,4 +159,5 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/shipping/toggle', [AdminShippingController::class , 'toggleActive'])->name('shipping.toggle');
 
     Route::get('/reports', [AdminReportsController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export-excel', [AdminReportsController::class, 'exportExcel'])->name('reports.exportExcel');
 });

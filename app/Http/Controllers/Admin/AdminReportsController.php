@@ -7,8 +7,10 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
+use App\Exports\SalesReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminReportsController extends Controller
 {
@@ -114,5 +116,29 @@ class AdminReportsController extends Controller
                 : now()->endOfMonth(),
             default  => now()->endOfMonth(),
         };
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $period    = $request->input('period', 'month');
+        $startDate = $this->getStartDate($period, $request);
+        $endDate   = $this->getEndDate($period, $request);
+
+        $periodLabel = match ($period) {
+            'today'  => 'Hari-Ini',
+            'week'   => 'Minggu-Ini',
+            'month'  => 'Bulan-Ini',
+            'year'   => 'Tahun-Ini',
+            'custom' => $startDate->format('d-M-Y') . '_sd_' . $endDate->format('d-M-Y'),
+            default  => 'Bulan-Ini',
+        };
+
+        $filename = 'Laporan-Penjualan_' . $periodLabel . '_' . now()->format('YmdHis') . '.xlsx';
+
+        return Excel::download(
+            new SalesReportExport($period, $startDate, $endDate),
+            $filename,
+            \Maatwebsite\Excel\Excel::XLSX
+        );
     }
 }

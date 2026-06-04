@@ -1,7 +1,10 @@
 {
     "name": "plastik-wijaya/ecommerce",
     "description": "E-Commerce Pusat Plastik Wijaya",
-    "keywords": ["laravel", "ecommerce"],
+    "keywords": [
+        "laravel",
+        "ecommerce"
+    ],
     "license": "MIT",
     "type": "project",
     "require": {

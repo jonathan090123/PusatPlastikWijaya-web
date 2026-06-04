@@ -5,6 +5,12 @@
 @section('content')
 <div class="page-header">
     <h1><i class="fas fa-chart-bar"></i> Laporan Penjualan</h1>
+    <a href="{{ route('admin.reports.exportExcel') }}"
+       id="btnExportExcel"
+       style="display:inline-flex;align-items:center;gap:0.45rem;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;padding:0.5rem 1.15rem;border-radius:8px;font-weight:600;font-size:0.88rem;text-decoration:none;transition:opacity .18s;box-shadow:0 2px 8px rgba(5,150,105,.28);cursor:pointer;"
+       onmouseover="this.style.opacity='.82'" onmouseout="this.style.opacity='1'">
+        <i class="fas fa-file-excel"></i> Export Excel
+    </a>
 </div>
 
 {{-- ═══════════ Period Filter ═══════════ --}}
@@ -306,6 +312,19 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
+function buildExportUrl() {
+    var baseUrl = "{{ route('admin.reports.exportExcel') }}";
+    var period  = document.getElementById('periodInput').value;
+    var params  = new URLSearchParams({ period: period });
+    if (period === 'custom') {
+        var s = document.querySelector('[name="start_date"]');
+        var e = document.querySelector('[name="end_date"]');
+        if (s && s.value) params.append('start_date', s.value);
+        if (e && e.value) params.append('end_date',   e.value);
+    }
+    document.getElementById('btnExportExcel').href = baseUrl + '?' + params.toString();
+}
+
 function selectPeriod(period) {
     document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
     document.querySelector('[data-period="' + period + '"]').classList.add('active');
@@ -314,11 +333,19 @@ function selectPeriod(period) {
     var custom = document.getElementById('customDateRange');
     if (period === 'custom') {
         custom.style.display = 'flex';
+        buildExportUrl();
     } else {
         custom.style.display = 'none';
+        buildExportUrl();
         document.getElementById('reportFilterForm').submit();
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    buildExportUrl();
+    document.querySelector('[name="start_date"]')?.addEventListener('change', buildExportUrl);
+    document.querySelector('[name="end_date"]')?.addEventListener('change', buildExportUrl);
+});
 
 // Revenue Chart
 @if($revenueChart->count() > 0)

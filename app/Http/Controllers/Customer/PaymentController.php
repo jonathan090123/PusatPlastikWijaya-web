@@ -124,7 +124,7 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Pesanan tidak dapat dibayar.'], 422);
         }
 
-        // Server-side deadline check
+        // deadline pembayaran (timer batas waktu bayar)
         $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
         if (now()->gt($deadline)) {
             $this->restoreStock($order);
