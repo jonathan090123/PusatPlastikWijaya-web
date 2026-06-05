@@ -22,6 +22,7 @@
                     <option value="ready_for_pickup" {{ request('status') === 'ready_for_pickup' ? 'selected' : '' }}>Siap Diambil</option>
                     <option value="shipped" {{ request('status') === 'shipped' ? 'selected' : '' }}>Dikirim</option>
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
+                    <option value="refunded" {{ request('status') === 'refunded' ? 'selected' : '' }}>Direfund</option>
                     <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                     <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Kadaluarsa</option>
                 </select>
@@ -55,7 +56,7 @@
             <tbody>
                 @forelse($orders as $index => $order)
                     @php
-                        $isDone = in_array($order->status, ['completed', 'cancelled', 'expired']);
+                        $isDone = in_array($order->status, ['completed', 'refunded', 'cancelled', 'expired']);
                         $badgeClass = match($order->status) {
                             'pending'           => 'badge-pending',
                             'waiting_payment'   => 'badge-waiting_payment',
@@ -64,6 +65,7 @@
                             'ready_for_pickup'  => 'badge-ready-pickup',
                             'shipped'           => 'badge-shipped',
                             'completed'         => 'badge-completed',
+                            'refunded'          => 'badge-refunded',
                             'cancelled'         => 'badge-cancelled',
                             'expired'           => 'badge-expired',
                             default             => '',
@@ -154,6 +156,12 @@
     font-size: 1.1rem;
     margin-left: 0.4rem;
     vertical-align: middle;
+}
+/* Failsafe untuk badge-refunded jika app.css ter-cache */
+.badge-refunded { 
+    background: #f3e8ff !important; 
+    color: #7e22ce !important; 
+    border: 1px solid #d8b4fe !important; 
 }
 </style>
 @endpush

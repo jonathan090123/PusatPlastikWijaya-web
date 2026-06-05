@@ -421,7 +421,7 @@ class PaymentController extends Controller
             'paid_at'            => now(),
         ]);
 
-        // Skip if already processing or beyond (idempotent)
+        // Skip if already processing 
         if (in_array($order->status, ['processing', 'ready_for_pickup', 'shipped', 'completed'])) {
             return;
         }

@@ -39,6 +39,7 @@
                                 'ready_for_pickup'  => 'badge-ready-pickup',
                                 'shipped'           => 'badge-shipped',
                                 'completed'         => 'badge-completed',
+                                'refunded'          => 'badge-refunded',
                                 'cancelled'         => 'badge-cancelled',
                                 'expired'           => 'badge-expired',
                                 default             => '',
@@ -244,6 +245,24 @@
             <div class="card" style="margin-bottom:1.5rem; background:#fef2f2; border:1px solid #fecaca;">
                 <div class="card-body" style="padding:0.85rem 1.25rem; font-size:0.82rem; color:#b91c1c;">
                     <i class="fas fa-times-circle"></i> Batas waktu pembayaran telah habis. Pesanan ini tidak dapat dibayar.
+                </div>
+            </div>
+            @endif
+
+            {{-- Refunded notice --}}
+            @if($order->status === 'refunded')
+            <div class="card" style="margin-bottom:1.5rem; background:#fff7ed; border:1.5px solid #fb923c;">
+                <div class="card-body" style="padding:0.85rem 1.25rem;">
+                    <div style="display:flex; align-items:center; gap:0.6rem;">
+                        <i class="fas fa-undo" style="color:#c2410c; font-size:1.1rem; flex-shrink:0;"></i>
+                        <div>
+                            <div style="font-size:0.88rem; font-weight:700; color:#c2410c;">Pesanan Ini Telah Direfund</div>
+                            <div style="font-size:0.78rem; color:#9a3412; margin-top:0.15rem; line-height:1.4;">
+                                Poin yang sebelumnya Anda dapatkan dari pesanan ini sudah ditarik kembali.
+                                Silakan hubungi admin untuk proses pengembalian dana.
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             @endif
@@ -580,8 +599,14 @@
     }
 }
 @media (max-width: 480px) {
-    .btn-wa-admin { font-size: 0.82rem; padding: 0.6rem 1rem; }
     .page-header h1 { font-size: 1.15rem; }
+}
+
+/* Failsafe untuk badge-refunded jika app.css ter-cache */
+.badge-refunded { 
+    background: #f3e8ff !important; 
+    color: #7e22ce !important; 
+    border: 1px solid #d8b4fe !important; 
 }
 </style>
 @endpush

@@ -31,6 +31,7 @@
                         'ready_for_pickup'  => 'badge-ready-pickup',
                         'shipped'           => 'badge-shipped',
                         'completed'         => 'badge-completed',
+                        'refunded'          => 'badge-refunded',
                         'cancelled'         => 'badge-cancelled',
                         'expired'           => 'badge-expired',
                         default             => '',
@@ -258,8 +259,14 @@
         height: 26px !important;
     }
     /* Tighten card padding */
-    .order-card .card-body { padding: 0.9rem !important; }
     .order-card .card-body div[style*="font-size:1.05rem"] { font-size: 0.95rem !important; }
+}
+
+/* Failsafe untuk badge-refunded jika app.css ter-cache */
+.badge-refunded { 
+    background: #f3e8ff !important; 
+    color: #7e22ce !important; 
+    border: 1px solid #d8b4fe !important; 
 }
 </style>
 @endpush

@@ -16,7 +16,7 @@ class AdminOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $doneStatuses = ['completed', 'cancelled', 'expired'];
+        $doneStatuses = ['completed', 'refunded', 'cancelled', 'expired'];
 
         $query = Order::with('user')
             ->orderByRaw("CASE WHEN status IN ('" . implode("','", $doneStatuses) . "') THEN 1 ELSE 0 END ASC")
@@ -161,10 +161,15 @@ class AdminOrderController extends Controller
     public function updateStatus(Request $request, Order $order)
     {
         $request->validate([
-            'status' => 'required|in:pending,waiting_payment,paid,processing,ready_for_pickup,shipped,completed,cancelled',
+            'status' => 'required|in:pending,waiting_payment,paid,processing,ready_for_pickup,shipped,completed,refunded,cancelled',
         ]);
 
         $newStatus = $request->status;
+
+        // Hanya boleh ke 'refunded' dari 'completed'
+        if ($newStatus === 'refunded' && $order->status !== 'completed') {
+            return back()->with('error', 'Refund hanya bisa dilakukan untuk pesanan yang sudah selesai.');
+        }
 
         DB::transaction(function () use ($order, $newStatus) {
             // Lock baris order
@@ -181,6 +186,11 @@ class AdminOrderController extends Controller
             if ($newStatus === 'completed' && $previousStatus !== 'completed') {
                 $this->awardPoints($locked->fresh());
                 $this->deductStock($locked->fresh());
+            }
+
+            // Tarik poin earned saat refund
+            if ($newStatus === 'refunded' && $previousStatus === 'completed') {
+                $this->deductEarnedPointsForRefund($locked->fresh());
             }
         });
 
@@ -224,9 +234,9 @@ class AdminOrderController extends Controller
                 Product::lockForUpdate()->where('id', $lockedItem->product_id)->update(['stock' => 0]);
             }
 
-            // Kurangi poin jika sudah completed
+        // Kurangi poin jika sudah completed atau refunded
             $lockedOrder = Order::with('user')->lockForUpdate()->find($order->id);
-            if ($lockedOrder->status === 'completed') {
+            if (in_array($lockedOrder->status, ['completed', 'refunded'])) {
                 $deduct = (int) floor((float) $lockedItem->subtotal / 200);
                 if ($deduct > 0) {
                     $currentPoints = $lockedOrder->user->points ?? 0;
@@ -246,6 +256,46 @@ class AdminOrderController extends Controller
         });
 
         return back()->with('success', 'Item "' . $item->product_name . '" ditandai stok kosong. Stok produk utama telah diubah menjadi 0.');
+    }
+
+    /** Tarik kembali poin earned saat order direfund oleh admin. */
+    private function deductEarnedPointsForRefund(Order $order): void
+    {
+        $earnedHistory = PointHistory::lockForUpdate()
+            ->where('order_id', $order->id)
+            ->where('type', 'earned')
+            ->first();
+
+        if (!$earnedHistory) {
+            return; // tidak ada poin earned, skip
+        }
+
+        // Guard: jangan double-deduct refund
+        $alreadyDeducted = PointHistory::where('order_id', $order->id)
+            ->where('type', 'deducted')
+            ->where('description', 'like', '%refund%')
+            ->exists();
+
+        if ($alreadyDeducted) {
+            return;
+        }
+
+        $order->loadMissing('user');
+        $deduct       = $earnedHistory->amount;
+        $currentPoints = $order->user->points ?? 0;
+        $actualDeduct  = min($deduct, $currentPoints); // jangan sampai minus
+
+        if ($actualDeduct > 0) {
+            $order->user->decrement('points', $actualDeduct);
+        }
+
+        PointHistory::create([
+            'user_id'     => $order->user_id,
+            'order_id'    => $order->id,
+            'type'        => 'deducted',
+            'amount'      => $actualDeduct,
+            'description' => 'Penarikan poin refund pesanan ' . $order->invoice_number,
+        ]);
     }
 
     private function awardPoints(Order $order): void

@@ -62,6 +62,7 @@
                             'ready_for_pickup'  => 'badge-ready-pickup',
                             'shipped'           => 'badge-shipped',
                             'completed'         => 'badge-completed',
+                            'refunded'          => 'badge-refunded',
                             'cancelled'         => 'badge-cancelled',
                             'expired'           => 'badge-expired',
                             default             => '',
@@ -299,7 +300,7 @@
                                 <div style="font-weight:700; font-size:0.875rem; color:{{ $item->is_out_of_stock ? 'var(--gray-400)' : 'var(--gray-800)' }}; white-space:nowrap; {{ $item->is_out_of_stock ? 'text-decoration:line-through;' : '' }}">
                                     Rp {{ number_format($item->subtotal, 0, ',', '.') }}
                                 </div>
-                                @if(!$item->is_out_of_stock && !in_array($order->status, ['completed', 'cancelled', 'expired']) && !$lockedBy)
+                                @if(!$item->is_out_of_stock && !in_array($order->status, ['completed', 'refunded', 'cancelled', 'expired']) && !$lockedBy)
                                     <button type="button"
                                         onclick="confirmOutOfStock({{ $item->id }}, '{{ addslashes($item->product_name) }}', '{{ route('admin.orders.items.outOfStock', [$order, $item]) }}')"
                                         style="font-size:0.7rem; padding:0.2rem 0.5rem; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap;">
@@ -385,7 +386,7 @@
         </div>
 
         {{-- Update Status --}}
-        @if(!in_array($order->status, ['completed', 'cancelled']))
+        @if(!in_array($order->status, ['completed', 'refunded', 'cancelled']))
             <div class="card">
                 <div class="card-body">
                     <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.75rem;">
@@ -434,6 +435,61 @@
                         </div>
                     </div>
                     @endif {{-- end @if($lockedBy) --}}
+                </div>
+            </div>
+        @elseif($order->status === 'completed' && !$lockedBy)
+            {{-- Completed: tampilkan tombol Refund --}}
+            <div class="card">
+                <div class="card-body">
+                    <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.5rem;">
+                        <i class="fas fa-undo" style="color:#c2410c;"></i> Refund Pesanan
+                    </h3>
+                    <p style="font-size:0.82rem; color:var(--gray-500); margin-bottom:1rem; line-height:1.5;">
+                        Tandai pesanan ini sebagai <strong>Direfund</strong>. Poin yang diperoleh customer dari pesanan ini akan otomatis <strong>ditarik kembali</strong>.
+                    </p>
+                    <form action="{{ route('admin.orders.updateStatus', $order) }}" method="POST" id="refundForm">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="status" value="refunded">
+                        <button type="button" id="refundBtn"
+                            style="width:100%; padding:0.7rem; background:#fff7ed; color:#c2410c; border:2px solid #fb923c; border-radius:var(--radius); font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:background 0.15s;">
+                            <i class="fas fa-undo"></i> Tandai Direfund & Tarik Poin
+                        </button>
+                    </form>
+                    <p style="font-size:0.73rem; color:var(--gray-400); margin-top:0.5rem; text-align:center;">
+                        <i class="fas fa-info-circle"></i> Aksi ini tidak dapat dibatalkan.
+                    </p>
+                </div>
+            </div>
+
+            {{-- Refund Confirmation Modal --}}
+            <div id="refundModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center;">
+                <div style="background:var(--white); border-radius:var(--radius-md); padding:1.75rem; max-width:400px; width:90%; box-shadow:var(--shadow-xl); animation:modalIn 0.15s ease;">
+                    <div style="text-align:center; font-size:2.5rem; margin-bottom:0.75rem;">↩️</div>
+                    <h3 style="font-size:1.05rem; font-weight:700; color:var(--gray-900); text-align:center; margin-bottom:0.5rem;">Proses Refund Pesanan?</h3>
+                    <p style="font-size:0.875rem; color:var(--gray-500); text-align:center; margin-bottom:0.85rem; line-height:1.6;">
+                        Pesanan <strong>{{ $order->invoice_number }}</strong> akan ditandai <strong style="color:#c2410c;">Direfund</strong>.
+                    </p>
+                    @php
+                        $earnedPts = $order->pointHistories->firstWhere('type', 'earned');
+                    @endphp
+                    @if($earnedPts)
+                    <div style="margin-bottom:1rem; padding:0.75rem 1rem; background:#fff7ed; border:1.5px solid #fb923c; border-radius:var(--radius-sm); font-size:0.85rem; color:#92400e;">
+                        <i class="fas fa-star" style="color:#f97316;"></i>
+                        <strong>{{ number_format($earnedPts->amount, 0, ',', '.') }} poin</strong> yang diperoleh customer akan <strong>ditarik kembali</strong> dari akun mereka.
+                    </div>
+                    @else
+                    <div style="margin-bottom:1rem; padding:0.65rem 1rem; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius-sm); font-size:0.82rem; color:var(--gray-500);">
+                        <i class="fas fa-info-circle"></i> Tidak ada poin earned pada pesanan ini.
+                    </div>
+                    @endif
+                    <p style="font-size:0.82rem; color:#b45309; text-align:center; margin-bottom:1.25rem;">
+                        <i class="fas fa-exclamation-triangle"></i> Pengembalian uang ke customer dilakukan secara manual.
+                    </p>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                        <button id="refundModalCancel" class="btn btn-secondary" style="width:100%;">Batal</button>
+                        <button id="refundModalConfirm" class="btn" style="width:100%; background:#c2410c; color:#fff;">Ya, Refund</button>
+                    </div>
                 </div>
             </div>
         @else
@@ -524,6 +580,13 @@
         grid-template-columns: 1fr !important;
     }
 }
+
+/* Failsafe untuk badge-refunded jika app.css ter-cache */
+.badge-refunded { 
+    background: #f3e8ff !important; 
+    color: #7e22ce !important; 
+    border: 1px solid #d8b4fe !important; 
+}
 </style>
 @endpush
 
@@ -533,6 +596,10 @@
     const btn    = document.getElementById('submitStatusBtn');
     const select = document.getElementById('statusSelect');
     const modal  = document.getElementById('confirmModal');
+
+    // Status form mungkin tidak ada (misal saat tampil refund card)
+    if (!btn || !select || !modal) return;
+
     const title  = document.getElementById('modalTitle');
     const desc   = document.getElementById('modalDesc');
     const icon   = document.getElementById('modalIcon');
@@ -581,6 +648,32 @@
         if (e.target === modal) modal.style.display = 'none';
     });
 }());
+
+// ---- Refund modal ----
+(function () {
+    const refundBtn     = document.getElementById('refundBtn');
+    const refundModal   = document.getElementById('refundModal');
+    const cancelRefund  = document.getElementById('refundModalCancel');
+    const confirmRefund = document.getElementById('refundModalConfirm');
+
+    if (!refundBtn || !refundModal) return;
+
+    refundBtn.addEventListener('click', function () {
+        refundModal.style.display = 'flex';
+    });
+    cancelRefund.addEventListener('click', function () {
+        refundModal.style.display = 'none';
+    });
+    refundModal.addEventListener('click', function (e) {
+        if (e.target === refundModal) refundModal.style.display = 'none';
+    });
+    confirmRefund.addEventListener('click', function () {
+        confirmRefund.disabled = true;
+        confirmRefund.textContent = 'Memproses...';
+        document.getElementById('refundForm').submit();
+    });
+}());
+
 
 // ---- Out-of-stock per item modal ----
 let oos_form_action = '';

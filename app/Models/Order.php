@@ -102,6 +102,7 @@ class Order extends Model
                 'ready_for_pickup'  => 'Siap Diambil',
                 'shipped'           => 'Dikirim',
                 'completed'         => 'Selesai',
+                'refunded'          => 'Direfund',
                 'cancelled'         => 'Dibatalkan',
                 'expired'           => 'Waktu Habis',
                 default             => $this->status,
