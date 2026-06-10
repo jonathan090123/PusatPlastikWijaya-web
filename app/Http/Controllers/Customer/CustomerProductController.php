@@ -25,7 +25,7 @@ class CustomerProductController extends Controller
             });
         }
 
-        // Filter by category slug
+        // Filter by category 
         if ($request->filled('category')) {
             $query->whereHas('category', function ($q) use ($request) {
                 $q->where('slug', $request->category);
@@ -37,7 +37,7 @@ class CustomerProductController extends Controller
             $query->whereNotNull('discount_price')->whereColumn('discount_price', '<', 'price');
         }
 
-        // Sorting sekunder sesuai pilihan user
+        // Sorting  sesuai pilihan user
         $sort = $request->get('sort', 'terbaru');
         switch ($sort) {
             case 'harga-rendah':

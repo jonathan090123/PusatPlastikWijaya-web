@@ -60,7 +60,7 @@ class CheckoutController extends Controller
             'shipping_type' => 'required|in:pickup,local,outside',
             'notes' => 'nullable|string|max:500',
             'use_points' => 'nullable|integer|min:0',
-            // Field RajaOngkir (wajib jika outside)
+            // Field RajaOngkir luarkota
             'ongkir_cost'           => 'required_if:shipping_type,outside|nullable|numeric|min:0',
             'ongkir_courier'        => 'required_if:shipping_type,outside|nullable|string|max:100',
             'ongkir_service'        => 'required_if:shipping_type,outside|nullable|string|max:100',
@@ -82,7 +82,7 @@ class CheckoutController extends Controller
 
         $cart->load('items.product.productUnits');
 
-        // Validate stock availability (unit-aware)
+        // Validate stock availability 
         foreach ($cart->items as $item) {
             if (!$item->product->is_active) {
                 return back()->with('error', "Produk \"{$item->product->name}\" sudah tidak tersedia.");

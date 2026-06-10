@@ -166,7 +166,7 @@ class AdminOrderController extends Controller
 
         $newStatus = $request->status;
 
-        // Hanya boleh ke 'refunded' dari 'completed'
+        // fix error status != complete
         if ($newStatus === 'refunded' && $order->status !== 'completed') {
             return back()->with('error', 'Refund hanya bisa dilakukan untuk pesanan yang sudah selesai.');
         }
