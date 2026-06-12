@@ -139,7 +139,7 @@
             <h2><i class="fas fa-th-large"></i> Produk Terkait</h2>
             <div class="products-grid">
                 @foreach($relatedProducts as $related)
-                    <a href="{{ route('products.show', $related->slug) }}" class="product-card">
+                    <a @if($related->stock > 0) href="{{ route('products.show', $related->slug) }}" @endif class="product-card @if($related->stock <= 0) product-card-disabled @endif">
                         <div class="product-card-image">
                             @if($related->hasDiscount())
                                 <span class="product-badge-discount">
@@ -163,6 +163,9 @@
                                     <span>Rp {{ number_format($related->price, 0, ',', '.') }}</span>
                                 @endif
                             </div>
+                            @if($related->stock <= 0)
+                                <span class="product-badge-stock">Habis</span>
+                            @endif
                         </div>
                     </a>
                 @endforeach

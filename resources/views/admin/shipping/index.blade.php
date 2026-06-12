@@ -83,14 +83,6 @@
             </div>
             <p style="font-size:0.85rem; color:var(--gray-500); margin:0 0 0.5rem;">Via ekspedisi (JNE, J&T, dll)</p>
             <p style="font-size:0.85rem; margin:0 0 0.25rem;"><strong>Biaya:</strong> <span style="color:var(--gray-500);">Otomatis via API</span></p>
-            <p style="font-size:0.85rem; margin:0 0 1rem;">
-                <strong>API Status:</strong>
-                @if($rajaOngkirConfigured)
-                    <span style="color:var(--success);"><i class="fas fa-check-circle"></i> Terkonfigurasi</span>
-                @else
-                    <span style="color:var(--danger);"><i class="fas fa-times-circle"></i> Belum dikonfigurasi</span>
-                @endif
-            </p>
             <div style="flex:1;"></div>
             @if($rajaOngkirConfigured)
                 <button type="button"

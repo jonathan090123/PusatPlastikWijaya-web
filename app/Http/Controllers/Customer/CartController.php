@@ -29,8 +29,8 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity'   => 'required|integer|min:1',
-            'unit'       => 'nullable|string|max:20',
+            'quantity' => 'required|integer|min:1',
+            'unit' => 'nullable|string|max:20',
         ]);
 
         $product = Product::with('productUnits')->findOrFail($request->product_id);
@@ -39,9 +39,9 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Produk tidak tersedia'], 400);
         }
 
-        // Resolve satuan & faktor konversi
+        // Tentukan satuan yang dipakai & hitung faktor konversinya ke satuan dasar
         $selectedUnit = $request->unit ?: $product->unit;
-        $conversion   = 1;
+        $conversion = 1;
         if ($selectedUnit !== $product->unit) {
             $pu = $product->productUnits->firstWhere('unit', $selectedUnit);
             if (!$pu) {
@@ -65,7 +65,7 @@ class CartController extends Controller
             ->first();
 
         if ($cartItem) {
-            $newQty        = $cartItem->quantity + $request->quantity;
+            $newQty = $cartItem->quantity + $request->quantity;
             $newStockNeeded = $newQty * $conversion;
             if ($newStockNeeded > $product->stock) {
                 return response()->json(['success' => false, 'message' => 'Stok tidak mencukupi'], 400);
@@ -73,10 +73,10 @@ class CartController extends Controller
             $cartItem->update(['quantity' => $newQty]);
         } else {
             CartItem::create([
-                'cart_id'    => $cart->id,
+                'cart_id' => $cart->id,
                 'product_id' => $product->id,
-                'quantity'   => $request->quantity,
-                'unit'       => $selectedUnit,
+                'quantity' => $request->quantity,
+                'unit' => $selectedUnit,
             ]);
         }
 
@@ -103,11 +103,12 @@ class CartController extends Controller
 
         // Cek stok (dengan konversi)
         $cartItem->load('product.productUnits');
-        $unitName   = $cartItem->unit ?: $cartItem->product->unit;
+        $unitName = $cartItem->unit ?: $cartItem->product->unit;
         $conversion = 1;
         if ($unitName !== $cartItem->product->unit) {
             $pu = $cartItem->product->productUnits->firstWhere('unit', $unitName);
-            if ($pu) $conversion = (int) $pu->conversion_value;
+            if ($pu)
+                $conversion = (int) $pu->conversion_value;
         }
         if (($request->quantity * $conversion) > $cartItem->product->stock) {
             return response()->json(['success' => false, 'message' => 'Stok tidak mencukupi'], 400);

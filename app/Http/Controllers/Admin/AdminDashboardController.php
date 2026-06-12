@@ -14,9 +14,9 @@ class AdminDashboardController extends Controller
 
     public function index()
     {
-        $totalOrders   = Order::count();
-        $totalRevenue  = Order::where('status', 'completed')->sum('total');
-        $totalProducts  = Product::count();
+        $totalOrders = Order::count();
+        $totalRevenue = Order::where('status', 'completed')->sum('total');
+        $totalProducts = Product::count();
         $totalCustomers = User::where('role', 'customer')->count();
 
         $recentPaginator = Order::with('user')
@@ -24,8 +24,8 @@ class AdminDashboardController extends Controller
             ->latest()
             ->paginate(9);
 
-        $recentOrders          = $recentPaginator->items();
-        $recentOrdersHasMore   = $recentPaginator->hasMorePages();
+        $recentOrders = $recentPaginator->items();
+        $recentOrdersHasMore = $recentPaginator->hasMorePages();
 
         $lowStockProducts = Product::with('category')
             ->where('is_active', true)
@@ -70,18 +70,18 @@ class AdminDashboardController extends Controller
             ->paginate(9, ['*'], 'page', $page);
 
         $orders = collect($paginator->items())->map(fn($order) => [
-            'id'             => $order->id,
+            'id' => $order->id,
             'invoice_number' => $order->invoice_number,
-            'user_name'      => $order->user->name ?? '-',
-            'total'          => number_format($order->total, 0, ',', '.'),
-            'status'         => $order->status,
-            'status_label'   => $order->status_label,
-            'url'            => route('admin.orders.show', $order),
+            'user_name' => $order->user->name ?? '-',
+            'total' => number_format($order->total, 0, ',', '.'),
+            'status' => $order->status,
+            'status_label' => $order->status_label,
+            'url' => route('admin.orders.show', $order),
         ]);
 
         return response()->json([
-            'orders'    => $orders,
-            'has_more'  => $paginator->hasMorePages(),
+            'orders' => $orders,
+            'has_more' => $paginator->hasMorePages(),
             'next_page' => $page + 1,
         ]);
     }

@@ -26,7 +26,8 @@ class PaymentController extends Controller
     }
 
     /**
-     * Show payment page — generate or reuse SNAP token.
+     * Tampilkan halaman pembayaran.
+     * Jika pelanggan refresh setelah bayar, cek status Midtrans langsung.
      */
     public function show(Order $order)
     {
@@ -51,24 +52,11 @@ class PaymentController extends Controller
 
         $order->load(['items.product', 'shippingCost', 'payment']);
 
-        // Auto-detect: jika customer refresh browser setelah bayar (tidak klik tombol di popup),
-        // cek langsung ke Midtrans API agar order langsung diproses tanpa perlu tunggu webhook.
+        // Auto-detect: cek kembali status Midtrans saat pelanggan refresh halaman
         if ($order->payment && !$order->payment->isPaid()) {
-            $midtransOrderId = data_get($order->payment->payment_detail, 'midtrans_order_id');
-            if ($midtransOrderId) {
-                try {
-                    $tx = Transaction::status($midtransOrderId);
-                    $ts = $tx->transaction_status ?? null;
-                    $fs = $tx->fraud_status ?? null;
-                    $isPaid = $ts === 'settlement' || ($ts === 'capture' && $fs === 'accept');
-                    if ($isPaid) {
-                        $this->markAsPaid($order, $order->payment);
-                        return redirect()->route('orders.show', $order)
-                            ->with('payment_success', true);
-                    }
-                } catch (\Exception $e) {
-                    Log::info('Auto status check on payment page load: ' . $e->getMessage());
-                }
+            if ($this->checkMidtransAndMarkPaid($order, 'Auto status check on payment page load')) {
+                return redirect()->route('orders.show', $order)
+                    ->with('payment_success', true);
             }
         }
 
@@ -76,7 +64,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * AJAX: cek apakah pembayaran sudah selesai (dipanggil saat popup Snap ditutup).
+     *  cek status pembayaran saat popup Snap ditutup.
      */
     public function statusCheck(Order $order)
     {
@@ -90,29 +78,15 @@ class PaymentController extends Controller
             return response()->json(['paid' => true, 'redirect' => route('orders.show', $order)]);
         }
 
-        $midtransOrderId = data_get($order->payment, 'payment_detail.midtrans_order_id');
-        if (!$midtransOrderId) {
-            return response()->json(['paid' => false]);
-        }
-
-        try {
-            $tx = Transaction::status($midtransOrderId);
-            $ts = $tx->transaction_status ?? null;
-            $fs = $tx->fraud_status ?? null;
-            $isPaid = $ts === 'settlement' || ($ts === 'capture' && $fs === 'accept');
-            if ($isPaid) {
-                $this->markAsPaid($order, $order->payment);
-                return response()->json(['paid' => true, 'redirect' => route('orders.show', $order)]);
-            }
-        } catch (\Exception $e) {
-            Log::info('Status check AJAX: ' . $e->getMessage());
+        if ($this->checkMidtransAndMarkPaid($order, 'Status check AJAX')) {
+            return response()->json(['paid' => true, 'redirect' => route('orders.show', $order)]);
         }
 
         return response()->json(['paid' => false]);
     }
 
     /**
-     * AJAX: generate a fresh Snap token for the chosen payment method.
+     * generate Snap token Midtrans untuk metode pembayaran yang dipilih.
      */
     public function getToken(Request $request, Order $order)
     {
@@ -124,24 +98,13 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Pesanan tidak dapat dibayar.'], 422);
         }
 
-        // deadline pembayaran (timer batas waktu bayar)
-        $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
-        if (now()->gt($deadline)) {
-            $this->restoreStock($order);
-            $this->refundPointsIfNeeded($order);
-            $order->update(['status' => 'expired', 'status_read_at' => null]);
+        if ($this->expireOrderIfPaymentTimePassed($order)) {
             return response()->json(['error' => 'Waktu pembayaran telah habis.'], 422);
         }
 
         $method = $request->input('method', 'all'); // bca_va | gopay | qris | all
-
-        $enabledPayments = match($method) {
-            'bca_va' => ['bank_transfer'],
-            'gopay'  => ['gopay', 'qris'],
-            default  => ['gopay', 'qris', 'bank_transfer'],
-        };
-
-        $bankTransfer = $method === 'bca_va' ? ['bank' => ['bca']] : null;
+        $enabledPayments = $this->getEnabledPayments($method);
+        $bankTransfer = $this->getBankTransferOptions($method);
         $midtransOrderId = 'PPW-' . $order->id . '-' . time();
 
         $snapToken = null;
@@ -173,50 +136,8 @@ class PaymentController extends Controller
     {
         $order->load(['items.product', 'user']);
 
-        // Use a unique order_id every time to avoid Midtrans "already taken" error
         if (!$midtransOrderId) {
             $midtransOrderId = 'PPW-' . $order->id . '-' . time();
-        }
-
-        $itemDetails = [];
-
-        foreach ($order->items as $item) {
-            $itemDetails[] = [
-                'id'       => 'PROD-' . $item->product_id,
-                'price'    => (int) $item->product_price,
-                'quantity' => $item->quantity,
-                'name'     => mb_substr($item->product_name, 0, 50),
-            ];
-        }
-
-        // Discount as negative item
-        if ($order->discount_amount > 0) {
-            $itemDetails[] = [
-                'id'       => 'DISCOUNT',
-                'price'    => -1 * (int) $order->discount_amount,
-                'quantity' => 1,
-                'name'     => 'Diskon Voucher',
-            ];
-        }
-
-        // Points discount as negative item
-        if ($order->points_discount > 0) {
-            $itemDetails[] = [
-                'id'       => 'POINTS',
-                'price'    => -1 * (int) $order->points_discount,
-                'quantity' => 1,
-                'name'     => 'Diskon Poin',
-            ];
-        }
-
-        // Shipping fee
-        if ($order->shipping_fee > 0) {
-            $itemDetails[] = [
-                'id'       => 'SHIPPING',
-                'price'    => (int) $order->shipping_fee,
-                'quantity' => 1,
-                'name'     => $order->shipping_name,
-            ];
         }
 
         $params = [
@@ -224,21 +145,10 @@ class PaymentController extends Controller
                 'order_id'     => $midtransOrderId,
                 'gross_amount' => (int) $order->total,
             ],
-            'item_details'  => $itemDetails,
-            'customer_details' => [
-                'first_name' => $order->user->name,
-                'email'      => $order->user->email,
-                'phone'      => $order->recipient_phone,
-                'shipping_address' => [
-                    'first_name' => $order->recipient_name,
-                    'phone'      => $order->recipient_phone,
-                    'address'    => $order->shipping_address,
-                ],
-            ],
+            'item_details'     => $this->getSnapItemDetails($order),
+            'customer_details' => $this->getSnapCustomerDetails($order),
             'enabled_payments' => $enabledPayments,
-            'callbacks' => [
-                'finish' => route('payment.finish', $order),
-            ],
+            'callbacks'        => ['finish' => route('payment.finish', $order)],
         ];
 
         if ($bankTransfer) {
@@ -248,9 +158,66 @@ class PaymentController extends Controller
         return Snap::getSnapToken($params);
     }
 
+    private function getSnapItemDetails(Order $order): array
+    {
+        $details = [];
+
+        foreach ($order->items as $item) {
+            $details[] = [
+                'id'       => 'PROD-' . $item->product_id,
+                'price'    => (int) $item->product_price,
+                'quantity' => $item->quantity,
+                'name'     => mb_substr($item->product_name, 0, 50),
+            ];
+        }
+
+        if ($order->discount_amount > 0) {
+            $details[] = [
+                'id'       => 'DISCOUNT',
+                'price'    => -1 * (int) $order->discount_amount,
+                'quantity' => 1,
+                'name'     => 'Diskon Voucher',
+            ];
+        }
+
+        if ($order->points_discount > 0) {
+            $details[] = [
+                'id'       => 'POINTS',
+                'price'    => -1 * (int) $order->points_discount,
+                'quantity' => 1,
+                'name'     => 'Diskon Poin',
+            ];
+        }
+
+        if ($order->shipping_fee > 0) {
+            $details[] = [
+                'id'       => 'SHIPPING',
+                'price'    => (int) $order->shipping_fee,
+                'quantity' => 1,
+                'name'     => $order->shipping_name,
+            ];
+        }
+
+        return $details;
+    }
+
+    private function getSnapCustomerDetails(Order $order): array
+    {
+        return [
+            'first_name' => $order->user->name,
+            'email'      => $order->user->email,
+            'phone'      => $order->recipient_phone,
+            'shipping_address' => [
+                'first_name' => $order->recipient_name,
+                'phone'      => $order->recipient_phone,
+                'address'    => $order->shipping_address,
+            ],
+        ];
+    }
+
     /**
-     * Finish callback — redirect from Midtrans after payment.
-     * Actively checks transaction status via Midtrans API (needed for localhost).
+     * Finish callback Midtrans.
+     * Redirect ke order dan cek status langsung jika diperlukan.
      */
     public function finish(Request $request, Order $order)
     {
@@ -266,53 +233,17 @@ class PaymentController extends Controller
         }
 
         // Check transaction status directly from Midtrans API
-        // Use the stored midtrans_order_id (which may differ from invoice_number)
+
         $midtransOrderId = data_get($order->payment, 'payment_detail.midtrans_order_id', $order->invoice_number);
 
         try {
             $status = Transaction::status($midtransOrderId);
-            $transactionStatus = $status->transaction_status ?? null;
-            $paymentType       = $status->payment_type ?? null;
-            $fraudStatus       = $status->fraud_status ?? null;
-            $transactionId     = $status->transaction_id ?? null;
+            $payment = $this->saveMidtransPayment($order, $status, $midtransOrderId);
+            $this->processTransactionStatus($order, $payment, $status->transaction_status ?? null, $status->fraud_status ?? null);
 
-            if ($transactionStatus) {
-                $detail = array_merge(
-                    json_decode(json_encode($status), true) ?? [],
-                    ['midtrans_order_id' => $midtransOrderId]
-                );
-
-                $payment = Payment::updateOrCreate(
-                    ['order_id' => $order->id],
-                    [
-                        'payment_type'       => $paymentType,
-                        'transaction_id'     => $transactionId,
-                        'transaction_status' => $transactionStatus,
-                        'gross_amount'       => $status->gross_amount ?? $order->total,
-                        'payment_detail'     => $detail,
-                    ]
-                );
-
-                $isPaid = ($transactionStatus === 'settlement')
-                       || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
-
-                if ($isPaid) {
-                    $this->markAsPaid($order, $payment);
-                    return redirect()->route('orders.show', $order)
-                        ->with('payment_success', true);
-                }
-
-                if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
-                    if (in_array($transactionStatus, ['cancel', 'deny'])) {
-                        // Explicit cancel/deny — cancel the order
-                        if (in_array($order->status, ['pending', 'waiting_payment'])) {
-                            $this->restoreStock($order);
-                            $this->refundPointsIfNeeded($order);
-                            $order->update(['status' => 'cancelled', 'status_read_at' => null]);
-                        }
-                    }
-                    // For 'expire': order stays waiting_payment so customer can retry
-                }
+            if ($payment->isPaid()) {
+                return redirect()->route('orders.show', $order)
+                    ->with('payment_success', true);
             }
         } catch (\Exception $e) {
             Log::warning('Midtrans status check failed: ' . $e->getMessage());
@@ -323,7 +254,8 @@ class PaymentController extends Controller
     }
 
     /**
-     * Midtrans webhook/notification handler (no auth, no CSRF).
+     * Handler webhook Midtrans.
+     * Terima notifikasi server-to-server dan update order/payment.
      */
     public function webhook(Request $request)
     {
@@ -369,43 +301,11 @@ class PaymentController extends Controller
                     'transaction_id'     => $transactionId,
                     'transaction_status' => $transactionStatus,
                     'gross_amount'       => $notification->gross_amount,
-                    'payment_detail'     => json_decode($notification->getResponse(), true),
+                    'payment_detail'     => json_decode(json_encode($notification->getResponse()), true),
                 ]
             );
 
-            // Map Midtrans status → order status
-            if ($transactionStatus === 'capture') {
-                // Card payment — check fraud status
-                if ($fraudStatus === 'accept') {
-                    $this->markAsPaid($order, $payment);
-                }
-            } elseif ($transactionStatus === 'settlement') {
-                // Non-card payment confirmed
-                $this->markAsPaid($order, $payment);
-            } elseif (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
-                $payment->update(['transaction_status' => $transactionStatus]);
-                // 'expire' = Midtrans session timed out; customer can retry with a new token
-                // Only cancel the order for explicit cancel/deny (not expire)
-                if (in_array($transactionStatus, ['cancel', 'deny'])) {
-                    if (in_array($order->status, ['pending', 'waiting_payment'])) {
-                        $this->restoreStock($order);
-                        $this->refundPointsIfNeeded($order);
-                        $order->update([
-                            'status'         => 'cancelled',
-                            'status_read_at' => null,
-                        ]);
-                    }
-                }
-                // For 'expire': leave order as waiting_payment so customer can generate new token
-            } elseif ($transactionStatus === 'pending') {
-                $payment->update(['transaction_status' => 'pending']);
-                if ($order->status === 'pending') {
-                    $order->update([
-                        'status'         => 'waiting_payment',
-                        'status_read_at' => null,
-                    ]);
-                }
-            }
+            $this->processTransactionStatus($order, $payment, $transactionStatus, $fraudStatus);
 
             return response()->json(['message' => 'OK']);
         } catch (\Exception $e) {
@@ -414,11 +314,129 @@ class PaymentController extends Controller
         }
     }
 
+    private function getMidtransOrderId(Order $order): ?string
+    {
+        return data_get($order->payment, 'payment_detail.midtrans_order_id');
+    }
+
+    private function isPaidTransaction(?string $transactionStatus, ?string $fraudStatus): bool
+    {
+        return $transactionStatus === 'settlement'
+            || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
+    }
+
+    private function checkMidtransAndMarkPaid(Order $order, string $logContext = ''): bool
+    {
+        $midtransOrderId = $this->getMidtransOrderId($order);
+        if (!$midtransOrderId) {
+            return false;
+        }
+
+        try {
+            $tx = Transaction::status($midtransOrderId);
+            if ($this->isPaidTransaction($tx->transaction_status ?? null, $tx->fraud_status ?? null)) {
+                $this->markAsPaid($order, $order->payment);
+                return true;
+            }
+        } catch (\Exception $e) {
+            Log::info($logContext . ': ' . $e->getMessage());
+        }
+
+        return false;
+    }
+
+    private function expireOrderIfPaymentTimePassed(Order $order): bool
+    {
+        $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
+        if (!now()->gt($deadline)) {
+            return false;
+        }
+
+        $this->restoreStock($order);
+        $this->refundPointsIfNeeded($order);
+        $order->update(['status' => 'expired', 'status_read_at' => null]);
+
+        return true;
+    }
+
+    private function getEnabledPayments(string $method): array
+    {
+        return match ($method) {
+            'bca_va' => ['bank_transfer'],
+            'gopay' => ['gopay', 'qris'],
+            default => ['gopay', 'qris', 'bank_transfer'],
+        };
+    }
+
+    private function getBankTransferOptions(string $method): ?array
+    {
+        return $method === 'bca_va' ? ['bank' => ['bca']] : null;
+    }
+
+    private function saveMidtransPayment(Order $order, $status, string $midtransOrderId): Payment
+    {
+        $transactionStatus = $status->transaction_status ?? null;
+        return Payment::updateOrCreate(
+            ['order_id' => $order->id],
+            [
+                'payment_type' => $status->payment_type ?? null,
+                'transaction_id' => $status->transaction_id ?? null,
+                'transaction_status' => $transactionStatus,
+                'gross_amount' => $status->gross_amount ?? $order->total,
+                'payment_detail' => array_merge(
+                    json_decode(json_encode($status), true) ?? [],
+                    ['midtrans_order_id' => $midtransOrderId]
+                ),
+            ]
+        );
+    }
+
+    private function processTransactionStatus(Order $order, Payment $payment, ?string $transactionStatus, ?string $fraudStatus): void
+    {
+        if ($transactionStatus === 'capture') {
+            if ($fraudStatus === 'accept') {
+                $this->markAsPaid($order, $payment);
+            }
+
+            return;
+        }
+
+        if ($transactionStatus === 'settlement') {
+            $this->markAsPaid($order, $payment);
+            return;
+        }
+
+        if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
+            $payment->update(['transaction_status' => $transactionStatus]);
+
+            if (in_array($transactionStatus, ['cancel', 'deny']) && in_array($order->status, ['pending', 'waiting_payment'])) {
+                $this->restoreStock($order);
+                $this->refundPointsIfNeeded($order);
+                $order->update([
+                    'status' => 'cancelled',
+                    'status_read_at' => null,
+                ]);
+            }
+
+            return;
+        }
+
+        if ($transactionStatus === 'pending') {
+            $payment->update(['transaction_status' => 'pending']);
+            if ($order->status === 'pending') {
+                $order->update([
+                    'status' => 'waiting_payment',
+                    'status_read_at' => null,
+                ]);
+            }
+        }
+    }
+
     private function markAsPaid(Order $order, Payment $payment): void
     {
         $payment->update([
             'transaction_status' => 'settlement',
-            'paid_at'            => now(),
+            'paid_at' => now(),
         ]);
 
         // Skip if already processing 

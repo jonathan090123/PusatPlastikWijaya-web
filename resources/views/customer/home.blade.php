@@ -22,35 +22,45 @@
 
     {{-- Categories Section --}}
     <section class="section">
-        <div class="section-header">
-            <h2>Kategori Produk</h2>
-            <p>Temukan produk berdasarkan kategori</p>
+        <div class="section-header cat-section-header" id="catSectionHeader" role="button" aria-expanded="true" aria-controls="catSectionBody" style="cursor:default;">
+            <div>
+                <h2>Kategori Produk</h2>
+                <p>Temukan produk berdasarkan kategori</p>
+            </div>
+            {{-- Toggle button: only visible on mobile --}}
+            <button class="cat-toggle-btn" id="catToggleBtn" aria-label="Sembunyikan kategori">
+                <i class="fas fa-chevron-up cat-toggle-icon" id="catToggleIcon"></i>
+            </button>
         </div>
-        <div class="categories-grid">
-            @forelse($categories as $category)
-                <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="category-card">
-                    <div class="category-img">
-                        @if($category->image)
-                            <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}">
-                        @else
-                            <div class="category-img-placeholder"><i class="fas fa-box"></i></div>
-                        @endif
-                    </div>
-                    <div class="category-card-body">
-                        <h3>{{ $category->name }}</h3>
-                        <p>{{ $category->products_count ?? 0 }} Produk</p>
-                    </div>
-                </a>
-            @empty
-                <div class="empty-state" style="grid-column: 1 / -1;">
-                    <i class="fas fa-tags"></i>
-                    <h3>Belum ada kategori</h3>
+        <div class="cat-section-body" id="catSectionBody">
+            <div class="cat-section-inner">
+                <div class="categories-grid">
+                    @forelse($categories as $category)
+                        <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="category-card">
+                            <div class="category-img">
+                                @if($category->image)
+                                    <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}">
+                                @else
+                                    <div class="category-img-placeholder"><i class="fas fa-box"></i></div>
+                                @endif
+                            </div>
+                            <div class="category-card-body">
+                                <h3>{{ $category->name }}</h3>
+                                <p>{{ $category->products_count ?? 0 }} Produk</p>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <i class="fas fa-tags"></i>
+                            <h3>Belum ada kategori</h3>
+                        </div>
+                    @endforelse
                 </div>
-            @endforelse
+            </div>
         </div>
     </section>
 
-    {{-- Promo / Diskon --}}
+    {{-- Promo & Diskon --}}
     @if($promoProducts->isNotEmpty())
         <section class="section promo-section">
             <div class="promo-heading">
@@ -58,16 +68,16 @@
                     <span class="promo-fire">🔥</span>
                     <div>
                         <div class="promo-heading-title">Promo <span class="promo-heading-highlight">&amp; Diskon</span></div>
-                        <div class="promo-heading-sub">Penawaran terbatas! jangan sampai kehabisan!</div>
                     </div>
                 </div>
-                <a href="{{ route('products.index', ['promo' => '1']) }}" class="btn btn-danger btn-sm promo-cta">
+                <a href="{{ route('products.index', ['diskon' => '1']) }}" class="btn btn-danger btn-sm promo-cta">
                     Lihat Semua <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
             <div class="products-grid">
                 @foreach($promoProducts as $product)
-                    <a href="{{ route('products.show', $product->slug) }}" class="product-card promo-card">
+                    <a @if($product->stock > 0) href="{{ route('products.show', $product->slug) }}" @endif
+                        class="product-card promo-card @if($product->stock <= 0) product-card-disabled @endif">
                         <div class="product-card-image">
                             <span class="product-badge-discount">
                                 -{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%
@@ -89,6 +99,9 @@
                             <div class="promo-saving">
                                 Hemat Rp {{ number_format($product->price - $product->discount_price, 0, ',', '.') }}
                             </div>
+                            @if($product->stock <= 0)
+                                <span class="product-badge-stock">Habis</span>
+                            @endif
                         </div>
                     </a>
                 @endforeach
@@ -105,7 +118,8 @@
         </div>
         <div class="products-grid">
             @forelse($latestProducts as $product)
-                <a href="{{ route('products.show', $product->slug) }}" class="product-card">
+                <a @if($product->stock > 0) href="{{ route('products.show', $product->slug) }}" @endif
+                    class="product-card @if($product->stock <= 0) product-card-disabled @endif">
                     <div class="product-card-image">
                         @if($product->hasDiscount())
                             <span class="product-badge-discount">
@@ -130,6 +144,9 @@
                                 <span>Rp {{ number_format($product->price, 0, ',', '.') }}</span>
                             @endif
                         </div>
+                        @if($product->stock <= 0)
+                            <span class="product-badge-stock">Habis</span>
+                        @endif
                     </div>
                 </a>
             @empty
@@ -367,6 +384,23 @@
             margin: 0;
         }
 
+        /* --- Category Toggle (mobile only) --- */
+        .cat-toggle-btn {
+            display: none; /* hidden on desktop */
+        }
+
+        /* Collapse container: use max-height transition for smooth animation */
+        .cat-section-body {
+            overflow: hidden;
+            transition: max-height 0.35s ease, opacity 0.3s ease;
+            max-height: 2000px; /* large enough to fit all cards */
+            opacity: 1;
+        }
+        .cat-section-body.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
         @media (max-width: 768px) {
             .hero-content h1 {
                 font-size: 1.6rem;
@@ -376,6 +410,44 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.5rem;
+            }
+
+            /* Make header look tappable on mobile */
+            .cat-section-header {
+                cursor: pointer !important;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+                padding: 0.4rem 0;
+                border-radius: var(--radius-sm);
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .cat-section-header:active {
+                background: rgba(0,0,0,0.03);
+            }
+
+            /* Show toggle button on mobile */
+            .cat-toggle-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: var(--primary-light);
+                border: 1px solid var(--gray-200);
+                color: var(--primary);
+                cursor: pointer;
+                flex-shrink: 0;
+                transition: background 0.2s, transform 0.35s ease;
+                outline: none;
+                padding: 0;
+                font-size: 0.75rem;
+            }
+            .cat-toggle-btn.collapsed .cat-toggle-icon {
+                transform: rotate(180deg);
             }
 
             .categories-grid {
@@ -389,6 +461,11 @@
 
             .promo-heading-title {
                 font-size: 1.3rem;
+            }
+
+            .products-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
             }
         }
 
@@ -436,4 +513,52 @@
             }
         }
     </style>
+@endpush
+
+@push('scripts')
+    <script>
+        (function () {
+            // Only activate toggle on mobile
+            function isMobileScreen() {
+                return window.matchMedia('(max-width: 768px)').matches;
+            }
+
+            const header  = document.getElementById('catSectionHeader');
+            const body    = document.getElementById('catSectionBody');
+            const btn     = document.getElementById('catToggleBtn');
+            const SESSION_KEY = 'cat_section_collapsed';
+
+            if (!header || !body || !btn) return;
+
+            function applyState(collapsed, animate) {
+                if (!animate) body.style.transition = 'none';
+                body.classList.toggle('collapsed', collapsed);
+                btn.classList.toggle('collapsed', collapsed);
+                btn.setAttribute('aria-label', collapsed ? 'Tampilkan kategori' : 'Sembunyikan kategori');
+                header.setAttribute('aria-expanded', String(!collapsed));
+                if (!animate) requestAnimationFrame(function () { body.style.transition = ''; });
+            }
+
+            // Only restore saved state when actually on mobile — desktop always shows
+            const savedCollapsed = isMobileScreen() && sessionStorage.getItem(SESSION_KEY) === '1';
+            applyState(savedCollapsed, false);
+
+            // Click handler — only on mobile
+            header.addEventListener('click', function (e) {
+                if (e.target.closest('a')) return;
+                if (!isMobileScreen()) return;
+
+                const isNowCollapsed = !body.classList.contains('collapsed');
+                applyState(isNowCollapsed, true);
+                sessionStorage.setItem(SESSION_KEY, isNowCollapsed ? '1' : '0');
+            });
+
+            // On resize to desktop, always show
+            window.addEventListener('resize', function () {
+                if (!isMobileScreen()) {
+                    applyState(false, false);
+                }
+            });
+        })();
+    </script>
 @endpush

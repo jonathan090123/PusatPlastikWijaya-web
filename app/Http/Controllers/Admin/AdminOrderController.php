@@ -30,8 +30,8 @@ class AdminOrderController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhere('recipient_name', 'like', "%{$search}%")
-                  ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                    ->orWhere('recipient_name', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -53,8 +53,8 @@ class AdminOrderController extends Controller
             ->toArray();
 
         Order::whereNull('admin_read_at')
-             ->whereIn('status', ['pending', 'waiting_payment'])
-             ->update(['admin_read_at' => now()]);
+            ->whereIn('status', ['pending', 'waiting_payment'])
+            ->update(['admin_read_at' => now()]);
 
         return view('admin.orders.index', compact('orders', 'newOrderIds'));
     }
@@ -69,8 +69,8 @@ class AdminOrderController extends Controller
         }
 
         // Presence Lock
-        $lockKey  = 'order_viewing_' . $order->id;
-        $me       = Auth::user();
+        $lockKey = 'order_viewing_' . $order->id;
+        $me = Auth::user();
         $lockData = Cache::get($lockKey);
 
         // Cek pemilik lock
@@ -83,9 +83,9 @@ class AdminOrderController extends Controller
         // Ambil/perbarui lock jika belum ada atau milik sendiri
         if (!$lockData || $lockData['admin_id'] === $me->id) {
             Cache::put($lockKey, [
-                'admin_id'   => $me->id,
+                'admin_id' => $me->id,
                 'admin_name' => $me->name,
-                'since'      => $lockData['since'] ?? now()->toTimeString(),
+                'since' => $lockData['since'] ?? now()->toTimeString(),
             ], 120);
         }
 
@@ -95,43 +95,43 @@ class AdminOrderController extends Controller
     /** Heartbeat: perpanjang lock. Dipanggil browser tiap 8 detik. */
     public function lockHeartbeat(Order $order): \Illuminate\Http\JsonResponse
     {
-        $lockKey  = 'order_viewing_' . $order->id;
-        $me       = Auth::user();
+        $lockKey = 'order_viewing_' . $order->id;
+        $me = Auth::user();
         $lockData = Cache::get($lockKey);
 
         // Perbarui lock jika belum ada atau milik sendiri (status active)
         if (!$lockData || ($lockData['admin_id'] === $me->id && ($lockData['status'] ?? 'active') === 'active')) {
             Cache::put($lockKey, [
-                'admin_id'   => $me->id,
+                'admin_id' => $me->id,
                 'admin_name' => $me->name,
-                'since'      => $lockData['since'] ?? now()->toTimeString(),
-                'status'     => 'active',
+                'since' => $lockData['since'] ?? now()->toTimeString(),
+                'status' => 'active',
             ], 120);
         }
 
         // Info lock saat ini
         $current = Cache::get($lockKey);
         return response()->json([
-            'locked_by_me'   => $current && $current['admin_id'] === $me->id,
-            'locker_name'    => $current ? $current['admin_name'] : null,
+            'locked_by_me' => $current && $current['admin_id'] === $me->id,
+            'locker_name' => $current ? $current['admin_name'] : null,
         ]);
     }
 
     /** Release lock: set status 'releasing' (grace period 15 detik). */
     public function releaseLock(Request $request, Order $order): \Illuminate\Http\JsonResponse
     {
-        $lockKey  = 'order_viewing_' . $order->id;
-        $me       = Auth::user();
+        $lockKey = 'order_viewing_' . $order->id;
+        $me = Auth::user();
         $lockData = Cache::get($lockKey);
 
         // Release lock jika milik sendiri dan masih active
         if ($lockData && $lockData['admin_id'] === $me->id && ($lockData['status'] ?? 'active') === 'active') {
             // Grace period 15 detik
             Cache::put($lockKey, [
-                'admin_id'   => $me->id,
+                'admin_id' => $me->id,
                 'admin_name' => $me->name,
-                'since'      => $lockData['since'],
-                'status'     => 'releasing',
+                'since' => $lockData['since'],
+                'status' => 'releasing',
             ], 15);
         }
 
@@ -141,14 +141,14 @@ class AdminOrderController extends Controller
     /** Cek lock (read-only). */
     public function checkLock(Order $order): \Illuminate\Http\JsonResponse
     {
-        $lockKey  = 'order_viewing_' . $order->id;
+        $lockKey = 'order_viewing_' . $order->id;
         $lockData = Cache::get($lockKey);
-        $status   = $lockData['status'] ?? 'active';
+        $status = $lockData['status'] ?? 'active';
 
         return response()->json([
-            'is_locked'   => (bool) $lockData,
+            'is_locked' => (bool) $lockData,
             'locker_name' => $lockData ? $lockData['admin_name'] : null,
-            'releasing'   => $lockData && $status === 'releasing',
+            'releasing' => $lockData && $status === 'releasing',
         ]);
     }
 
@@ -158,6 +158,7 @@ class AdminOrderController extends Controller
         return view('admin.orders.invoice', compact('order'));
     }
 
+    //update status manual
     public function updateStatus(Request $request, Order $order)
     {
         $request->validate([
@@ -178,7 +179,7 @@ class AdminOrderController extends Controller
             $previousStatus = $locked->status;
 
             $locked->update([
-                'status'         => $newStatus,
+                'status' => $newStatus,
                 'status_read_at' => null, // mark as unread for customer
             ]);
 
@@ -205,7 +206,7 @@ class AdminOrderController extends Controller
 
         $order->update([
             'tracking_number' => $request->tracking_number ?: null,
-            'status_read_at'  => null, // notify customer of update
+            'status_read_at' => null, // notify customer of update
         ]);
 
         return back()->with('success', $request->tracking_number
@@ -234,7 +235,7 @@ class AdminOrderController extends Controller
                 Product::lockForUpdate()->where('id', $lockedItem->product_id)->update(['stock' => 0]);
             }
 
-        // Kurangi poin jika sudah completed atau refunded
+            // Kurangi poin jika sudah completed atau refunded
             $lockedOrder = Order::with('user')->lockForUpdate()->find($order->id);
             if (in_array($lockedOrder->status, ['completed', 'refunded'])) {
                 $deduct = (int) floor((float) $lockedItem->subtotal / 200);
@@ -244,10 +245,10 @@ class AdminOrderController extends Controller
                     if ($deduct > 0) {
                         $lockedOrder->user->decrement('points', $deduct);
                         PointHistory::create([
-                            'user_id'     => $lockedOrder->user_id,
-                            'order_id'    => $lockedOrder->id,
-                            'type'        => 'deducted',
-                            'amount'      => $deduct,
+                            'user_id' => $lockedOrder->user_id,
+                            'order_id' => $lockedOrder->id,
+                            'type' => 'deducted',
+                            'amount' => $deduct,
                             'description' => 'Koreksi poin: ' . $lockedItem->product_name . ' (stok kosong) - ' . $lockedOrder->invoice_number,
                         ]);
                     }
@@ -281,19 +282,19 @@ class AdminOrderController extends Controller
         }
 
         $order->loadMissing('user');
-        $deduct       = $earnedHistory->amount;
+        $deduct = $earnedHistory->amount;
         $currentPoints = $order->user->points ?? 0;
-        $actualDeduct  = min($deduct, $currentPoints); // jangan sampai minus
+        $actualDeduct = min($deduct, $currentPoints); // jangan sampai minus
 
         if ($actualDeduct > 0) {
             $order->user->decrement('points', $actualDeduct);
         }
 
         PointHistory::create([
-            'user_id'     => $order->user_id,
-            'order_id'    => $order->id,
-            'type'        => 'deducted',
-            'amount'      => $actualDeduct,
+            'user_id' => $order->user_id,
+            'order_id' => $order->id,
+            'type' => 'deducted',
+            'amount' => $actualDeduct,
             'description' => 'Penarikan poin refund pesanan ' . $order->invoice_number,
         ]);
     }
@@ -326,10 +327,10 @@ class AdminOrderController extends Controller
         $order->user->increment('points', $points);
 
         PointHistory::create([
-            'user_id'     => $order->user_id,
-            'order_id'    => $order->id,
-            'type'        => 'earned',
-            'amount'      => $points,
+            'user_id' => $order->user_id,
+            'order_id' => $order->id,
+            'type' => 'earned',
+            'amount' => $points,
             'description' => 'Poin dari pesanan ' . $order->invoice_number,
         ]);
     }

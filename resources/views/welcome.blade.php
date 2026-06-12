@@ -34,15 +34,25 @@
     @if($categories->count() > 0)
         <section class="lp-categories">
             <div class="container">
-                <h2 class="lp-section-title">Kategori Produk</h2>
-                <div class="lp-cat-grid">
-                    @foreach($categories as $cat)
-                        <a href="{{ route('products.index', ['category' => $cat->slug]) }}" class="lp-cat-item">
-                            <i class="fas fa-tag"></i>
-                            <span>{{ $cat->name }}</span>
-                            <small>{{ $cat->products_count }} produk</small>
-                        </a>
-                    @endforeach
+                <div class="lp-section-title-wrap">
+                    <h2 class="lp-section-title" style="margin-bottom: 0;">Kategori Produk</h2>
+                </div>
+                <div class="lp-cat-slider-wrapper">
+                    <button id="lpCatPrev" class="lp-slider-btn lp-slider-prev" onclick="scrollCategories(-150)" style="opacity: 0; pointer-events: none;">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="lpCatGrid" class="lp-cat-grid">
+                        @foreach($categories as $cat)
+                            <a href="{{ route('products.index', ['category' => $cat->slug]) }}" class="lp-cat-item">
+                                <i class="fas fa-tag"></i>
+                                <span>{{ $cat->name }}</span>
+                                <small>{{ $cat->products_count }} produk</small>
+                            </a>
+                        @endforeach
+                    </div>
+                    <button id="lpCatNext" class="lp-slider-btn lp-slider-next" onclick="scrollCategories(150)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
         </section>
@@ -60,7 +70,7 @@
                 </div>
                 <div class="lp-products-grid">
                     @foreach($promoProducts as $product)
-                        <a href="{{ route('products.show', $product->slug) }}" class="lp-product-card">
+                        <a href="{{ route('products.show', $product->slug) }}" class="lp-product-card @if($product->stock <= 0) lp-product-card-disabled @endif">
                             <div class="lp-product-img">
                                 @if($product->hasDiscount())
                                     <span
@@ -81,6 +91,9 @@
                                     <span class="lp-price-discount">Rp
                                         {{ number_format($product->discount_price, 0, ',', '.') }}</span>
                                 </div>
+                                @if($product->stock <= 0)
+                                    <span class="product-badge-stock">Habis</span>
+                                @endif
                             </div>
                         </a>
                     @endforeach
@@ -101,7 +114,7 @@
                 </div>
                 <div class="lp-products-grid">
                     @foreach($featuredProducts as $product)
-                        <a href="{{ route('products.show', $product->slug) }}" class="lp-product-card">
+                        <a href="{{ route('products.show', $product->slug) }}" class="lp-product-card @if($product->stock <= 0) lp-product-card-disabled @endif">
                             <div class="lp-product-img">
                                 @if($product->hasDiscount())
                                     <span
@@ -126,6 +139,9 @@
                                         <span class="lp-price-normal">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
                                     @endif
                                 </div>
+                                @if($product->stock <= 0)
+                                    <span class="product-badge-stock">Habis</span>
+                                @endif
                             </div>
                         </a>
                     @endforeach
@@ -257,6 +273,53 @@
             background: #fff;
         }
 
+        .lp-section-title-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .lp-cat-slider-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .lp-slider-btn {
+            display: none;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            cursor: pointer;
+            z-index: 10;
+            transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+            outline: none;
+            padding: 0;
+        }
+
+        .lp-slider-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .lp-slider-prev {
+            left: -10px;
+        }
+
+        .lp-slider-next {
+            right: -10px;
+        }
+
         .lp-cat-grid {
             display: flex;
             flex-wrap: wrap;
@@ -350,6 +413,10 @@
         .lp-product-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .lp-product-card-disabled {
+            /* Out-of-stock: still clickable, badge 'Habis' already indicates status */
         }
 
         .lp-product-img {
@@ -454,9 +521,159 @@
                 padding: 1.5rem 0 1.25rem;
             }
 
+            .lp-slider-btn {
+                display: flex;
+            }
+
+            .lp-cat-grid {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                justify-content: flex-start;
+                gap: 0.5rem;
+                padding: 0.25rem 0.25rem 0.75rem;
+                scrollbar-width: none; /* Hide scrollbar for Firefox */
+                -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .lp-cat-grid::-webkit-scrollbar {
+                display: none; /* Hide scrollbar for Chrome/Safari/Opera */
+            }
+
+            .lp-cat-item {
+                flex: 0 0 auto;
+                min-width: 105px;
+                padding: 0.6rem 0.8rem;
+                border-radius: 10px;
+                font-size: 0.8rem;
+            }
+
             .lp-products-grid {
-                grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+            }
+
+            .lp-product-card {
+                border-radius: 8px;
+            }
+
+            .lp-product-body {
+                padding: 0.5rem;
+            }
+
+            .lp-product-cat {
+                font-size: 0.6rem;
+                margin-bottom: 0.15rem;
+            }
+
+            .lp-product-name {
+                font-size: 0.72rem;
+                margin-bottom: 0.25rem;
+                line-height: 1.25;
+            }
+
+            .lp-price-original {
+                font-size: 0.65rem;
+            }
+
+            .lp-price-discount, .lp-price-normal {
+                font-size: 0.78rem;
+            }
+
+            .lp-badge-discount {
+                font-size: 0.6rem;
+                padding: 0.15rem 0.35rem;
+                top: 4px;
+                left: 4px;
+            }
+
+            .product-badge-stock {
+                font-size: 0.6rem;
+                padding: 0.1rem 0.3rem;
+                margin-top: 0.2rem;
             }
         }
+
+        @media (max-width: 480px) {
+            .lp-products-grid {
+                gap: 0.35rem;
+            }
+
+            .lp-product-body {
+                padding: 0.4rem;
+            }
+
+            .lp-product-cat {
+                font-size: 0.55rem;
+            }
+
+            .lp-product-name {
+                font-size: 0.68rem;
+                margin-bottom: 0.2rem;
+                line-height: 1.2;
+            }
+
+            .lp-price-original {
+                font-size: 0.6rem;
+            }
+
+            .lp-price-discount, .lp-price-normal {
+                font-size: 0.72rem;
+            }
+        }
+
+        @keyframes swipeHint {
+            0%, 100% { transform: translateX(0); opacity: 0.6; }
+            50% { transform: translateX(3px); opacity: 1; }
+        }
     </style>
+@endpush
+
+@push('scripts')
+    <script>
+        function scrollCategories(distance) {
+            const grid = document.getElementById('lpCatGrid');
+            if (grid) {
+                grid.scrollBy({ left: distance, behavior: 'smooth' });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('lpCatGrid');
+            const prevBtn = document.getElementById('lpCatPrev');
+            const nextBtn = document.getElementById('lpCatNext');
+
+            if (!grid || !prevBtn || !nextBtn) return;
+
+            function updateBtnVisibility() {
+                const scrollLeft = grid.scrollLeft;
+                const maxScrollLeft = grid.scrollWidth - grid.clientWidth;
+
+                // Tampilkan/sembunyikan tombol Prev
+                if (scrollLeft <= 5) {
+                    prevBtn.style.opacity = '0';
+                    prevBtn.style.pointerEvents = 'none';
+                } else {
+                    prevBtn.style.opacity = '1';
+                    prevBtn.style.pointerEvents = 'auto';
+                }
+
+                // Tampilkan/sembunyikan tombol Next
+                if (scrollLeft >= maxScrollLeft - 5) {
+                    nextBtn.style.opacity = '0';
+                    nextBtn.style.pointerEvents = 'none';
+                } else {
+                    nextBtn.style.opacity = '1';
+                    nextBtn.style.pointerEvents = 'auto';
+                }
+            }
+
+            grid.addEventListener('scroll', updateBtnVisibility);
+            window.addEventListener('resize', updateBtnVisibility);
+            
+            // Panggil setelah load pertama kali
+            setTimeout(updateBtnVisibility, 200);
+        });
+    </script>
 @endpush
