@@ -20,6 +20,13 @@
                     {{ session('success') }}
                 </div>
             @endif
+            
+            @if(session('info'))
+                <div class="alert-info-login">
+                    <i class="fas fa-info-circle"></i>
+                    {{ session('info') }}
+                </div>
+            @endif
 
             <form method="POST" action="{{ route('login') }}" class="auth-form">
                 @csrf
@@ -98,6 +105,26 @@
                 .alert-success-register i {
                     font-size: 1.1rem;
                     color: #16a34a;
+                    flex-shrink: 0;
+                }
+
+                .alert-info-login {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    background: #eff6ff;
+                    border: 1px solid #93c5fd;
+                    border-radius: var(--radius, 8px);
+                    color: #1e40af;
+                    font-size: 0.88rem;
+                    font-weight: 600;
+                    padding: 0.85rem 1rem;
+                    margin-bottom: 1.25rem;
+                }
+
+                .alert-info-login i {
+                    font-size: 1.1rem;
+                    color: #3b82f6;
                     flex-shrink: 0;
                 }
 

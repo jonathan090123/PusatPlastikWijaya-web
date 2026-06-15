@@ -18,14 +18,14 @@ class CustomerProductController extends Controller
             $term = $request->search;
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', '%' . $term . '%')
-                  ->orWhere('product_code', 'like', '%' . $term . '%')
-                  ->orWhereHas('category', function ($cq) use ($term) {
-                      $cq->where('name', 'like', '%' . $term . '%');
-                  });
+                    ->orWhere('product_code', 'like', '%' . $term . '%')
+                    ->orWhereHas('category', function ($cq) use ($term) {
+                        $cq->where('name', 'like', '%' . $term . '%');
+                    });
             });
         }
 
-        // Filter by category slug
+        // Filter by category 
         if ($request->filled('category')) {
             $query->whereHas('category', function ($q) use ($request) {
                 $q->where('slug', $request->category);
@@ -37,7 +37,10 @@ class CustomerProductController extends Controller
             $query->whereNotNull('discount_price')->whereColumn('discount_price', '<', 'price');
         }
 
-        // Sorting sekunder sesuai pilihan user
+        // sort by image product 
+        $query->orderByRaw('CASE WHEN image IS NULL OR image = "" THEN 1 ELSE 0 END ASC');
+
+        // Sorting  sesuai pilihan user
         $sort = $request->get('sort', 'terbaru');
         switch ($sort) {
             case 'harga-rendah':
@@ -54,10 +57,12 @@ class CustomerProductController extends Controller
                 break;
         }
 
-        $products = $query->paginate(48)->withQueryString();
-        $categories = Category::where('is_active', true)->withCount(['products' => function ($q) {
-            $q->where('is_active', true);
-        }])->orderBy('name')->get();
+        $products = $query->paginate(60)->withQueryString();
+        $categories = Category::where('is_active', true)->withCount([
+            'products' => function ($q) {
+                $q->where('is_active', true);
+            }
+        ])->orderBy('name')->get();
 
         return view('customer.products.index', compact('products', 'categories'));
     }
@@ -73,10 +78,10 @@ class CustomerProductController extends Controller
             ->where('is_active', true)
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', '%' . $q . '%')
-                      ->orWhere('product_code', 'like', '%' . $q . '%')
-                      ->orWhereHas('category', function ($cq) use ($q) {
-                          $cq->where('name', 'like', '%' . $q . '%');
-                      });
+                    ->orWhere('product_code', 'like', '%' . $q . '%')
+                    ->orWhereHas('category', function ($cq) use ($q) {
+                        $cq->where('name', 'like', '%' . $q . '%');
+                    });
             })
             ->orderByRaw('CASE WHEN name LIKE ? THEN 0 ELSE 1 END', [$q . '%'])
             ->limit(8)
@@ -85,13 +90,13 @@ class CustomerProductController extends Controller
         return response()->json($products->map(function ($p) {
             $isPromo = $p->discount_price && $p->discount_price < $p->price;
             return [
-                'name'           => $p->name,
-                'slug'           => $p->slug,
-                'category'       => $p->category->name ?? '',
-                'image'          => $p->image ? asset('storage/' . $p->image) : null,
-                'price'          => 'Rp ' . number_format($isPromo ? $p->discount_price : $p->price, 0, ',', '.'),
+                'name' => $p->name,
+                'slug' => $p->slug,
+                'category' => $p->category->name ?? '',
+                'image' => $p->image ? asset('storage/' . $p->image) : null,
+                'price' => 'Rp ' . number_format($isPromo ? $p->discount_price : $p->price, 0, ',', '.'),
                 'price_original' => $isPromo ? 'Rp ' . number_format($p->price, 0, ',', '.') : null,
-                'is_promo'       => $isPromo,
+                'is_promo' => $isPromo,
             ];
         }));
     }

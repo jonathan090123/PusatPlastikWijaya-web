@@ -27,7 +27,7 @@ class AdminProductController extends Controller
                     foreach ($keywords as $keyword) {
                         $q->where(function ($inner) use ($keyword) {
                             $inner->where('name', 'like', '%' . $keyword . '%')
-                                  ->orWhere('product_code', 'like', '%' . $keyword . '%');
+                                ->orWhere('product_code', 'like', '%' . $keyword . '%');
                         });
                     }
                 });
@@ -35,7 +35,7 @@ class AdminProductController extends Controller
                 // Single keyword: normal LIKE search
                 $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', '%' . $term . '%')
-                      ->orWhere('product_code', 'like', '%' . $term . '%');
+                        ->orWhere('product_code', 'like', '%' . $term . '%');
                 });
             }
         }
@@ -66,22 +66,22 @@ class AdminProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'                              => 'required|string|max:255',
-            'product_code'                      => 'nullable|string|max:50|unique:products,product_code',
-            'category_id'                       => 'required|exists:categories,id',
-            'description'                       => 'nullable|string',
-            'unit'                              => 'required|string|max:20',
-            'price'                             => 'required|numeric|min:0',
-            'discount_price'                    => 'nullable|numeric|min:0|lt:price',
-            'weight'                            => 'nullable|numeric|min:0',
-            'stock'                             => 'required|integer|min:0',
-            'stock_alert'                       => 'required|integer|min:0',
-            'image'                             => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'is_active'                         => 'boolean',
-            'conversion_units'                  => 'nullable|array',
-            'conversion_units.*.unit'           => 'required|string|max:20',
+            'name' => 'required|string|max:255',
+            'product_code' => 'nullable|string|max:50|unique:products,product_code',
+            'category_id' => 'required|exists:categories,id',
+            'description' => 'nullable|string',
+            'unit' => 'required|string|max:20',
+            'price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0|lt:price',
+            'weight' => 'nullable|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'stock_alert' => 'required|integer|min:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'is_active' => 'boolean',
+            'conversion_units' => 'nullable|array',
+            'conversion_units.*.unit' => 'required|string|max:20',
             'conversion_units.*.conversion_value' => 'required|integer|min:1',
-            'conversion_units.*.price'          => 'required|numeric|min:0',
+            'conversion_units.*.price' => 'required|numeric|min:0',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
@@ -107,9 +107,9 @@ class AdminProductController extends Controller
             foreach ($request->conversion_units as $cu) {
                 if (!empty($cu['unit']) && !empty($cu['conversion_value']) && isset($cu['price'])) {
                     $product->productUnits()->create([
-                        'unit'             => $cu['unit'],
+                        'unit' => $cu['unit'],
                         'conversion_value' => (int) $cu['conversion_value'],
-                        'price'            => $cu['price'],
+                        'price' => $cu['price'],
                     ]);
                 }
             }
@@ -129,22 +129,22 @@ class AdminProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $validated = $request->validate([
-            'name'                              => 'required|string|max:255',
-            'product_code'                      => 'nullable|string|max:50|unique:products,product_code,' . $product->id,
-            'category_id'                       => 'required|exists:categories,id',
-            'description'                       => 'nullable|string',
-            'unit'                              => 'required|string|max:20',
-            'price'                             => 'required|numeric|min:0',
-            'discount_price'                    => 'nullable|numeric|min:0|lt:price',
-            'weight'                            => 'nullable|numeric|min:0',
-            'stock'                             => 'required|integer|min:0',
-            'stock_alert'                       => 'required|integer|min:0',
-            'image'                             => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'is_active'                         => 'boolean',
-            'conversion_units'                  => 'nullable|array',
-            'conversion_units.*.unit'           => 'required|string|max:20',
+            'name' => 'required|string|max:255',
+            'product_code' => 'nullable|string|max:50|unique:products,product_code,' . $product->id,
+            'category_id' => 'required|exists:categories,id',
+            'description' => 'nullable|string',
+            'unit' => 'required|string|max:20',
+            'price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0|lt:price',
+            'weight' => 'nullable|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'stock_alert' => 'required|integer|min:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'is_active' => 'boolean',
+            'conversion_units' => 'nullable|array',
+            'conversion_units.*.unit' => 'required|string|max:20',
             'conversion_units.*.conversion_value' => 'required|integer|min:1',
-            'conversion_units.*.price'          => 'required|numeric|min:0',
+            'conversion_units.*.price' => 'required|numeric|min:0',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
@@ -174,9 +174,9 @@ class AdminProductController extends Controller
             foreach ($request->conversion_units as $cu) {
                 if (!empty($cu['unit']) && !empty($cu['conversion_value']) && isset($cu['price'])) {
                     $product->productUnits()->create([
-                        'unit'             => $cu['unit'],
+                        'unit' => $cu['unit'],
                         'conversion_value' => (int) $cu['conversion_value'],
-                        'price'            => $cu['price'],
+                        'price' => $cu['price'],
                     ]);
                 }
             }
