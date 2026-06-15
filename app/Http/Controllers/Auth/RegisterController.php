@@ -44,7 +44,7 @@ class RegisterController extends Controller
                     if (!$request->boolean('is_business') || blank($value)) {
                         return;
                     }
-                    // Normalisasi nama bisnis
+                    // guard : autentikasi  nama bisnis
                     $normalize = fn($s) => preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9\s]/u', '', strtolower(trim($s))));
                     $normalizedName  = $normalize($value);
 
@@ -98,6 +98,7 @@ class RegisterController extends Controller
             Cache::put('pending_biz_' . md5($normalizedForCache), true, now()->addMinutes(15));
         }
 
+        //  Generate OTP ->  kirim email
         $otp      = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $otpKey   = 'email_otp_' . md5($request->email);
         Cache::put($otpKey, $otp, now()->addMinutes(10));

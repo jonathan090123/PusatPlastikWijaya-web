@@ -204,6 +204,7 @@ class CustomerOrderController extends Controller
         ]);
     }
 
+    // (pt) Customer klik "Pesanan Diterima" 
     public function complete(Order $order)
     {
         if ($order->user_id !== Auth::id()) {
@@ -219,19 +220,21 @@ class CustomerOrderController extends Controller
             'status_read_at' => null,
         ]);
 
+        // (pt) Cairkan poin ke customer setelah klik "Pesanan Diterima"
         $this->awardPoints($order->fresh());
 
         return back()->with('success', 'Pesanan ' . $order->invoice_number . ' telah diselesaikan. Terima kasih!');
     }
 
+    // (pt) Hitung & cairkan poin ke customer: 1 poin per Rp 200 belanja
     private function awardPoints(Order $order): void
     {
-        // Guard: only award once per order
+        // Cegah poin dicairkan 2x untuk order yang sama
         if (PointHistory::where('order_id', $order->id)->where('type', 'earned')->exists()) {
             return;
         }
 
-        // 1 poin per Rp 200 belanja
+        // (pt) Rumus: 1 poin per Rp 200 belanja 
         $belanja = $order->subtotal - $order->discount_amount - $order->points_discount;
         $points = (int) floor($belanja / 200);
         if ($points <= 0) {
@@ -249,12 +252,13 @@ class CustomerOrderController extends Controller
         ]);
     }
 
+    // (pt) Kembalikan poin ke customer jika order dibatalkan/refund
     private function refundPointsIfNeeded(Order $order): void
     {
         if (($order->points_used ?? 0) <= 0)
             return;
 
-        // Guard: don't double-refund
+        // Cegah pengembalian poin 2x
         $alreadyRefunded = PointHistory::where('order_id', $order->id)
             ->where('type', 'refunded')
             ->exists();
@@ -273,6 +277,7 @@ class CustomerOrderController extends Controller
         ]);
     }
 
+    // restore / kembalikan stok produk jika order dibatalkan
     private function restoreOrderStock(Order $order): void
     {
         $order->load('items.product.productUnits');

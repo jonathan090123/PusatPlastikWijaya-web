@@ -11,7 +11,7 @@ use App\Models\ShippingCost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Services\RajaOngkirService;
+use App\Services\RajaOngkirService; // (raj) Service untuk kalkulasi ongkir
 
 class CheckoutController extends Controller
 {
@@ -31,18 +31,18 @@ class CheckoutController extends Controller
             ->keyBy('type');
         $user = Auth::user();
 
-        // Cek RajaOngkir
         $rajaOngkir = app(RajaOngkirService::class);
         $rajaOngkirAvailable = $rajaOngkir->isConfigured();
 
-        // Hitung total berat
+        // (raj) RUMUS: Hitung total berat semua item (dalam gram) untuk kalkulasi ongkir
         $totalWeight = 0;
         foreach ($cart->items as $item) {
-            $conv = 1;
+            // (raj) Konversi unit  ke satuan dasar
+            $conv = 1; 
             if ($item->unit && $item->unit !== $item->product->unit) {
                 $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
                 if ($pu) $conv = (int) $pu->conversion_value;
-            }
+            } 
             $productWeight = $item->product->weight > 0 ? $item->product->weight : 500;
             $totalWeight += $productWeight * $item->quantity * $conv;
         }
@@ -116,7 +116,7 @@ class CheckoutController extends Controller
             $shippingName = "Ekspedisi {$courierInfo}" . ($etd ? " (Est. {$etd} hari)" : '');
             $shippingCostId = $method->id;
 
-            // Verifikasi ongkir server-side
+            // (raj) Verifikasi ongkir server-side untuk mencegah manipulasi client
             if ($request->ongkir_destination) {
                 $rajaOngkir = app(RajaOngkirService::class);
 
@@ -159,13 +159,13 @@ class CheckoutController extends Controller
             $shippingCostId = $method->id;
         }
 
-        // Determine points to use
+        // (pt) Ambil jumlah poin yang mau dipakai customer (max 100% subtotal)
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $requestedPoints = (int) ($request->use_points ?? 0);
-        // Poin bisa dipakai hingga 100% subtotal, ongkir dibayar penuh
         $pointsToUse = min($requestedPoints, $user->points);
 
+        // (checkout) Proses order dalam DB Transaction untuk menjaga integritas data
         try {
             $order = DB::transaction(function () use ($cart, $shippingFee, $shippingName, $shippingCostId, $request, $pointsToUse, $user) {
                 // Hitung subtotal
@@ -174,9 +174,9 @@ class CheckoutController extends Controller
                     $subtotal += $item->product->getPriceForUnit($item->unit) * $item->quantity;
                 }
 
-                // pemakain poin
+                // (pt) Hitung diskon dari poin yang dipakai (1 poin = Rp 1)
                 $pointsDiscount = min($pointsToUse, (int) $subtotal);
-                $pointsUsed = (int) $pointsDiscount; // 1 poin = Rp 1
+                $pointsUsed = (int) $pointsDiscount;
 
                 $total = $subtotal - $pointsDiscount + $shippingFee;
 
@@ -225,7 +225,7 @@ class CheckoutController extends Controller
                 // Clear cart
                 $cart->items()->delete();
 
-                // Kurangi poin & catat history
+                // (pt) Kurangi poin dari akun customer & catat history
                 if ($pointsUsed > 0) {
                     $user->decrement('points', $pointsUsed);
                     PointHistory::create([

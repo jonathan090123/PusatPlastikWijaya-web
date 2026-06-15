@@ -21,6 +21,7 @@ class VerifyEmailOtpController extends Controller
         return view('auth.verify-otp');
     }
 
+    // (auth) Verifikasi OTP & buat akun customer baru
     public function verify(Request $request)
     {
         $request->validate([

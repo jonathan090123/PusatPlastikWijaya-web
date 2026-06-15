@@ -9,7 +9,6 @@ use App\Models\PointHistory;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AdminOrderController extends Controller
@@ -68,89 +67,10 @@ class AdminOrderController extends Controller
             $order->update(['admin_read_at' => now()]);
         }
 
-        // Presence Lock
-        $lockKey  = 'order_viewing_' . $order->id;
-        $me       = Auth::user();
-        $lockData = Cache::get($lockKey);
-
-        // Cek pemilik lock
-        $lockedBy = null;
-        if ($lockData && $lockData['admin_id'] !== $me->id) {
-            // Admin lain sedang buka
-            $lockedBy = $lockData;
-        }
-
-        // Ambil/perbarui lock jika belum ada atau milik sendiri
-        if (!$lockData || $lockData['admin_id'] === $me->id) {
-            Cache::put($lockKey, [
-                'admin_id'   => $me->id,
-                'admin_name' => $me->name,
-                'since'      => $lockData['since'] ?? now()->toTimeString(),
-            ], 120);
-        }
-
-        return view('admin.orders.show', compact('order', 'lockedBy'));
+        return view('admin.orders.show', compact('order'));
     }
 
-    /** Heartbeat: perpanjang lock. Dipanggil browser tiap 8 detik. */
-    public function lockHeartbeat(Order $order): \Illuminate\Http\JsonResponse
-    {
-        $lockKey  = 'order_viewing_' . $order->id;
-        $me       = Auth::user();
-        $lockData = Cache::get($lockKey);
 
-        // Perbarui lock jika belum ada atau milik sendiri (status active)
-        if (!$lockData || ($lockData['admin_id'] === $me->id && ($lockData['status'] ?? 'active') === 'active')) {
-            Cache::put($lockKey, [
-                'admin_id'   => $me->id,
-                'admin_name' => $me->name,
-                'since'      => $lockData['since'] ?? now()->toTimeString(),
-                'status'     => 'active',
-            ], 120);
-        }
-
-        // Info lock saat ini
-        $current = Cache::get($lockKey);
-        return response()->json([
-            'locked_by_me'   => $current && $current['admin_id'] === $me->id,
-            'locker_name'    => $current ? $current['admin_name'] : null,
-        ]);
-    }
-
-    /** Release lock: set status 'releasing' (grace period 15 detik). */
-    public function releaseLock(Request $request, Order $order): \Illuminate\Http\JsonResponse
-    {
-        $lockKey  = 'order_viewing_' . $order->id;
-        $me       = Auth::user();
-        $lockData = Cache::get($lockKey);
-
-        // Release lock jika milik sendiri dan masih active
-        if ($lockData && $lockData['admin_id'] === $me->id && ($lockData['status'] ?? 'active') === 'active') {
-            // Grace period 15 detik
-            Cache::put($lockKey, [
-                'admin_id'   => $me->id,
-                'admin_name' => $me->name,
-                'since'      => $lockData['since'],
-                'status'     => 'releasing',
-            ], 15);
-        }
-
-        return response()->json(['ok' => true]);
-    }
-
-    /** Cek lock (read-only). */
-    public function checkLock(Order $order): \Illuminate\Http\JsonResponse
-    {
-        $lockKey  = 'order_viewing_' . $order->id;
-        $lockData = Cache::get($lockKey);
-        $status   = $lockData['status'] ?? 'active';
-
-        return response()->json([
-            'is_locked'   => (bool) $lockData,
-            'locker_name' => $lockData ? $lockData['admin_name'] : null,
-            'releasing'   => $lockData && $status === 'releasing',
-        ]);
-    }
 
     public function invoice(Order $order)
     {
@@ -182,13 +102,13 @@ class AdminOrderController extends Controller
                 'status_read_at' => null, // mark as unread for customer
             ]);
 
-            // Award poin & kurangi stok (sekali saat completed)
+            // (pt) Cairkan poin ke customer & kurangi stok saat status jadi "completed"
             if ($newStatus === 'completed' && $previousStatus !== 'completed') {
                 $this->awardPoints($locked->fresh());
                 $this->deductStock($locked->fresh());
             }
 
-            // Tarik poin earned saat refund
+            // (pt) Tarik kembali poin yang sudah dicairkan jika order di-refund
             if ($newStatus === 'refunded' && $previousStatus === 'completed') {
                 $this->deductEarnedPointsForRefund($locked->fresh());
             }
@@ -234,7 +154,7 @@ class AdminOrderController extends Controller
                 Product::lockForUpdate()->where('id', $lockedItem->product_id)->update(['stock' => 0]);
             }
 
-        // Kurangi poin jika sudah completed atau refunded
+        // Kurangi poin customer jika item out of stock & order sudah completed/refunded
             $lockedOrder = Order::with('user')->lockForUpdate()->find($order->id);
             if (in_array($lockedOrder->status, ['completed', 'refunded'])) {
                 $deduct = (int) floor((float) $lockedItem->subtotal / 200);
@@ -258,7 +178,7 @@ class AdminOrderController extends Controller
         return back()->with('success', 'Item "' . $item->product_name . '" ditandai stok kosong. Stok produk utama telah diubah menjadi 0.');
     }
 
-    /** Tarik kembali poin earned saat order direfund oleh admin. */
+    // (pt) Tarik kembali poin yang sudah dicairkan saat order di-refund oleh admin
     private function deductEarnedPointsForRefund(Order $order): void
     {
         $earnedHistory = PointHistory::lockForUpdate()
@@ -298,9 +218,10 @@ class AdminOrderController extends Controller
         ]);
     }
 
+    // (pt) function cairakan point kalo selesai
     private function awardPoints(Order $order): void
     {
-        // Guard: cegah double-award
+        // Cegah poin dicairkan 2x untuk order yang sama
         $alreadyAwarded = PointHistory::lockForUpdate()
             ->where('order_id', $order->id)
             ->where('type', 'earned')
@@ -310,14 +231,12 @@ class AdminOrderController extends Controller
             return;
         }
 
-        // Subtotal dari item tersedia
         $order->loadMissing('items');
         $activeSubtotal = $order->items->where('is_out_of_stock', false)->sum('subtotal');
-
-        // Hitung total diskon
         $totalDiscount = $order->discount_amount + $order->points_discount;
         $belanja = max(0, $activeSubtotal - $totalDiscount);
 
+        // (pt) Konversi: 1 poin = Rp 200 belanja bersih
         $points = (int) floor($belanja / 200);
         if ($points <= 0) {
             return;

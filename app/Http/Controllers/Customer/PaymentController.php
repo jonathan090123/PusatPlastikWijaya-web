@@ -16,6 +16,7 @@ use Midtrans\Transaction;
 
 class PaymentController extends Controller
 {
+    // (mid) Konfigurasi Midtrans API
     public function __construct()
     {
         Config::$serverKey    = config('services.midtrans.server_key');
@@ -25,8 +26,9 @@ class PaymentController extends Controller
         Config::$is3ds        = true;
     }
 
+    // (mid) Tampilkan halaman pembayaran & auto-check status ke Midtrans
     /**
-     * Show payment page — generate or reuse SNAP token.
+     * Show payment page
      */
     public function show(Order $order)
     {
@@ -75,9 +77,7 @@ class PaymentController extends Controller
         return view('customer.payment.index', compact('order'));
     }
 
-    /**
-     * AJAX: cek apakah pembayaran sudah selesai (dipanggil saat popup Snap ditutup).
-     */
+    // (mid) AJAX: cek status pembayaran ke Midtrans saat popup ditutup
     public function statusCheck(Order $order)
     {
         if (!Auth::check() || $order->user_id !== Auth::id()) {
@@ -111,9 +111,7 @@ class PaymentController extends Controller
         return response()->json(['paid' => false]);
     }
 
-    /**
-     * AJAX: generate a fresh Snap token for the chosen payment method.
-     */
+    // (mid) AJAX: generate Snap Token dari Midtrans untuk popup pembayaran
     public function getToken(Request $request, Order $order)
     {
         if (!Auth::check() || $order->user_id !== Auth::id()) {
@@ -169,6 +167,7 @@ class PaymentController extends Controller
         return response()->json(['token' => $snapToken]);
     }
 
+    // (mid) Build payload & minta Snap Token ke Midtrans API
     private function createSnapToken(Order $order, array $enabledPayments = ['gopay', 'qris'], ?array $bankTransfer = null, ?string $midtransOrderId = null): string
     {
         $order->load(['items.product', 'user']);
@@ -248,10 +247,7 @@ class PaymentController extends Controller
         return Snap::getSnapToken($params);
     }
 
-    /**
-     * Finish callback — redirect from Midtrans after payment.
-     * Actively checks transaction status via Midtrans API (needed for localhost).
-     */
+    // (mid) Callback setelah customer menutup popup Midtrans — cek status ke API
     public function finish(Request $request, Order $order)
     {
         if (!Auth::check() || $order->user_id !== Auth::id()) {
@@ -322,9 +318,7 @@ class PaymentController extends Controller
             ->with('info', 'Status pembayaran sedang diverifikasi.');
     }
 
-    /**
-     * Midtrans webhook/notification handler (no auth, no CSRF).
-     */
+    // (mid) Webhook: notifikasi asinkron dari Midtrans saat pembayaran berhasil/gagal
     public function webhook(Request $request)
     {
         try {
@@ -414,6 +408,7 @@ class PaymentController extends Controller
         }
     }
 
+    // (mid) Update status jadi "processing" setelah bayar
     private function markAsPaid(Order $order, Payment $payment): void
     {
         $payment->update([
@@ -433,10 +428,12 @@ class PaymentController extends Controller
         ]);
     }
 
+    // (pt) Kembalikan poin ke customer jika order cancelled/expired
     private function refundPointsIfNeeded(Order $order): void
     {
         if (($order->points_used ?? 0) <= 0) return;
 
+        // Cegah pengembalian poin 2x
         $alreadyRefunded = PointHistory::where('order_id', $order->id)
             ->where('type', 'refunded')
             ->exists();
@@ -454,6 +451,7 @@ class PaymentController extends Controller
         ]);
     }
 
+    // (mid) Kembalikan stok produk ke inventory jika order expired/cancelled
     private function restoreStock(Order $order): void
     {
         $order->load('items.product.productUnits');

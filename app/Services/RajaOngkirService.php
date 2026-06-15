@@ -10,6 +10,7 @@ class RajaOngkirService
     protected string $baseUrl = 'https://rajaongkir.komerce.id/api/v1';
     protected string $originId;
 
+    // (raj) Load konfigurasi API RajaOngkir dari .env
     public function __construct()
     {
         $this->apiKey   = config('services.rajaongkir.api_key', '');
@@ -30,6 +31,7 @@ class RajaOngkirService
      *
      * @return array<int, array{id: int, label: string, province_name: string, city_name: string, district_name: string, subdistrict_name: string, zip_code: string}>
      */
+    // (raj) Cari kota/kecamatan tujuan pengiriman
     public function searchDestination(string $query, int $limit = 10): array
     {
         $response = Http::withHeaders(['key' => $this->apiKey])
@@ -54,10 +56,11 @@ class RajaOngkirService
      * @param  array      $couriers       Courier codes, e.g. ['jne','tiki','pos','sicepat','jnt']
      * @return array  Flat list sorted by cost: [{name, code, service, description, cost, etd}, ...]
      */
+    // (raj) Hitung ongkos kirim dari Blitar ke kota tujuan
     public function getShippingOptions(string|int $destinationId, int $weight, array $couriers = ['jne', 'sicepat', 'jnt']): array
     {
-        if ($weight < 100) {
-            $weight = 500;
+        if ($weight < 100) { //gram
+            $weight = 500; //minimal 500 
         }
 
         $response = Http::withHeaders([

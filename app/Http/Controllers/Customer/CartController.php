@@ -25,6 +25,7 @@ class CartController extends Controller
         return view('customer.cart.index', compact('cart'));
     }
 
+    // (cart) Tambah produk ke keranjang dengan cek stok & konversi unit
     public function add(Request $request)
     {
         $request->validate([
@@ -39,7 +40,7 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Produk tidak tersedia'], 400);
         }
 
-        // Resolve satuan & faktor konversi
+        // (cart) Konversi unit (piece/box/carton) ke satuan dasar untuk cek stok
         $selectedUnit = $request->unit ?: $product->unit;
         $conversion   = 1;
         if ($selectedUnit !== $product->unit) {
@@ -50,7 +51,7 @@ class CartController extends Controller
             $conversion = (int) $pu->conversion_value;
         }
 
-        // Cek stok (satuan dasar)
+        // (cart) Cek stok berdasarkan satuan dasar (misal: 1 box = 10 piece)
         $requiredStock = $request->quantity * $conversion;
         if ($product->stock < $requiredStock) {
             return response()->json(['success' => false, 'message' => 'Stok tidak mencukupi'], 400);

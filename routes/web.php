@@ -25,15 +25,15 @@ use App\Http\Controllers\Api\ShippingController;
 
 /* |-------------------------------------------------------------------------- | Web Routes |-------------------------------------------------------------------------- */
 
-// Public Routes
+// Public  Home Routes
 Route::get('/', [HomeController::class , 'index'])->name('home');
 
-// Public Product Catalog (accessible without login)
+// Public Product Catalog (bisa buka tanpa login)
 Route::get('/products', [CustomerProductController::class , 'index'])->name('products.index');
 Route::get('/products/suggest', [CustomerProductController::class , 'suggest'])->name('products.suggest');
 Route::get('/products/{slug}', [CustomerProductController::class , 'show'])->name('products.show');
 
-// Guest: store intended URL then redirect to login (for "Login untuk membeli" flow)
+// Guest customer : direct ke login page di product
 Route::get('/goto-login', function (Illuminate\Http\Request $request) {
     $from = $request->input('from', '');
     if ($from && (str_starts_with($from, '/') || str_starts_with($from, config('app.url')))) {
@@ -71,8 +71,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class , 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class , 'updatePassword'])->name('profile.password');
 
-    // Customer Product Catalog (now public – keep names for backward compat, but routes removed from here)
-    // Products routes are public above
 
     // Cart
     Route::get('/cart', [CartController::class , 'index'])->name('cart.index');
@@ -106,7 +104,7 @@ Route::middleware('auth')->group(function () {
 // Midtrans Webhook
 Route::post('/midtrans/webhook', [PaymentController::class , 'webhook'])->name('midtrans.webhook');
 
-// Shipping API (RajaOngkir V2) — requires auth
+// Shipping API (RajaOngkir)
 Route::middleware('auth')->prefix('api/shipping')->name('api.shipping.')->group(function () {
     Route::get('/search-destinations', [ShippingController::class, 'searchDestinations'])->name('search-destinations');
     Route::post('/cost', [ShippingController::class, 'cost'])->name('cost');
@@ -148,10 +146,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('/orders/{order}/status', [AdminOrderController::class , 'updateStatus'])->name('orders.updateStatus');
     Route::patch('/orders/{order}/tracking', [AdminOrderController::class , 'updateTracking'])->name('orders.updateTracking');
     Route::patch('/orders/{order}/items/{item}/out-of-stock', [AdminOrderController::class , 'markItemOutOfStock'])->name('orders.items.outOfStock');
-    // Presence lock
-    Route::post('/orders/{order}/heartbeat', [AdminOrderController::class, 'lockHeartbeat'])->name('orders.heartbeat');
-    Route::post('/orders/{order}/release-lock', [AdminOrderController::class, 'releaseLock'])->name('orders.releaseLock');
-    Route::get('/orders/{order}/check-lock', [AdminOrderController::class, 'checkLock'])->name('orders.checkLock');
 
     // Shipping Settings
     Route::get('/shipping', [AdminShippingController::class , 'index'])->name('shipping.index');

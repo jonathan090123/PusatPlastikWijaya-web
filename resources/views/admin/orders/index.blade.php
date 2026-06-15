@@ -163,6 +163,7 @@
     color: #7e22ce !important; 
     border: 1px solid #d8b4fe !important; 
 }
+
 </style>
 @endpush
 

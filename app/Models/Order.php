@@ -20,8 +20,8 @@ class Order extends Model
         'shipping_address',
         'subtotal',
         'discount_amount',
-        'points_used',
-        'points_discount',
+        'points_used',       
+        'points_discount',    // (pt) Nilai diskon dari poin dalam Rupiah
         'shipping_fee',
         'total',
         'status',
@@ -74,11 +74,13 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    // (mid) Relasi ke tabel payments (1 order = 1 payment record)
     public function payment()
     {
         return $this->hasOne(Payment::class);
     }
 
+    // (pt) Relasi ke history poin (earned, used, refunded, deducted)
     public function pointHistories()
     {
         return $this->hasMany(PointHistory::class);
