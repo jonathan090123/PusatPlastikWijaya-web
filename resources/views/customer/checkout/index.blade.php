@@ -64,6 +64,19 @@
                                 </div>
                                 <span class="shipping-price free">Gratis</span>
                             </label>
+                            @elseif($pickup)
+                            <div class="shipping-option disabled" data-allow="blitar,outside">
+                                <input type="radio" disabled>
+                                <div class="shipping-info">
+                                    <div class="shipping-name">
+                                        <i class="fas fa-store" style="color:var(--gray-400);"></i>
+                                        <strong>Pickup (Ambil di Toko)</strong>
+                                        <span class="badge-coming">Tidak Tersedia</span>
+                                    </div>
+                                    <p class="shipping-desc">Ambil langsung di toko, <b>Ruko Niaga Jl. Sedap Malam Kav 8-10 Blitar</b></p>
+                                </div>
+                                <span class="shipping-price" style="color:var(--gray-400);">Gratis</span>
+                            </div>
                             @endif
 
                             @php $local = $shippingMethods->get('local'); @endphp
@@ -82,9 +95,25 @@
                                 </div>
                                 <span class="shipping-price">Rp {{ number_format($local->cost, 0, ',', '.') }}</span>
                             </label>
+                            @elseif($local)
+                            <div class="shipping-option disabled" data-allow="blitar">
+                                <input type="radio" disabled>
+                                <div class="shipping-info">
+                                    <div class="shipping-name">
+                                        <i class="fas fa-motorcycle" style="color:var(--gray-400);"></i>
+                                        <strong>Kurir Toko</strong>
+                                        <span class="badge-coming">Tidak Tersedia</span>
+                                    </div>
+                                    <p class="shipping-desc">
+                                        {{ $local->description ?? 'Pengiriman dalam kota Blitar' }}
+                                    </p>
+                                </div>
+                                <span class="shipping-price" style="color:var(--gray-400);">-</span>
+                            </div>
                             @endif
 
-                            @if($rajaOngkirAvailable)
+                            @php $outside = $shippingMethods->get('outside'); @endphp
+                            @if($rajaOngkirAvailable && $outside && $outside->is_active)
                             <div class="shipping-option" id="outsideOptionDiv" data-cost="0" data-type="outside" data-allow="outside" style="cursor:pointer;">
                                 <input type="radio" id="outsideRadioInput" style="width:17px;height:17px;flex-shrink:0;cursor:pointer;" tabindex="-1">
                                 <div class="shipping-info">
@@ -103,7 +132,7 @@
                                     <div class="shipping-name">
                                         <i class="fas fa-shipping-fast" style="color:var(--gray-400);"></i>
                                         <strong>Pengiriman Luar Kota</strong>
-                                        <span class="badge-coming">Segera Hadir</span>
+                                        <span class="badge-coming">Tidak Tersedia</span>
                                     </div>
                                     <p class="shipping-desc">Via ekspedisi (JNE, TIKI, POS) — pilih kurir & layanan di bawah</p>
                                 </div>
@@ -111,7 +140,7 @@
                             </div>
                             @endif
 
-                            @if($rajaOngkirAvailable)
+                            @if($rajaOngkirAvailable && $outside && $outside->is_active)
                             {{-- RajaOngkir Ekspedisi Section --}}
                             <div id="rajaongkirSection" style="display:none; margin-top:0.5rem;">
                                 <div style="padding:1rem; background:var(--gray-50); border-radius:var(--radius); border:1.5px solid var(--gray-200);">
