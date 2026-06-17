@@ -31,7 +31,6 @@
                 <option value="latest"      {{ request('sort','latest')==='latest'      ? 'selected' : '' }}>Terbaru</option>
                 <option value="oldest"      {{ request('sort')==='oldest'      ? 'selected' : '' }}>Terlama</option>
                 <option value="orders_desc" {{ request('sort')==='orders_desc' ? 'selected' : '' }}>Pesanan Terbanyak</option>
-                <option value="spent_desc"  {{ request('sort')==='spent_desc'  ? 'selected' : '' }}>Belanja Terbanyak</option>
                 <option value="points_desc" {{ request('sort')==='points_desc' ? 'selected' : '' }}>Poin Tertinggi</option>
             </select>
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Terapkan</button>

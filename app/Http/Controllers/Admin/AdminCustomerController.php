@@ -57,7 +57,6 @@ class AdminCustomerController extends Controller
         match ($request->sort) {
             'points_desc'  => $query->orderByDesc('points'),
             'orders_desc'  => $query->orderByDesc('orders_count'),
-            'spent_desc'   => $query->orderByDesc('total_spent'),
             'oldest'       => $query->oldest(),
             default        => $query->latest(),
         };

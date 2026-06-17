@@ -9,6 +9,8 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 
 class AdminProductController extends Controller
 {
@@ -90,6 +92,27 @@ class AdminProductController extends Controller
             'conversion_units.*.price' => 'required|numeric|min:0',
         ]);
 
+        // (val) Pastikan satuan konversi tidak sama dengan satuan dasar dan tidak duplikat
+        if ($request->filled('conversion_units')) {
+            $baseUnit = $request->input('unit');
+            $seenUnits = [];
+            foreach ($request->conversion_units as $cu) {
+                if (!empty($cu['unit'])) {
+                    if ($cu['unit'] === $baseUnit) {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Satuan konversi tidak boleh sama dengan satuan dasar (' . $baseUnit . ').');
+                    }
+                    if (in_array($cu['unit'], $seenUnits)) {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Satuan konversi tidak boleh memiliki nama yang sama.');
+                    }
+                    $seenUnits[] = $cu['unit'];
+                }
+            }
+        }
+
         $validated['slug'] = Str::slug($validated['name']);
         $validated['is_active'] = $request->has('is_active');
         $validated['discount_price'] = $request->filled('discount_price') ? ($request->price - $request->discount_price) : null;
@@ -106,24 +129,45 @@ class AdminProductController extends Controller
             $validated['image'] = $request->file('image')->store('products', 'public');
         }
 
-        $product = Product::create($validated);
+        try {
+            DB::beginTransaction();
 
-        // (adm) Simpan satuan konversi ke tabel product_units
-        // Save satuan konversi
-        if ($request->filled('conversion_units')) {
-            foreach ($request->conversion_units as $cu) {
-                if (!empty($cu['unit']) && !empty($cu['conversion_value']) && isset($cu['price'])) {
-                    $product->productUnits()->create([
-                        'unit' => $cu['unit'],
-                        'conversion_value' => (int) $cu['conversion_value'],
-                        'price' => $cu['price'],
-                    ]);
+            $product = Product::create($validated);
+
+            // (adm) Simpan satuan konversi ke tabel product_units
+            // Save satuan konversi
+            if ($request->filled('conversion_units')) {
+                foreach ($request->conversion_units as $cu) {
+                    if (!empty($cu['unit']) && !empty($cu['conversion_value']) && isset($cu['price'])) {
+                        $product->productUnits()->create([
+                            'unit' => $cu['unit'],
+                            'conversion_value' => (int) $cu['conversion_value'],
+                            'price' => $cu['price'],
+                        ]);
+                    }
                 }
             }
-        }
 
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Produk berhasil ditambahkan!');
+            DB::commit();
+
+            return redirect()->route('admin.products.index')
+                ->with('success', 'Produk berhasil ditambahkan!');
+        } catch (QueryException $e) {
+            DB::rollBack();
+            if ($e->getCode() == 23000 && str_contains($e->getMessage(), 'product_units')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Satuan konversi tidak boleh memiliki nama yang sama.');
+            }
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan database. Silakan coba lagi.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     // (fetch) Form edit produk: fetch dari tabel products + product_units + categories
@@ -157,6 +201,27 @@ class AdminProductController extends Controller
             'conversion_units.*.price' => 'required|numeric|min:0',
         ]);
 
+        // (val) Pastikan satuan konversi tidak sama dengan satuan dasar dan tidak duplikat
+        if ($request->filled('conversion_units')) {
+            $baseUnit = $request->input('unit');
+            $seenUnits = [];
+            foreach ($request->conversion_units as $cu) {
+                if (!empty($cu['unit'])) {
+                    if ($cu['unit'] === $baseUnit) {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Satuan konversi tidak boleh sama dengan satuan dasar (' . $baseUnit . ').');
+                    }
+                    if (in_array($cu['unit'], $seenUnits)) {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Satuan konversi tidak boleh memiliki nama yang sama.');
+                    }
+                    $seenUnits[] = $cu['unit'];
+                }
+            }
+        }
+
         $validated['slug'] = Str::slug($validated['name']);
         $validated['is_active'] = $request->has('is_active');
         $validated['discount_price'] = $request->filled('discount_price') ? ($request->price - $request->discount_price) : null;
@@ -176,25 +241,46 @@ class AdminProductController extends Controller
             $validated['image'] = $request->file('image')->store('products', 'public');
         }
 
-        $product->update($validated);
+        try {
+            DB::beginTransaction();
 
-        // (adm) Update satuan konversi ke tabel product_units
-        // Sync satuan konversi
-        $product->productUnits()->delete();
-        if ($request->filled('conversion_units')) {
-            foreach ($request->conversion_units as $cu) {
-                if (!empty($cu['unit']) && !empty($cu['conversion_value']) && isset($cu['price'])) {
-                    $product->productUnits()->create([
-                        'unit' => $cu['unit'],
-                        'conversion_value' => (int) $cu['conversion_value'],
-                        'price' => $cu['price'],
-                    ]);
+            $product->update($validated);
+
+            // (adm) Update satuan konversi ke tabel product_units
+            // Sync satuan konversi
+            $product->productUnits()->delete();
+            if ($request->filled('conversion_units')) {
+                foreach ($request->conversion_units as $cu) {
+                    if (!empty($cu['unit']) && !empty($cu['conversion_value']) && isset($cu['price'])) {
+                        $product->productUnits()->create([
+                            'unit' => $cu['unit'],
+                            'conversion_value' => (int) $cu['conversion_value'],
+                            'price' => $cu['price'],
+                        ]);
+                    }
                 }
             }
-        }
 
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Produk berhasil diperbarui!');
+            DB::commit();
+
+            return redirect()->route('admin.products.index')
+                ->with('success', 'Produk berhasil diperbarui!');
+        } catch (QueryException $e) {
+            DB::rollBack();
+            if ($e->getCode() == 23000 && str_contains($e->getMessage(), 'product_units')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Satuan konversi tidak boleh memiliki nama yang sama.');
+            }
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan database. Silakan coba lagi.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Product $product)

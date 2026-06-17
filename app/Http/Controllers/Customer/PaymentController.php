@@ -167,7 +167,7 @@ class PaymentController extends Controller
         return response()->json(['token' => $snapToken]);
     }
 
-    // (mid) Build payload & minta Snap Token ke Midtrans API
+    // (mid) Minta / Request Snap Token ke Midtrans API
     private function createSnapToken(Order $order, array $enabledPayments = ['gopay', 'qris'], ?array $bankTransfer = null, ?string $midtransOrderId = null): string
     {
         $order->load(['items.product', 'user']);
