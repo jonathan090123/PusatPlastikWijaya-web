@@ -110,7 +110,7 @@ class CustomerProductController extends Controller
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();
-
+            // tampilkan produk terkait dari kategori yg sama, kecuali produk yg sedang dilihat
         $relatedProducts = Product::with('category')
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
