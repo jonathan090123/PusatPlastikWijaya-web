@@ -29,6 +29,16 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
+// nonaktif akun
+            if (Auth::user()->role === 'customer' && !Auth::user()->is_active) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Akun Anda telah dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.',
+                ])->onlyInput('email');
+            }
 
             if (Auth::user()->role === 'admin') {
                 return redirect()->route('admin.dashboard');
