@@ -9,11 +9,12 @@ use Illuminate\Http\Request;
 
 class CustomerProductController extends Controller
 {
+    // (fetch) Tampilkan katalog produk dengan filter & sort
     public function index(Request $request)
     {
         $query = Product::with('category')->where('is_active', true);
 
-        // Search — includes product name, product_code, and category name
+        // (search) Cari produk dari tabel products + categories
         if ($request->filled('search')) {
             $term = $request->search;
             $query->where(function ($q) use ($term) {
@@ -67,6 +68,7 @@ class CustomerProductController extends Controller
         return view('customer.products.index', compact('products', 'categories'));
     }
 
+    // (fetch) AJAX preview: fetch 8 produk dari tabel products untuk dropdown search
     public function suggest(Request $request)
     {
         $q = trim($request->get('q', ''));
@@ -101,6 +103,7 @@ class CustomerProductController extends Controller
         }));
     }
 
+    // (fetch) Detail produk dari tabel products + product_units
     public function show($slug)
     {
         $product = Product::with(['category', 'productUnits'])

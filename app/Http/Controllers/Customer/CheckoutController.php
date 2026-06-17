@@ -11,7 +11,8 @@ use App\Models\ShippingCost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Services\RajaOngkirService; // (raj) Service untuk kalkulasi ongkir
+use App\Services\RajaOngkirService; 
+// fetch dari tabel cart
 
 class CheckoutController extends Controller
 {
@@ -37,7 +38,7 @@ class CheckoutController extends Controller
         // (raj) RUMUS: Hitung total berat semua item (dalam gram) untuk kalkulasi ongkir
         $totalWeight = 0;
         foreach ($cart->items as $item) {
-            // (raj) Konversi unit  ke satuan dasar
+            // (raj) Konversi unit ke satuan dasar
             $conv = 1; 
             if ($item->unit && $item->unit !== $item->product->unit) {
                 $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
@@ -180,7 +181,7 @@ class CheckoutController extends Controller
 
                 $total = $subtotal - $pointsDiscount + $shippingFee;
 
-                // Create order
+                // Create order / Buat Pesanan btn
                 $order = Order::create([
                     'invoice_number' => Order::generateInvoiceNumber(),
                     'user_id' => Auth::id(),

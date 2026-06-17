@@ -12,9 +12,10 @@ use Illuminate\Support\Facades\Auth;
 
 class CustomerOrderController extends Controller
 {
+    // (fetch) List order customer dari tabel orders + auto-expire deadline
     public function index()
     {
-        // Auto-expire order yang melewati deadline
+        // (exp) Auto-expire order yang melewati deadline
         $expiring = Order::where('user_id', Auth::id())
             ->whereIn('status', ['pending', 'waiting_payment'])
             ->where(function ($q) {
@@ -37,7 +38,7 @@ class CustomerOrderController extends Controller
             ->latest()
             ->paginate(10);
 
-        // Ambil ID unread sebelum ditandai dibaca
+        // (fetch) Ambil ID unread sebelum ditandai dibaca
         $unreadOrderIds = Order::where('user_id', Auth::id())
             ->whereNull('status_read_at')
             ->pluck('id')
@@ -55,13 +56,14 @@ class CustomerOrderController extends Controller
         return view('customer.orders.index', compact('orders', 'unreadOrderIds', 'confirmableCount'));
     }
 
+    // (fetch) Detail order customer dari tabel orders + auto-expire
     public function show(Order $order)
     {
         if ($order->user_id !== Auth::id()) {
             abort(403);
         }
 
-        // Auto-expire if deadline already passed
+        // (exp) Auto-expire jika deadline lewat
         if (in_array($order->status, ['pending', 'waiting_payment'])) {
             $deadline = $order->payment_deadline ?? $order->created_at->addHours(12);
             if (now()->gte($deadline)) {
@@ -82,6 +84,7 @@ class CustomerOrderController extends Controller
         return view('customer.orders.show', compact('order'));
     }
 
+    // (order) Customer batalkan order: kembalikan stok + poin
     public function cancel(Order $order)
     {
         if ($order->user_id !== Auth::id()) {
@@ -97,6 +100,7 @@ class CustomerOrderController extends Controller
             return back()->with('error', 'Batas waktu pembatalan telah habis.');
         }
 
+        // (fetch) Kembalikan stok ke tabel products + refund poin ke users
         $this->restoreOrderStock($order);
         $this->refundPointsIfNeeded($order);
         $order->update([
@@ -108,7 +112,7 @@ class CustomerOrderController extends Controller
             ->with('success', 'Pesanan ' . $order->invoice_number . ' telah dibatalkan.');
     }
 
-    /** AJAX: tandai order expired saat countdown habis. */
+    // (exp) AJAX: tandai order expired saat countdown habis di frontend
     public function expire(Order $order)
     {
         if ($order->user_id !== Auth::id()) {
@@ -129,7 +133,7 @@ class CustomerOrderController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    /** Tambah semua item order ke keranjang (Beli Lagi). */
+    // (fetch) Beli Lagi: pindah item dari order lama ke cart_items
     public function reorder(Order $order)
     {
         if ($order->user_id !== Auth::id()) {

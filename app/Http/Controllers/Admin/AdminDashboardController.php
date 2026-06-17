@@ -12,13 +12,16 @@ class AdminDashboardController extends Controller
 {
     private array $recentStatuses = ['processing', 'shipped', 'ready_for_pickup', 'pending'];
 
+    // (fetch) Dashboard admin: fetch ringkasan dari orders, products, users
     public function index()
     {
+        // Ringkasan statistik dari tabel orders, products, users
         $totalOrders = Order::count();
         $totalRevenue = Order::where('status', 'completed')->sum('total');
         $totalProducts = Product::count();
         $totalCustomers = User::where('role', 'customer')->count();
 
+        // (fetch) Pesanan terbaru dari tabel orders
         $recentPaginator = Order::with('user')
             ->whereIn('status', $this->recentStatuses)
             ->latest()
@@ -27,6 +30,7 @@ class AdminDashboardController extends Controller
         $recentOrders = $recentPaginator->items();
         $recentOrdersHasMore = $recentPaginator->hasMorePages();
 
+        // (fetch) Stok menipis dari tabel products
         $lowStockProducts = Product::with('category')
             ->where('is_active', true)
             ->whereColumn('stock', '<=', 'stock_alert')
@@ -34,7 +38,7 @@ class AdminDashboardController extends Controller
             ->take(10)
             ->get();
 
-        // Ambil ID unread sebelum read
+        // (fetch) Ambil ID unread sebelum read dari tabel orders
         $newOrderIds = Order::whereNull('admin_read_at')
             ->whereNotIn('status', ['cancelled', 'completed', 'expired'])
             ->pluck('id')
@@ -60,10 +64,12 @@ class AdminDashboardController extends Controller
         ));
     }
 
+    // Fetch pesanan terbaru untuk infinite scroll dashboard
     public function recentOrdersAjax(Request $request)
     {
         $page = max(1, (int) $request->query('page', 1));
 
+        // (fetch) Pesanan terbaru dari tabel orders
         $paginator = Order::with('user')
             ->whereIn('status', $this->recentStatuses)
             ->latest()

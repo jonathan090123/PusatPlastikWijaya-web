@@ -9,6 +9,7 @@ use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
+    // (auth) Tampilkan profil user dari tabel users
     public function edit()
     {
         $user = Auth::user();
@@ -20,10 +21,12 @@ class ProfileController extends Controller
         return view('customer.profile', compact('user'));
     }
 
+    // (auth) Update profil user ke tabel users
     public function update(Request $request)
     {
         $user = Auth::user();
 
+        // (val) Validasi input profil
         $rules = [
             'name'  => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,

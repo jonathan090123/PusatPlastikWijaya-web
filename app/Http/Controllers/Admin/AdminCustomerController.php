@@ -8,8 +8,10 @@ use Illuminate\Http\Request;
 
 class AdminCustomerController extends Controller
 {
+    // (fetch) List customer dari tabel users dengan filter & search
     public function index(Request $request)
     {
+        // (fetch) Query customer dari tabel users + relasi orders
         $query = User::where('role', 'customer')
             ->withCount('orders')
             ->withSum(['orders as total_spent' => fn($q) => $q->whereIn('status', ['paid','processing','shipped','completed'])], 'total');
@@ -87,7 +89,7 @@ class AdminCustomerController extends Controller
         $status = $customer->is_active ? 'diaktifkan' : 'dinonaktifkan';
         return redirect()->back()->with('success', "Akun {$customer->name} berhasil {$status}.");
     }
-
+    
     public function destroy(User $customer)
     {
         $customer->delete();

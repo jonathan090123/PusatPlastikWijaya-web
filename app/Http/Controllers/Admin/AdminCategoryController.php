@@ -10,10 +10,13 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminCategoryController extends Controller
 {
+    // (fetch) List kategori dari tabel categories dengan filter & search
     public function index(Request $request)
     {
+        // (fetch) Query kategori dari tabel categories + count produk aktif
         $query = Category::withCount(['products' => fn($q) => $q->where('is_active', true)]);
 
+        // (search) Cari kategori dari tabel categories
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }

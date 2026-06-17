@@ -273,7 +273,7 @@
                                 <div style="font-weight:700; font-size:0.875rem; color:{{ $item->is_out_of_stock ? 'var(--gray-400)' : 'var(--gray-800)' }}; white-space:nowrap; {{ $item->is_out_of_stock ? 'text-decoration:line-through;' : '' }}">
                                     Rp {{ number_format($item->subtotal, 0, ',', '.') }}
                                 </div>
-                                @if(!$item->is_out_of_stock && !in_array($order->status, ['completed', 'refunded', 'cancelled', 'expired']) && !$lockedBy)
+                                @if(!$item->is_out_of_stock && !in_array($order->status, ['completed', 'refunded', 'cancelled', 'expired']))
                                     <button type="button"
                                         onclick="confirmOutOfStock({{ $item->id }}, '{{ addslashes($item->product_name) }}', '{{ route('admin.orders.items.outOfStock', [$order, $item]) }}')"
                                         style="font-size:0.7rem; padding:0.2rem 0.5rem; background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap;">
@@ -365,12 +365,6 @@
                     <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin-bottom:0.75rem;">
                         <i class="fas fa-edit" style="color:var(--primary);"></i> Update Status
                     </h3>
-                    @if($lockedBy)
-                        <div style="padding:0.85rem; background:#fef3c7; border:1px solid #fcd34d; border-radius:var(--radius-sm); text-align:center; font-size:0.85rem; color:#92400e;">
-                            <i class="fas fa-lock"></i>
-                            Diblokir — <strong>{{ $lockedBy['admin_name'] }}</strong> sedang mengelola pesanan ini.
-                        </div>
-                    @else
                     @php
                         $shippingType = $order->shippingCost->type ?? 'local';
                     @endphp
@@ -407,10 +401,9 @@
                             </div>
                         </div>
                     </div>
-                    @endif {{-- end @if($lockedBy) --}}
                 </div>
             </div>
-        @elseif($order->status === 'completed' && !$lockedBy)
+        @elseif($order->status === 'completed')
             {{-- Completed: tampilkan tombol Refund --}}
             <div class="card">
                 <div class="card-body">

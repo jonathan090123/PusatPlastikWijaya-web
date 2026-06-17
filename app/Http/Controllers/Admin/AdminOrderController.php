@@ -13,10 +13,12 @@ use Illuminate\Support\Facades\DB;
 
 class AdminOrderController extends Controller
 {
+    // (fetch) List semua order dari tabel orders dengan filter & search
     public function index(Request $request)
     {
         $doneStatuses = ['completed', 'refunded', 'cancelled', 'expired'];
 
+        // (fetch) Query order dari tabel orders + relasi user
         $query = Order::with('user')
             ->orderByRaw("CASE WHEN status IN ('" . implode("','", $doneStatuses) . "') THEN 1 ELSE 0 END ASC")
             ->latest();
@@ -44,7 +46,7 @@ class AdminOrderController extends Controller
 
         $orders = $query->paginate(15)->withQueryString();
 
-        // Ambil ID unread sebelum ditandai dibaca
+        // (fetch) Ambil ID unread sebelum ditandai dibaca
         $newOrderIds = Order::whereNull('admin_read_at')
             ->whereIn('status', ['pending', 'waiting_payment'])
             ->pluck('id')
@@ -58,11 +60,12 @@ class AdminOrderController extends Controller
         return view('admin.orders.index', compact('orders', 'newOrderIds'));
     }
 
+    // (fetch) Detail order dari tabel orders + relasi items, payment, shipping
     public function show(Order $order)
     {
         $order->load(['user', 'items.product', 'payment', 'shippingCost']);
 
-        // Tandai order sudah dibaca
+        // (adm) Tandai order sudah dibaca
         if (is_null($order->admin_read_at)) {
             $order->update(['admin_read_at' => now()]);
         }
@@ -72,12 +75,14 @@ class AdminOrderController extends Controller
 
 
 
+    // (fetch) Invoice order dari tabel orders
     public function invoice(Order $order)
     {
         $order->load(['user', 'items.product', 'payment', 'shippingCost']);
         return view('admin.orders.invoice', compact('order'));
     }
 
+    // (order) Admin update status order dengan DB Transaction
     public function updateStatus(Request $request, Order $order)
     {
         $request->validate([
@@ -86,20 +91,21 @@ class AdminOrderController extends Controller
 
         $newStatus = $request->status;
 
-        // Hanya boleh ke 'refunded' dari 'completed'
+        // (val) Hanya boleh ke 'refunded' dari 'completed'
         if ($newStatus === 'refunded' && $order->status !== 'completed') {
             return back()->with('error', 'Refund hanya bisa dilakukan untuk pesanan yang sudah selesai.');
         }
 
+        // (trans) Update status dalam DB Transaction untuk integritas data
         DB::transaction(function () use ($order, $newStatus) {
-            // Lock baris order
+            // (fetch) Lock baris order dari tabel orders
             $locked = Order::lockForUpdate()->find($order->id);
 
             $previousStatus = $locked->status;
 
             $locked->update([
                 'status'         => $newStatus,
-                'status_read_at' => null, // mark as unread for customer
+                'status_read_at' => null, // (adm) Mark as unread for customer
             ]);
 
             // (pt) Cairkan poin ke customer & kurangi stok saat status jadi "completed"
@@ -117,6 +123,7 @@ class AdminOrderController extends Controller
         return redirect()->route('admin.orders.index')->with('success', 'Status pesanan berhasil diperbarui menjadi "' . $order->fresh()->status_label . '".');
     }
 
+    // (order) Admin update nomor resi tracking
     public function updateTracking(Request $request, Order $order)
     {
         $request->validate([
@@ -125,7 +132,7 @@ class AdminOrderController extends Controller
 
         $order->update([
             'tracking_number' => $request->tracking_number ?: null,
-            'status_read_at'  => null, // notify customer of update
+            'status_read_at'  => null, // (adm) Notify customer of update
         ]);
 
         return back()->with('success', $request->tracking_number
@@ -133,15 +140,17 @@ class AdminOrderController extends Controller
             : 'Nomor resi berhasil dihapus.');
     }
 
+    // (order) Admin tandai item stok habis + DB Transaction
     public function markItemOutOfStock(Request $request, Order $order, OrderItem $item)
     {
         abort_if($item->order_id !== $order->id, 403);
 
+        // (trans) Lock & update dalam DB Transaction
         DB::transaction(function () use ($order, $item) {
-            // Lock baris item
+            // (fetch) Lock baris item dari tabel order_items
             $lockedItem = OrderItem::lockForUpdate()->find($item->id);
 
-            // Re-check dalam lock
+            // (val) Re-check dalam lock
             abort_if($lockedItem->is_out_of_stock, 422, 'Item sudah ditandai stok kosong.');
 
             $lockedItem->update([
@@ -149,12 +158,12 @@ class AdminOrderController extends Controller
                 'out_of_stock_at' => now(),
             ]);
 
-            // Set stok produk ke 0
+            // (fetch) Set stok produk ke 0 di tabel products
             if ($lockedItem->product_id) {
                 Product::lockForUpdate()->where('id', $lockedItem->product_id)->update(['stock' => 0]);
             }
 
-        // Kurangi poin customer jika item out of stock & order sudah completed/refunded
+        // (pt) Kurangi poin customer jika item out of stock & order sudah completed/refunded
             $lockedOrder = Order::with('user')->lockForUpdate()->find($order->id);
             if (in_array($lockedOrder->status, ['completed', 'refunded'])) {
                 $deduct = (int) floor((float) $lockedItem->subtotal / 200);

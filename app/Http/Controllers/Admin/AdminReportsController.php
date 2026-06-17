@@ -13,20 +13,21 @@ use Illuminate\Support\Facades\DB;
 
 class AdminReportsController extends Controller
 {
+    // (fetch) Laporan penjualan: fetch data dari tabel orders, order_items, users
     public function index(Request $request)
     {
         $period = $request->input('period', 'month');
         $startDate = $this->getStartDate($period, $request);
         $endDate   = $this->getEndDate($period, $request);
 
-        // Hanya order completed
+        // (fetch) Hanya order completed dari tabel orders
         $completedQuery = Order::where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
-        // Semua order non-cancelled
+        // (fetch) Semua order non-cancelled dari tabel orders
         $allOrdersQuery = Order::whereBetween('created_at', [$startDate, $endDate]);
 
-        // Summary stats
+        // (rep) Summary stats dari tabel orders
         $totalRevenue      = (clone $completedQuery)->sum('total');
         $totalOrders       = (clone $allOrdersQuery)->count();
         $completedOrders   = (clone $completedQuery)->count();
@@ -36,7 +37,7 @@ class AdminReportsController extends Controller
         })->sum('quantity');
         $avgOrderValue     = $completedOrders > 0 ? $totalRevenue / $completedOrders : 0;
 
-        // Revenue chart
+        // grafik pendapat / Revenue chart
         $revenueChart = Order::where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as revenue'), DB::raw('COUNT(*) as orders'))
@@ -117,13 +118,14 @@ class AdminReportsController extends Controller
         };
     }
 
+    // (rep) Export laporan ke Excel: fetch dari tabel orders, order_items, users
     public function exportExcel(Request $request)
     {
         $period    = $request->input('period', 'month');
         $startDate = $this->getStartDate($period, $request);
         $endDate   = $this->getEndDate($period, $request);
 
-        // ── Sheet 1: Ringkasan ────────────────────────────────────────────
+        // (fetch) Ringkasan dari tabel orders
         $completedQuery = Order::where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate]);
         $allOrdersQuery = Order::whereBetween('created_at', [$startDate, $endDate]);

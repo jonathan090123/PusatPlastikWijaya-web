@@ -12,17 +12,20 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminProductController extends Controller
 {
+    // (fetch) List produk dari tabel products dengan filter & search
     public function index(Request $request)
     {
+        // (fetch) Query produk dari tabel products
         $query = Product::with('category');
 
+        // (search) Cari produk dari tabel products
         if ($request->filled('search')) {
             $term = trim($request->search);
-            // Split search term into individual keywords (split on whitespace)
+            // (search) Split search term into individual keywords (split on whitespace)
             $keywords = preg_split('/\s+/', $term, -1, PREG_SPLIT_NO_EMPTY);
 
             if (count($keywords) > 1) {
-                // Multi-keyword: each keyword must appear in name OR product_code
+                // (search) Multi-keyword: each keyword must appear in name OR product_code
                 $query->where(function ($q) use ($keywords) {
                     foreach ($keywords as $keyword) {
                         $q->where(function ($inner) use ($keyword) {
@@ -32,7 +35,7 @@ class AdminProductController extends Controller
                     }
                 });
             } else {
-                // Single keyword: normal LIKE search
+                // (search) Single keyword: normal LIKE search
                 $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', '%' . $term . '%')
                         ->orWhere('product_code', 'like', '%' . $term . '%');
@@ -57,14 +60,17 @@ class AdminProductController extends Controller
         return view('admin.products.index', compact('products', 'categories'));
     }
 
+    // (fetch) Form tambah produk: fetch kategori dari tabel categories
     public function create()
     {
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         return view('admin.products.create', compact('categories'));
     }
 
+    // (adm) Simpan produk baru ke tabel products + product_units
     public function store(Request $request)
     {
+        // (val) Validasi input produk
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'product_code' => 'nullable|string|max:50|unique:products,product_code',
@@ -102,6 +108,7 @@ class AdminProductController extends Controller
 
         $product = Product::create($validated);
 
+        // (adm) Simpan satuan konversi ke tabel product_units
         // Save satuan konversi
         if ($request->filled('conversion_units')) {
             foreach ($request->conversion_units as $cu) {
@@ -119,6 +126,7 @@ class AdminProductController extends Controller
             ->with('success', 'Produk berhasil ditambahkan!');
     }
 
+    // (fetch) Form edit produk: fetch dari tabel products + product_units + categories
     public function edit(Product $product)
     {
         $product->load('productUnits');
@@ -126,8 +134,10 @@ class AdminProductController extends Controller
         return view('admin.products.edit', compact('product', 'categories'));
     }
 
+    // (adm) Update produk ke tabel products + product_units satuan
     public function update(Request $request, Product $product)
     {
+        // (val) Validasi input produk
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'product_code' => 'nullable|string|max:50|unique:products,product_code,' . $product->id,
@@ -152,7 +162,7 @@ class AdminProductController extends Controller
         $validated['discount_price'] = $request->filled('discount_price') ? ($request->price - $request->discount_price) : null;
         $validated['weight'] = $validated['weight'] ?? 0;
 
-        // Pastikan slug unik
+        // (val) Pastikan slug unik
         $originalSlug = $validated['slug'];
         $counter = 1;
         while (Product::where('slug', $validated['slug'])->where('id', '!=', $product->id)->exists()) {
@@ -168,6 +178,7 @@ class AdminProductController extends Controller
 
         $product->update($validated);
 
+        // (adm) Update satuan konversi ke tabel product_units
         // Sync satuan konversi
         $product->productUnits()->delete();
         if ($request->filled('conversion_units')) {

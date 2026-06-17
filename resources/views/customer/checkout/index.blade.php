@@ -259,7 +259,9 @@
                              data-price="{{ $itemUnitPrice }}"
                              data-stock="{{ $item->product->stock }}"
                              data-max="{{ $itemMaxQty }}"
-                             data-unit="{{ $item->unit }}">
+                             data-unit="{{ $item->unit }}"
+                             data-weight="{{ $item->product->weight > 0 ? $item->product->weight : 500 }}"
+                             data-conversion="{{ $itemConversion }}">
                             <div class="summary-item-img">
                                 @if($item->product->image)
                                     <img src="{{ asset('storage/' . $item->product->image) }}"
@@ -789,6 +791,8 @@ function updateCartItem(itemId, newQty) {
         var price = parseFloat(row.dataset.price);
         document.getElementById('sub-' + itemId).textContent = formatRupiah(price * newQty);
         recalcSubtotal();
+        if (window.recalcWeight) window.recalcWeight();
+        if (window.clearOngkirResults) window.clearOngkirResults();
     });
 }
 
@@ -800,6 +804,8 @@ function deleteCartItem(itemId) {
         var row = document.getElementById('summary-item-' + itemId);
         if (row) row.remove();
         recalcSubtotal();
+        if (window.recalcWeight) window.recalcWeight();
+        if (window.clearOngkirResults) window.clearOngkirResults();
         var remaining = document.querySelectorAll('#summaryItemsList .summary-item').length;
         if (remaining === 0) {
             document.getElementById('cartEmptyMsg').style.display = 'block';
@@ -1430,6 +1436,22 @@ function applyPoints() {
         }
         _origRecalcTotal();
     };
+
+    // (raj) Recalculate total weight from cart items (exposed globally for cart updates)
+    window.recalcWeight = function() {
+        var newWeight = 0;
+        document.querySelectorAll('#summaryItemsList .summary-item').forEach(function(row) {
+            const w = parseFloat(row.dataset.weight) || 500;
+            const c = parseInt(row.dataset.conversion) || 1;
+            const q = parseInt(document.getElementById('qty-' + row.dataset.itemId).value, 10);
+            newWeight += w * q * c;
+        });
+        totalWeight = newWeight;
+        if (weightEl) weightEl.textContent = totalWeight.toLocaleString('id-ID');
+    };
+
+    // Expose clearOngkirResults globally so cart updates can reset shipping
+    window.clearOngkirResults = clearOngkirResults;
 
     // When pickup/local selected, clear ongkir selection
     document.querySelectorAll('.shipping-option:not(.ongkir-option) input[name="shipping_type"]').forEach(function(radio) {

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 
 class AdminShippingController extends Controller
 {
+    // (fetch) Pastikan 3 metode pengiriman ada di tabel shipping_costs
     private function ensureAllMethods(): void
     {
         ShippingCost::firstOrCreate(
@@ -25,10 +26,12 @@ class AdminShippingController extends Controller
         );
     }
 
+    // (fetch) Tampilkan pengaturan ongkir dari tabel shipping_costs
     public function index(RajaOngkirService $rajaOngkir)
     {
         $this->ensureAllMethods();
 
+        // (fetch) Ambil metode pickup, local, outside dari tabel shipping_costs
         $pickup  = ShippingCost::where('type', 'pickup')->first();
         $local   = ShippingCost::where('type', 'local')->first();
         $outside = ShippingCost::where('type', 'outside')->first();
