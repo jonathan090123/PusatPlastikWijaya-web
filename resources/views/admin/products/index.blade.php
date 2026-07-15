@@ -3,11 +3,73 @@
 @section('title', 'Manajemen Produk - Admin')
 
 @section('content')
-<div class="page-header">
-    <h1><i class="fas fa-box"></i> Manajemen Produk</h1>
-    <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Tambah Produk
-    </a>
+<div class="page-header" style="display:flex; align-items:center; gap:1rem;">
+    <h1 style="margin:0; display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-box"></i> Manajemen Produk</h1>
+
+    <div style="margin-left:auto; display:flex; gap:0.5rem; align-items:center;">
+        <a href="{{ route('admin.products.create') }}" class="header-btn header-add">
+            <i class="fas fa-plus"></i> Tambah Produk
+        </a>
+
+        <form id="exportFormHeader" action="{{ route('admin.products.exportPriceTemplate') }}" method="GET" style="margin:0;">
+            <input type="hidden" name="search" value="{{ request('search') }}">
+            <input type="hidden" name="category" value="{{ request('category') }}">
+            <input type="hidden" name="status" value="{{ request('status') }}">
+            <input type="hidden" name="sort" value="{{ request('sort', 'newest') }}">
+            <button type="submit" class="header-btn header-export">
+                <i class="fas fa-file-csv"></i> Export Produk
+            </button>
+        </form>
+
+        <form id="importFormHeader" action="{{ route('admin.products.importPriceUpdates') }}" method="POST" enctype="multipart/form-data" style="margin:0;">
+            @csrf
+            <input type="file" id="priceFileHeader" name="file" accept=".csv,text/csv" style="display:none;">
+            <button type="button" id="importBtnHeader" class="header-btn header-import">
+                <i class="fas fa-upload"></i> Import Produk
+            </button>
+        </form>
+
+        <details style="position:relative;">
+            <summary class="header-btn header-import" style="padding:0.4rem 0.7rem; cursor:pointer; list-style:none;">
+                <i class="fas fa-history"></i> Riwayat File
+            </summary>
+            <div class="card" style="position:absolute; right:0; top:calc(100% + 0.4rem); min-width:260px; z-index:20; box-shadow:0 8px 24px rgba(0,0,0,0.12);">
+                <div class="card-body" style="padding:0.8rem;">
+                    <div style="font-size:0.8rem; font-weight:700; color:var(--gray-600); margin-bottom:0.5rem;">Riwayat file</div>
+                    @if(!empty($fileHistory))
+                        <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:0.45rem;">
+                            @foreach(array_reverse($fileHistory) as $item)
+                                <li style="font-size:0.85rem; color:var(--gray-700); border-bottom:1px solid var(--gray-200); padding-bottom:0.35rem;">
+                                    <div style="font-weight:600; text-transform:capitalize;">{{ $item['type'] }}</div>
+                                    <div>{{ $item['filename'] }}</div>
+                                    @if(!empty($item['updates']) || !empty($item['before']))
+                                        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; margin-top:0.35rem; flex-wrap:wrap;">
+                                            <span style="font-size:0.72rem; color:var(--gray-500);">{{ isset($item['count']) ? $item['count'] . ' item' : '1 item' }}</span>
+                                            <form action="{{ route('admin.products.undoFileHistory') }}" method="POST" style="margin:0;">
+                                                @csrf
+                                                <input type="hidden" name="history_id" value="{{ $item['id'] }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" style="padding:0.2rem 0.5rem; font-size:0.75rem;">
+                                                    <i class="fas fa-undo"></i> Undo
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <div style="font-size:0.85rem; color:var(--gray-500);">Belum ada riwayat file.</div>
+                    @endif
+
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
+
+{{-- Info Text --}}
+<div style="font-size:0.85rem; color:var(--gray-600); margin-bottom:1rem; padding:0 0.5rem;">
+    <i class="fas fa-info-circle"></i> Untuk export seluruh produk di kategori tertentu, pilih kategori di filter yang sesuai.
 </div>
 
 {{-- Filters --}}
@@ -46,6 +108,8 @@
     </div>
 </div>
 
+<!-- Import form moved to header for cleaner layout -->
+
 <div class="card">
     {{-- Bulk Action Bar --}}
     <div id="bulkBar" style="display:none; background:#1e40af; color:#fff; padding:0.65rem 1.25rem; border-radius:var(--radius-md) var(--radius-md) 0 0; display:none; align-items:center; gap:1rem; flex-wrap:wrap;">
@@ -56,6 +120,9 @@
             </button>
             <button onclick="bulkToggle('inactive')" class="btn btn-sm" style="background:#f59e0b; color:#fff; border:none;">
                 <i class="fas fa-times"></i> Nonaktifkan
+            </button>
+            <button onclick="bulkExport()" class="btn btn-sm" style="background:#0ea5e9; color:#fff; border:none;">
+                <i class="fas fa-file-export"></i> Export
             </button>
             <button onclick="bulkDelete()" class="btn btn-sm" style="background:#ef4444; color:#fff; border:none;">
                 <i class="fas fa-trash"></i> Hapus
@@ -178,11 +245,76 @@
         background-color: var(--gray-50);
         cursor: pointer;
     }
+    .page-header .btn { white-space: nowrap; }
+    .page-header .btn + .btn { margin-left: 0.5rem; }
+    /* Header button styles - clean and consistent */
+    .header-btn {
+        display:inline-flex;
+        align-items:center;
+        gap:0.5rem;
+        padding:0.45rem 0.7rem;
+        border-radius:0.375rem;
+        font-size:0.95rem;
+        text-decoration:none;
+        cursor:pointer;
+        border:1px solid transparent;
+        transition:all 0.12s ease;
+    }
+    .header-btn i { font-size:0.95rem; }
+    .header-add {
+        background:#2563eb; /* blue-600, sama dengan tombol Filter */
+        color:#ffffff;
+        border-color:#2563eb;
+    }
+    .header-add:hover {
+        background:#1d4ed8;
+        border-color:#1d4ed8;
+        color:#ffffff;
+    }
+    .header-export {
+        background:#16a34a; /* green-600 */
+        color:#ffffff;
+        border-color:#16a34a;
+    }
+    .header-export:hover {
+        background:#15803d;
+        border-color:#15803d;
+        color:#ffffff;
+    }
+    .header-import {
+        background:#16a34a; /* green-600 */
+        color:#ffffff;
+        border-color:#16a34a;
+    }
+    .header-import:hover {
+        background:#15803d;
+        border-color:#15803d;
+        color:#ffffff;
+    }
 </style>
 @endpush
 
 @push('scripts')
 <script>
+// Import button in header: trigger file input and auto-submit
+document.addEventListener('DOMContentLoaded', function() {
+    var importBtn = document.getElementById('importBtnHeader');
+    var fileInput = document.getElementById('priceFileHeader');
+    var form = document.getElementById('importFormHeader');
+
+    if (importBtn && fileInput && form) {
+        importBtn.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                form.submit();
+            }
+        });
+    }
+});
+
 document.querySelectorAll('.product-row').forEach(row => {
     row.addEventListener('click', function(e) {
         // Prevent navigation if clicking on buttons, forms, or anything with onclick
@@ -234,32 +366,96 @@ document.querySelectorAll('.toggle-active').forEach(btn => {
 const bulkBar    = document.getElementById('bulkBar');
 const bulkCount  = document.getElementById('bulkCount');
 const selectAll  = document.getElementById('selectAll');
+const STORAGE_KEY = 'adminProductSelectedIds';
+
+function getStoredSelectedIds() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function setStoredSelectedIds(ids) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+}
+
+function syncSelectionFromStorage() {
+    const selectedIds = getStoredSelectedIds();
+    const checkboxes = document.querySelectorAll('.row-check');
+
+    checkboxes.forEach(cb => {
+        cb.checked = selectedIds.includes(cb.value);
+    });
+
+    updateBulkBar();
+}
 
 function getChecked() {
-    return [...document.querySelectorAll('.row-check:checked')].map(c => c.value);
+    return getStoredSelectedIds();
 }
+
 function updateBulkBar() {
     const ids = getChecked();
+    const visibleCheckboxes = [...document.querySelectorAll('.row-check')];
+
     if (ids.length > 0) {
         bulkBar.style.display = 'flex';
         bulkCount.textContent = ids.length + ' produk dipilih';
     } else {
         bulkBar.style.display = 'none';
     }
-    selectAll.indeterminate = ids.length > 0 && ids.length < document.querySelectorAll('.row-check').length;
-    selectAll.checked = ids.length > 0 && ids.length === document.querySelectorAll('.row-check').length;
+
+    if (selectAll) {
+        const checkedVisible = visibleCheckboxes.filter(c => c.checked).length;
+        selectAll.indeterminate = checkedVisible > 0 && checkedVisible < visibleCheckboxes.length;
+        selectAll.checked = visibleCheckboxes.length > 0 && checkedVisible === visibleCheckboxes.length;
+    }
 }
+
 function clearSelection() {
+    setStoredSelectedIds([]);
     document.querySelectorAll('.row-check').forEach(c => c.checked = false);
     selectAll.checked = false;
     updateBulkBar();
 }
 
-selectAll.addEventListener('change', function() {
-    document.querySelectorAll('.row-check').forEach(c => c.checked = this.checked);
-    updateBulkBar();
+if (selectAll) {
+    selectAll.addEventListener('change', function() {
+        const visibleCheckboxes = document.querySelectorAll('.row-check');
+        const selectedIds = getStoredSelectedIds();
+        visibleCheckboxes.forEach(c => {
+            c.checked = this.checked;
+            const id = c.value;
+            if (this.checked) {
+                if (!selectedIds.includes(id)) selectedIds.push(id);
+            } else {
+                const index = selectedIds.indexOf(id);
+                if (index >= 0) selectedIds.splice(index, 1);
+            }
+        });
+        setStoredSelectedIds(selectedIds);
+        updateBulkBar();
+    });
+}
+
+document.querySelectorAll('.row-check').forEach(c => {
+    c.addEventListener('change', function() {
+        const id = this.value;
+        const selectedIds = getStoredSelectedIds();
+        if (this.checked) {
+            if (!selectedIds.includes(id)) selectedIds.push(id);
+        } else {
+            const index = selectedIds.indexOf(id);
+            if (index >= 0) selectedIds.splice(index, 1);
+        }
+        setStoredSelectedIds(selectedIds);
+        updateBulkBar();
+    });
 });
-document.querySelectorAll('.row-check').forEach(c => c.addEventListener('change', updateBulkBar));
+
+syncSelectionFromStorage();
 
 function bulkDelete() {
     const ids = getChecked();
@@ -283,10 +479,35 @@ function bulkDelete() {
     );
 }
 
+function bulkExport() {
+    const ids = getChecked();
+    if (!ids.length) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route('admin.products.exportSelected') }}';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = '_token';
+    input.value = document.querySelector('meta[name="csrf-token"]').content;
+    form.appendChild(input);
+
+    ids.forEach(id => {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'ids[]';
+        hidden.value = id;
+        form.appendChild(hidden);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
 function bulkToggle(status) {
     const ids = getChecked();
     if (!ids.length) return;
-    const label = status === 'active' ? 'mengaktifkan' : 'menonaktifkan';
     fetch('{{ route('admin.products.bulkToggle') }}', {
         method: 'POST',
         headers: {

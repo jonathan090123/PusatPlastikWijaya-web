@@ -122,6 +122,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/categories/{category}/image', [AdminCategoryController::class, 'deleteImage'])->name('categories.deleteImage');
 
     // Products
+    Route::get('/products/export-price-template', [AdminProductController::class, 'exportPriceTemplate'])->name('products.exportPriceTemplate');
+    Route::post('/products/export-selected', [AdminProductController::class, 'exportSelected'])->name('products.exportSelected');
+    Route::post('/products/import-price-updates', [AdminProductController::class, 'importPriceUpdates'])->name('products.importPriceUpdates');
+    Route::post('/products/apply-file-history', [AdminProductController::class, 'applyFileHistory'])->name('products.applyFileHistory');
+    Route::post('/products/undo-file-history', [AdminProductController::class, 'undoFileHistory'])->name('products.undoFileHistory');
+    Route::post('/products/undo-price-import', [AdminProductController::class, 'undoPriceImport'])->name('products.undoPriceImport');
     Route::resource('products', AdminProductController::class);
     Route::patch('/products/{product}/toggle-active', [AdminProductController::class , 'toggleActive'])->name('products.toggleActive');
     Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDelete'])->name('products.bulkDelete');

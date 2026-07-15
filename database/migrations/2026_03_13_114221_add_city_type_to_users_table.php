@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('city_type', ['blitar', 'outside'])->nullable()->after('address');
+            if (!Schema::hasColumn('users', 'city_type')) {
+                $table->enum('city_type', ['blitar', 'outside'])->nullable()->after('address');
+            }
         });
     }
 
