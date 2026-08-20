@@ -20,7 +20,7 @@ class ProductUnit extends Model
     {
         return [
             'price' => 'decimal:2',
-            'conversion_value' => 'integer',
+            'conversion_value' => 'decimal:2',
         ];
     }
 

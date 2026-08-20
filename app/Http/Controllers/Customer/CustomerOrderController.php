@@ -292,7 +292,7 @@ class CustomerOrderController extends Controller
             if ($item->unit && $item->unit !== $item->product->unit) {
                 $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
                 if ($pu)
-                    $conv = (int) $pu->conversion_value;
+                    $conv = (float) $pu->conversion_value;
             }
             $item->product->increment('stock', $item->quantity * $conv);
         }

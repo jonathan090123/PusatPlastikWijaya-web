@@ -42,7 +42,7 @@ class CheckoutController extends Controller
             $conv = 1; 
             if ($item->unit && $item->unit !== $item->product->unit) {
                 $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
-                if ($pu) $conv = (int) $pu->conversion_value;
+                if ($pu) $conv = (float) $pu->conversion_value;
             } 
             $productWeight = $item->product->weight > 0 ? $item->product->weight : 500;
             $totalWeight += $productWeight * $item->quantity * $conv;
@@ -91,7 +91,7 @@ class CheckoutController extends Controller
             $conv = 1;
             if ($item->unit && $item->unit !== $item->product->unit) {
                 $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
-                if ($pu) $conv = (int) $pu->conversion_value;
+                if ($pu) $conv = (float) $pu->conversion_value;
             }
             $required = $item->quantity * $conv;
             if ($item->product->stock < $required) {
@@ -127,7 +127,7 @@ class CheckoutController extends Controller
                     $conv = 1;
                     if ($item->unit && $item->unit !== $item->product->unit) {
                         $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
-                        if ($pu) $conv = (int) $pu->conversion_value;
+                        if ($pu) $conv = (float) $pu->conversion_value;
                     }
                     $productWeight = $item->product->weight > 0 ? $item->product->weight : 500;
                     $totalWeight += $productWeight * $item->quantity * $conv;
@@ -218,7 +218,7 @@ class CheckoutController extends Controller
                     $conv = 1;
                     if ($item->unit && $item->unit !== $item->product->unit) {
                         $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
-                        if ($pu) $conv = (int) $pu->conversion_value;
+                        if ($pu) $conv = (float) $pu->conversion_value;
                     }
                     $item->product->decrement('stock', $item->quantity * $conv);
                 }

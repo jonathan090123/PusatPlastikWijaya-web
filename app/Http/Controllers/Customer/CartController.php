@@ -48,7 +48,7 @@ class CartController extends Controller
             if (!$pu) {
                 return response()->json(['success' => false, 'message' => 'Satuan tidak valid'], 400);
             }
-            $conversion = (int) $pu->conversion_value;
+$conversion = (float) $pu->conversion_value;
         }
 
         // (cart) Cek stok berdasarkan satuan dasar (misal: 1 box = 10 piece)
@@ -108,7 +108,7 @@ class CartController extends Controller
         $conversion = 1;
         if ($unitName !== $cartItem->product->unit) {
             $pu = $cartItem->product->productUnits->firstWhere('unit', $unitName);
-            if ($pu) $conversion = (int) $pu->conversion_value;
+            if ($pu) $conversion = (float) $pu->conversion_value;
         }
         if (($request->quantity * $conversion) > $cartItem->product->stock) {
             return response()->json(['success' => false, 'message' => 'Stok tidak mencukupi'], 400);

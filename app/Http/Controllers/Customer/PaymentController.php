@@ -460,7 +460,7 @@ class PaymentController extends Controller
             $conv = 1;
             if ($item->unit && $item->unit !== $item->product->unit) {
                 $pu = $item->product->productUnits->firstWhere('unit', $item->unit);
-                if ($pu) $conv = (int) $pu->conversion_value;
+                if ($pu) $conv = (float) $pu->conversion_value;
             }
             $item->product->increment('stock', $item->quantity * $conv);
         }

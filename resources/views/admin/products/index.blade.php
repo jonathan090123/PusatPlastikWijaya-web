@@ -17,13 +17,13 @@
             <input type="hidden" name="status" value="{{ request('status') }}">
             <input type="hidden" name="sort" value="{{ request('sort', 'newest') }}">
             <button type="submit" class="header-btn header-export">
-                <i class="fas fa-file-csv"></i> Export Produk
+                <i class="fas fa-file-excel"></i> Export Produk
             </button>
         </form>
 
         <form id="importFormHeader" action="{{ route('admin.products.importPriceUpdates') }}" method="POST" enctype="multipart/form-data" style="margin:0;">
             @csrf
-            <input type="file" id="priceFileHeader" name="file" accept=".csv,text/csv" style="display:none;">
+            <input type="file" id="priceFileHeader" name="file" accept=".xlsx,.xls,.csv,text/csv" style="display:none;">
             <button type="button" id="importBtnHeader" class="header-btn header-import">
                 <i class="fas fa-upload"></i> Import Produk
             </button>
@@ -45,10 +45,10 @@
                                     @if(!empty($item['updates']) || !empty($item['before']))
                                         <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; margin-top:0.35rem; flex-wrap:wrap;">
                                             <span style="font-size:0.72rem; color:var(--gray-500);">{{ isset($item['count']) ? $item['count'] . ' item' : '1 item' }}</span>
-                                            <form action="{{ route('admin.products.undoFileHistory') }}" method="POST" style="margin:0;">
+                                            <form action="{{ route('admin.products.undoFileHistory') }}" method="POST" class="undo-history-form" style="margin:0;">
                                                 @csrf
                                                 <input type="hidden" name="history_id" value="{{ $item['id'] }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary" style="padding:0.2rem 0.5rem; font-size:0.75rem;">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary undo-history-btn" data-name="{{ $item['filename'] }}" style="padding:0.2rem 0.5rem; font-size:0.75rem;">
                                                     <i class="fas fa-undo"></i> Undo
                                                 </button>
                                             </form>
@@ -65,11 +65,6 @@
             </div>
         </details>
     </div>
-</div>
-
-{{-- Info Text --}}
-<div style="font-size:0.85rem; color:var(--gray-600); margin-bottom:1rem; padding:0 0.5rem;">
-    <i class="fas fa-info-circle"></i> Untuk export seluruh produk di kategori tertentu, pilih kategori di filter yang sesuai.
 </div>
 
 {{-- Filters --}}
@@ -110,7 +105,7 @@
 
 <!-- Import form moved to header for cleaner layout -->
 
-<div class="card">
+<div class="card" id="productListCard">
     {{-- Bulk Action Bar --}}
     <div id="bulkBar" style="display:none; background:#1e40af; color:#fff; padding:0.65rem 1.25rem; border-radius:var(--radius-md) var(--radius-md) 0 0; display:none; align-items:center; gap:1rem; flex-wrap:wrap;">
         <span id="bulkCount" style="font-weight:700; font-size:0.9rem;">0 produk dipilih</span>
@@ -315,14 +310,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-document.querySelectorAll('.product-row').forEach(row => {
-    row.addEventListener('click', function(e) {
-        // Prevent navigation if clicking on buttons, forms, or anything with onclick
-        if (e.target.closest('button, a, form, .toggle-active, .delete-btn, [onclick]')) return;
-        window.location = this.dataset.url;
-    });
-});
-
 function openImgPreview(img) {
     if (img.classList.contains('img-zoomed')) return;
     img.classList.add('img-zoomed');
@@ -334,43 +321,12 @@ function openImgPreview(img) {
     }, 0);
 }
 
-document.querySelectorAll('.toggle-active').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const url = this.dataset.url;
-        const button = this;
-
-        fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                if (data.is_active) {
-                    button.className = 'btn btn-sm btn-success toggle-active';
-                    button.innerHTML = '<i class="fas fa-check"></i> Aktif';
-                } else {
-                    button.className = 'btn btn-sm btn-secondary toggle-active';
-                    button.innerHTML = '<i class="fas fa-times"></i> Nonaktif';
-                }
-            }
-        });
-    });
-});
-
 // Bulk Select
-const bulkBar    = document.getElementById('bulkBar');
-const bulkCount  = document.getElementById('bulkCount');
-const selectAll  = document.getElementById('selectAll');
-const STORAGE_KEY = 'adminProductSelectedIds';
+var STORAGE_KEY = 'adminProductSelectedIds';
 
 function getStoredSelectedIds() {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        var raw = localStorage.getItem(STORAGE_KEY);
         return raw ? JSON.parse(raw) : [];
     } catch (e) {
         return [];
@@ -381,81 +337,197 @@ function setStoredSelectedIds(ids) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
 }
 
-function syncSelectionFromStorage() {
-    const selectedIds = getStoredSelectedIds();
-    const checkboxes = document.querySelectorAll('.row-check');
-
-    checkboxes.forEach(cb => {
-        cb.checked = selectedIds.includes(cb.value);
-    });
-
-    updateBulkBar();
-}
-
 function getChecked() {
     return getStoredSelectedIds();
 }
 
 function updateBulkBar() {
-    const ids = getChecked();
-    const visibleCheckboxes = [...document.querySelectorAll('.row-check')];
-
+    var bulkBar = document.getElementById('bulkBar');
+    var bulkCount = document.getElementById('bulkCount');
+    if (!bulkBar || !bulkCount) return;
+    var ids = getChecked();
+    var visibleCheckboxes = [].slice.call(document.querySelectorAll('.row-check'));
     if (ids.length > 0) {
         bulkBar.style.display = 'flex';
         bulkCount.textContent = ids.length + ' produk dipilih';
     } else {
         bulkBar.style.display = 'none';
     }
-
+    var selectAll = document.getElementById('selectAll');
     if (selectAll) {
-        const checkedVisible = visibleCheckboxes.filter(c => c.checked).length;
+        var checkedVisible = visibleCheckboxes.filter(function(c) { return c.checked; }).length;
         selectAll.indeterminate = checkedVisible > 0 && checkedVisible < visibleCheckboxes.length;
         selectAll.checked = visibleCheckboxes.length > 0 && checkedVisible === visibleCheckboxes.length;
     }
 }
 
-function clearSelection() {
-    setStoredSelectedIds([]);
-    document.querySelectorAll('.row-check').forEach(c => c.checked = false);
-    selectAll.checked = false;
+function syncSelectionFromStorage() {
+    var selectedIds = getStoredSelectedIds();
+    document.querySelectorAll('.row-check').forEach(function(cb) {
+        cb.checked = selectedIds.indexOf(cb.value) >= 0;
+    });
     updateBulkBar();
 }
 
-if (selectAll) {
-    selectAll.addEventListener('change', function() {
-        const visibleCheckboxes = document.querySelectorAll('.row-check');
-        const selectedIds = getStoredSelectedIds();
-        visibleCheckboxes.forEach(c => {
-            c.checked = this.checked;
-            const id = c.value;
-            if (this.checked) {
-                if (!selectedIds.includes(id)) selectedIds.push(id);
-            } else {
-                const index = selectedIds.indexOf(id);
-                if (index >= 0) selectedIds.splice(index, 1);
-            }
-        });
-        setStoredSelectedIds(selectedIds);
-        updateBulkBar();
+function clearSelection() {
+    setStoredSelectedIds([]);
+    document.querySelectorAll('.row-check').forEach(function(c) { c.checked = false; });
+    updateBulkBar();
+}
+
+// ===== AJAX live list =====
+var productSearchInput = document.getElementById('productSearch');
+var productListCard = document.getElementById('productListCard');
+
+function listSelectVal(name) {
+    var el = document.querySelector('select[name="' + name + '"]');
+    return el ? el.value : '';
+}
+
+function buildListUrl() {
+    var url = new URL(window.location.origin + window.location.pathname);
+    var search = productSearchInput ? productSearchInput.value.trim() : '';
+    if (search) { url.searchParams.set('search', search); } else { url.searchParams.delete('search'); }
+    var category = listSelectVal('category');
+    if (category) { url.searchParams.set('category', category); } else { url.searchParams.delete('category'); }
+    var status = listSelectVal('status');
+    if (status) { url.searchParams.set('status', status); } else { url.searchParams.delete('status'); }
+    var sort = listSelectVal('sort');
+    if (sort) { url.searchParams.set('sort', sort); } else { url.searchParams.delete('sort'); }
+    url.searchParams.delete('page');
+    return url;
+}
+
+function loadList(url) {
+    return fetch(url.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    })
+    .then(function(res) {
+        if (!res.ok) throw new Error('Gagal memuat data');
+        return res.text();
+    })
+    .then(function(html) {
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        var replacement = wrapper.querySelector('#productListCard');
+        if (!replacement) throw new Error('Konten tidak ditemukan');
+        productListCard.outerHTML = replacement.outerHTML;
+        productListCard = document.getElementById('productListCard');
+        bindTableEvents();
     });
 }
 
-document.querySelectorAll('.row-check').forEach(c => {
-    c.addEventListener('change', function() {
-        const id = this.value;
-        const selectedIds = getStoredSelectedIds();
-        if (this.checked) {
-            if (!selectedIds.includes(id)) selectedIds.push(id);
-        } else {
-            const index = selectedIds.indexOf(id);
-            if (index >= 0) selectedIds.splice(index, 1);
-        }
-        setStoredSelectedIds(selectedIds);
-        updateBulkBar();
+function refreshList() {
+    var url = buildListUrl();
+    updateFilterButtons();
+    loadList(url).catch(function() {
+        window.location.href = url.toString();
     });
-});
+}
 
-syncSelectionFromStorage();
+function updateFilterButtons() {
+    var hasFilter = !!(productSearchInput && productSearchInput.value.trim())
+        || !!listSelectVal('category')
+        || !!listSelectVal('status');
+    var resetLink = productSearchInput ? productSearchInput.closest('form').querySelector('a.btn-secondary') : null;
+    if (resetLink) {
+        resetLink.style.display = hasFilter ? '' : 'none';
+    }
+}
+
+// ===== Bind ulang event tabel (dipanggil ulang tiap selesai AJAX) =====
+function bindTableEvents() {
+    document.querySelectorAll('.product-row').forEach(function(row) {
+        if (row.dataset.bound) return;
+        row.dataset.bound = '1';
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('button, a, form, .toggle-active, .delete-btn, [onclick]')) return;
+            window.location = this.dataset.url;
+        });
+    });
+
+    document.querySelectorAll('.toggle-active').forEach(function(btn) {
+        if (btn.dataset.bound) return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', function() {
+            var url = this.dataset.url;
+            var button = this;
+            fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    if (data.is_active) {
+                        button.className = 'btn btn-sm btn-success toggle-active';
+                        button.innerHTML = '<i class="fas fa-check"></i> Aktif';
+                    } else {
+                        button.className = 'btn btn-sm btn-secondary toggle-active';
+                        button.innerHTML = '<i class="fas fa-times"></i> Nonaktif';
+                    }
+                }
+            });
+        });
+    });
+
+    var selectAll = document.getElementById('selectAll');
+    if (selectAll && !selectAll.dataset.bound) {
+        selectAll.dataset.bound = '1';
+        selectAll.addEventListener('change', function() {
+            var visibleCheckboxes = document.querySelectorAll('.row-check');
+            var selectedIds = getStoredSelectedIds();
+            visibleCheckboxes.forEach(function(c) {
+                c.checked = this.checked;
+                var id = c.value;
+                var idx = selectedIds.indexOf(id);
+                if (this.checked) {
+                    if (idx < 0) selectedIds.push(id);
+                } else if (idx >= 0) {
+                    selectedIds.splice(idx, 1);
+                }
+            }, this);
+            setStoredSelectedIds(selectedIds);
+            updateBulkBar();
+        });
+    }
+
+    document.querySelectorAll('.row-check').forEach(function(c) {
+        if (c.dataset.bound) return;
+        c.dataset.bound = '1';
+        c.addEventListener('change', function() {
+            var id = this.value;
+            var selectedIds = getStoredSelectedIds();
+            var idx = selectedIds.indexOf(id);
+            if (this.checked) {
+                if (idx < 0) selectedIds.push(id);
+            } else if (idx >= 0) {
+                selectedIds.splice(idx, 1);
+            }
+            setStoredSelectedIds(selectedIds);
+            updateBulkBar();
+        });
+    });
+
+    var card = document.getElementById('productListCard');
+    if (card && !card.dataset.pageBound) {
+        card.dataset.pageBound = '1';
+        card.addEventListener('click', function(e) {
+            var link = e.target.closest('.pagination a');
+            if (!link) return;
+            e.preventDefault();
+            loadList(link.href).catch(function() {
+                window.location.href = link.href;
+            });
+        });
+    }
+
+    syncSelectionFromStorage();
+}
 
 function bulkDelete() {
     const ids = getChecked();
@@ -534,28 +606,58 @@ document.addEventListener('click', function(e) {
     );
 });
 
-// Live search dengan debounce 400ms
+// ===== Search / filter (AJAX, tanpa reload halaman) =====
 (function() {
-    var searchInput = document.getElementById('productSearch');
-    if (!searchInput) return;
+    if (!productSearchInput || !productListCard) return;
+
     var timer;
-    searchInput.addEventListener('input', function() {
+    productSearchInput.addEventListener('input', function() {
         clearTimeout(timer);
-        var val = this.value;
-        timer = setTimeout(function() {
-            var url = new URL(window.location.href);
-            if (val.trim()) {
-                url.searchParams.set('search', val.trim());
-            } else {
-                url.searchParams.delete('search');
-            }
-            url.searchParams.delete('page');
-            window.location.href = url.toString();
-        }, 400);
+        timer = setTimeout(refreshList, 300);
     });
-    var len = searchInput.value.length;
-    searchInput.setSelectionRange(len, len);
-    searchInput.focus();
+
+    ['category', 'status', 'sort'].forEach(function(name) {
+        var el = document.querySelector('select[name="' + name + '"]');
+        if (el) el.addEventListener('change', refreshList);
+    });
+
+    var filterForm = productSearchInput.closest('form');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            refreshList();
+        });
+        var resetLink = filterForm.querySelector('a.btn-secondary');
+        if (resetLink) {
+            resetLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                productSearchInput.value = '';
+                ['category', 'status', 'sort'].forEach(function(name) {
+                    var el = document.querySelector('select[name="' + name + '"]');
+                    if (el) el.value = '';
+                });
+                refreshList();
+            });
+        }
+    }
 })();
+
+// ===== Undo riwayat file =====
+document.addEventListener('submit', function(e) {
+    var form = e.target.closest('.undo-history-form');
+    if (!form) return;
+    e.preventDefault();
+    var btn = form.querySelector('.undo-history-btn');
+    var name = (btn && btn.dataset.name) || 'file ini';
+    wwConfirm(
+        'Undo Riwayat File?',
+        'Perubahan dari file "' + name + '" akan dikembalikan. Lanjutkan?',
+        function() { form.submit(); },
+        { confirmText: 'Ya, Undo', confirmColor: '#2563eb' }
+    );
+});
+
+// Inisialisasi
+bindTableEvents();
 </script>
 @endpush

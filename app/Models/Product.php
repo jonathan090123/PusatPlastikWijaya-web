@@ -72,7 +72,7 @@ class Product extends Model
 
     public function productUnits()
     {
-        return $this->hasMany(ProductUnit::class);
+        return $this->hasMany(ProductUnit::class)->orderBy('id');
     }
 
     /**
