@@ -1,11 +1,5 @@
 # Pusat Plastik Wijaya
 
-<div align="center">
-  <a href="https://pusatplastikwijaya.com/products" target="_blank">
-    <img src="docs/homepage-customer-preview.svg" alt="Homepage customer preview" width="1000" />
-  </a>
-</div>
-
 Website e-commerce untuk toko plastik yang membantu pelanggan dalam mencari produk, melakukan checkout, dan memantau status pesanan secara online.
 
 Website: [Pusat Plastik Wijaya](https://pusatplastikwijaya.com/products)
