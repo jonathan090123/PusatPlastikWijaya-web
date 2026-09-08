@@ -8,9 +8,18 @@
 
 Website e-commerce untuk toko plastik yang membantu pelanggan dalam mencari produk, melakukan checkout, dan memantau status pesanan secara online.
 
-Live demo: [Pusat Plastik Wijaya](https://pusatplastikwijaya.com/products)
+Website: [Pusat Plastik Wijaya](https://pusatplastikwijaya.com/products)
 
-Proyek ini dibuat sebagai salah satu portofolio saya dalam bidang web development, khususnya pada pengembangan aplikasi bisnis dan sistem transaksi digital.
+## Preview
+
+<div align="center">
+  <img src="screenshots/home_loggedIn.png" alt="Homepage customer logged in" width="900" />
+</div>
+
+<div align="center">
+  <img src="screenshots/product.png" alt="Product page" width="440" />
+  <img src="screenshots/admin_dashboard.png" alt="Admin dashboard" width="440" />
+</div>
 
 ## Tentang Proyek
 
@@ -51,8 +60,9 @@ Pusat Plastik Wijaya adalah platform belanja online yang dirancang untuk memperm
 - MySQL
 - Tailwind CSS
 - Vite
-- Midtrans
+- Midtrans API
 - JavaScript
+- RajaOngkir API
 
 ## Alur Aplikasi
 
@@ -70,20 +80,4 @@ Pusat Plastik Wijaya adalah platform belanja online yang dirancang untuk memperm
 - `database/` — migrasi dan seeder
 - `public/` — aset publik
 - `config/` — konfigurasi aplikasi dan layanan eksternal
-
-## Cara Menjalankan
-
-Pastikan PHP, Composer, dan Node.js sudah terinstal di komputer Anda.
-
-```bash
-composer install
-npm install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
-php artisan serve
-npm run dev
-```
-
-Untuk fitur pembayaran, pastikan konfigurasi Midtrans sudah diatur di file `.env`.
 
