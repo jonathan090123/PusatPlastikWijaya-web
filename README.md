@@ -13,12 +13,12 @@ Website: [Pusat Plastik Wijaya](https://pusatplastikwijaya.com/products)
 ## Preview
 
 <div align="center">
-  <img src="screenshots/home_loggedIn.png" alt="Homepage customer logged in" width="900" />
+  <img src="screenshots/home_loggedIn.png" alt="Homepage customer logged in" width="502" />
 </div>
 
 <div align="center">
-  <img src="screenshots/product.png" alt="Product page" width="440" />
-  <img src="screenshots/admin_dashboard.png" alt="Admin dashboard" width="440" />
+  <img src="screenshots/product.png" alt="Product page" width="502" />
+  <img src="screenshots/admin_dashboard.png" alt="Admin dashboard" width="502" />
 </div>
 
 ## Tentang Proyek
